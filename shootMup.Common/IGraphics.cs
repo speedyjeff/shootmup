@@ -25,6 +25,7 @@ namespace shootMup.Common
         void Rectangle(RGBA color, float x, float y, float width, float height, bool fill = true);
         void Text(RGBA color, float x, float y, string text);
         void Line(RGBA color, float x1, float y1, float x2, float y2, float thickness);
+        void Image(string path, float x, float y);
 
         void RotateTransform(float angle);
 

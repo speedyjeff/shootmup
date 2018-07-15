@@ -28,7 +28,7 @@ namespace shootMup.Common
             // draw player
             g.RotateTransform(Angle);
             {
-                if (Primary != null) g.Rectangle(RGBA.Black, X - 10, Y - Height, 20, Height);
+                if (Primary != null) g.Rectangle(RGBA.Black, X - 2, Y - Height, 4, Height);
                 g.Ellipse(new RGBA() { R = 255, G = 0, B = 0, A = 255 }, X - (Width / 2), Y - (Width / 2), Width, Height);
                 if (Sheld > 0) g.Ellipse(new RGBA() { R = 85, G = 85, B = 85, A = 255 }, X - 25, Y - 25, 50, 50);
             }

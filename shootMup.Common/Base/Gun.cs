@@ -23,6 +23,7 @@ namespace shootMup.Common
         public virtual string EmptySoundPath() => "media/empty.wav";
         public virtual string ReloadSoundPath() => "media/reload.wav";
         public virtual string FiredSoundPath() => "media/pistol.wav";
+        public virtual string ImagePath => "media/pistol.png";
 
         public Gun() : base()
         {
@@ -88,6 +89,12 @@ namespace shootMup.Common
         private bool CheckShotdelay()
         {
             return (Shotdelay.ElapsedMilliseconds > Delay);
+        }
+
+        public override void Draw(IGraphics g)
+        {
+            g.Image(ImagePath, X - Width / 2, Y - Height / 2);
+            base.Draw(g);
         }
         #endregion
     }

@@ -7,6 +7,7 @@ namespace shootMup.Common
     public class Pistol : Gun
     {
         public override string FiredSoundPath() => "media/pistol.wav";
+        public override string ImagePath => "media/pistol.png";
 
         public Pistol() : base()
         {
@@ -23,13 +24,6 @@ namespace shootMup.Common
             Distance = 600;
             Spread = 0;
             Delay = 1000;
-        }
-
-        public override void Draw(IGraphics g)
-        {
-            g.Rectangle(RGBA.Black, X - Width / 2, Y - Height / 2, Width, Height / 2);
-            g.Ellipse(RGBA.Black, X - Width/2, Y, 10, 10);
-            base.Draw(g);
         }
     }
 }

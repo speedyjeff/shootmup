@@ -139,6 +139,7 @@ namespace shootMup
         {
             if (e.Button == MouseButtons.Left) World.KeyPress(Common.Constants.LeftMouse);
             else if (e.Button == MouseButtons.Right) OnMoveTimer.Start();
+            else if (e.Button == MouseButtons.Middle) World.KeyPress(Common.Constants.r);
         }
 
         private void OnMouseUp(object sender, MouseEventArgs e)
@@ -164,6 +165,7 @@ namespace shootMup
             else if (keyData == Keys.Right) World.KeyPress(Common.Constants.RightArrow);
             else if (keyData == Keys.Up) World.KeyPress(Common.Constants.UpArrow);
             else if (keyData == Keys.Down) World.KeyPress(Common.Constants.DownArrow);
+            else if (keyData == Keys.Space) World.KeyPress(Common.Constants.Space);
 
             // command control
             else if (keyData == Keys.Tab) throw new Exception("NYI - show menu"); // show a menu

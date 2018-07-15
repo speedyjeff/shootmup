@@ -12,18 +12,22 @@ namespace shootMup.Common
         public const char LeftArrow = (char)252;
         public const char RightArrow = (char)251;
 
-        public const char Up = 'w';
-        public const char Down = 's';
-        public const char Left = 'a';
-        public const char Right = 'd';
+        public const char Space = (char)248;
 
-        public const char Pickup = 'f';
+        public const char w = 'w';
+        public const char s = 's';
+        public const char a = 'a';
+        public const char d = 'd';
 
-        public const char Reload = 'r';
+        public const char f = 'f';
 
-        public const char Switch = '1';
+        public const char r = 'r';
 
-        public const char Drop = '0';
+        public const char x1 = '1';
+
+        public const char x0 = '0';
+        public const char x2 = '2';
+        public const char q = 'q';
 
         // mouse
         public const char LeftMouse = (char)250;

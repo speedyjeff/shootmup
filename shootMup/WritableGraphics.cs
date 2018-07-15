@@ -14,6 +14,7 @@ namespace shootMup
         public WritableGraphics(BufferedGraphicsContext context)
         {
             Context = context;
+            ImageCache = new Dictionary<string, Image>();
         }
 
         // access to the Graphics implementation
@@ -125,6 +126,30 @@ namespace shootMup
             Surface.Graphics.DrawLine(new Pen(Color.FromArgb(color.A, color.R, color.G, color.B), thickness), sx1, sy1, sx2, sy2);
         }
 
+        public void Image(string path, float x, float y)
+        {
+            System.Drawing.Image img = null;
+            if (!ImageCache.TryGetValue(path, out img))
+            {
+                img = System.Drawing.Image.FromFile(path);
+                var bitmap = new Bitmap(img);
+                bitmap.MakeTransparent(bitmap.GetPixel(0,0));
+                ImageCache.Add(path, bitmap);
+            }
+
+            float sx = x;
+            float sy = y;
+            float swidth = 0;
+            float sheight = 0;
+            if (Translate != null && !Translate(x, y, 0, 0, out sx, out sy, out swidth, out sheight)) return;
+
+            // safe guard accidental usage
+            x = y = 0;
+
+            // use screen coordinates
+            Surface.Graphics.DrawImage(img, sx, sy);
+        }
+
         public void RotateTransform(float angle)
         {
             Surface.Graphics.TranslateTransform(1 * Width / 2, 1 * Height / 2);
@@ -144,6 +169,8 @@ namespace shootMup
         private BufferedGraphics Surface;
         private BufferedGraphicsContext Context;
         private TranslateCoordinatesDelegate Translate;
+        private Dictionary<string, Image> ImageCache;
+        // TODO! color cache
         #endregion
     }
 }

@@ -32,7 +32,7 @@ namespace shootMup
             Player = new Player() { X = WindowX, Y = WindowY };
             // player
             All.Add(Player.Id, Player);
-            if (false)
+            if (true)
             {
                 // test world
                 foreach (var elem in WorldGenerator.Test(out Width, out Height))
@@ -101,39 +101,42 @@ namespace shootMup
             switch (key)
             {
                 // move
-                case Constants.Down:
+                case Constants.s:
                 case Constants.DownArrow:
                     ydelta = speed;
                     break;
-                case Constants.Left:
+                case Constants.a:
                 case Constants.LeftArrow:
                     xdelta = -1* speed;
                     break;
-                case Constants.Right:
+                case Constants.d:
                 case Constants.RightArrow:
                     xdelta = speed;
                     break;
-                case Constants.Up:
+                case Constants.w:
                 case Constants.UpArrow:
                     ydelta = -1* speed;
                     break;
 
-                case Constants.Switch:
+                case Constants.x1:
                     SwitchWeapon();
                     break;
 
-                case Constants.Pickup:
+                case Constants.f:
                     Pickup();
                     break;
 
-                case Constants.Drop:
+                case Constants.x2:
+                case Constants.q:
+                case Constants.x0:
                     Drop();
                     break;
 
-                case Constants.Reload:
+                case Constants.r:
                     Reload();
                     break;
 
+                case Constants.Space:
                 case Constants.LeftMouse:
                     Shoot();
                     break;
