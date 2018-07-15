@@ -32,10 +32,22 @@ namespace shootMup
             Player = new Player() { X = WindowX, Y = WindowY };
             // player
             All.Add(Player.Id, Player);
-            // test world
-            foreach(var elem in WorldGenerator.Test(out Width, out Height))
+            if (false)
             {
-                All.Add(elem.Id, elem);
+                // test world
+                foreach (var elem in WorldGenerator.Test(out Width, out Height))
+                {
+                    All.Add(elem.Id, elem);
+                }
+            }
+            else
+            {
+                Width = 10000;
+                Height = 10000;
+                foreach (var elem in WorldGenerator.Randomgen(Width, Height))
+                {
+                    All.Add(elem.Id, elem);
+                }
             }
 
             // initially render all the elements

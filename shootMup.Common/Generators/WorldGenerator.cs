@@ -34,5 +34,147 @@ namespace shootMup.Common
 
             return elements;
         }
+
+        public static List<Element> Randomgen(int width, int height)
+        {
+            // this size is determined by the largest element (the Hut)
+            int chunkSize = 400;
+            Random rand = new Random();
+            var elements = new List<Element>();
+
+            if (width < chunkSize || height < chunkSize) throw new Exception("Must have at least " + chunkSize + " pixels to generate a board");
+
+            // break the board up into 400x400 chunks, within those chunks we will then fill with a few particular patterns
+
+            for(int h = 0; h < height / chunkSize; h++)
+            {
+                for(int w = 0; w < width / chunkSize; w++)
+                {
+                    if (h == 0 && w == 0) continue;
+
+                    var x = (h * chunkSize) + (chunkSize / 2);
+                    var y = (w * chunkSize) + (chunkSize / 2);
+
+                    // potential item location
+                    var ix = x;
+                    var iy = y;
+
+                    // generate random obstacle
+                    var obstacles = RandomgenObstacle(x, y, chunkSize, rand);
+
+                    if (obstacles != null && obstacles.Count == 1)
+                    {
+                        // adjust the item placement
+                        if (obstacles[0] is Rock) ix -= (width / 2);
+                        if (obstacles[0] is Wall)
+                        {
+                            if ((obstacles[0] as Wall).Width > (obstacles[0] as Wall).Height)
+                            {
+                                // horizontal
+                                iy += height / 2;
+                            }
+                            else
+                            {
+                                // vertical
+                                ix += width / 2;
+                            }
+                        }
+                    }
+
+                    // place an item
+                    var item = RandomgenItem(ix, iy, chunkSize, rand);
+                    
+                    if (item != null)
+                    {
+                        // add the item first (so it renders correctly)
+                        elements.Add(item);
+                    }
+                    if (obstacles != null) elements.AddRange(obstacles);
+                }
+            }
+
+            // make borders
+            elements.AddRange( WorldHelper.MakeBorders(width, height, 20));
+            
+            return elements;
+        }
+
+        public static Element RandomgenItem(float x, float y, float window, Random rand)
+        {
+            switch (rand.Next() % 10)
+            {
+                case 0:
+                    // helmet
+                    return new Helmet() { X = x, Y = y };
+                case 1:
+                    // bandage
+                    return new Bandage() { X = x, Y = y };
+                case 4:
+                case 2:
+                    // ammo
+                    return new Ammo() { X = x, Y = y };
+                case 3:
+                    // guns
+                    switch (rand.Next() % 3)
+                    {
+                        case 0:
+                            return new Pistol() { X = x, Y = y };
+                        case 1:
+                            return new AK47() { X = x, Y = y };
+                        case 2:
+                            return new Shotgun() { X = x, Y = y };
+                    }
+                    break;
+                default:
+                    // nothing
+                    break;
+            }
+
+            return null;
+        }
+
+        public static List<Element> RandomgenObstacle(float x, float y, float window, Random rand)
+        {
+            // choose initial obstacle
+            switch (rand.Next() % 12)
+            {
+                case 0:
+                    // hut
+                    return WorldHelper.MakeHut(x, y, (DirectionEnum)((rand.Next() % 15) + 1));
+                case 10:
+                case 9:
+                case 8:
+                case 7:
+                case 6:
+                case 5:
+                case 4:
+                case 1:
+                    // tree
+                    var rx = (x - (window / 2)) + ((float)(rand.Next() % 100) / 100f) * window;
+                    var ry = (y - (window / 2)) + ((float)(rand.Next() % 100) / 100f) * window;
+                    return new List<Element>() { new Tree() { X = rx, Y = ry } };
+                case 2:
+                    // rock
+                    return new List<Element>() { new Rock() { X = x, Y = y } };
+                case 3:
+                    if (rand.Next() % 2 == 0)
+                    {
+                        // vertical wall
+                        return new List<Element>() { new Wall(WallDirection.Vertical, window, 20) { X = x, Y = y } };
+                        
+                    }
+                    else
+                    {
+                        // horizontal wall
+                        return new List<Element>() { new Wall(WallDirection.Horiztonal, window, 20) { X = x, Y = y } };
+                        
+                    }
+                default:
+                    // nothing
+                    break;
+            }
+
+            return null;
+        }
     }
 }
