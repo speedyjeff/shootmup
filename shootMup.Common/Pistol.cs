@@ -20,7 +20,7 @@ namespace shootMup.Common
 
             // damage
             Damage = 25;
-            Distance = 300;
+            Distance = 600;
             Spread = 0;
         }
 

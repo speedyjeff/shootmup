@@ -60,6 +60,15 @@ namespace shootMup.Common
                     return true;
                 }
             }
+            else if (item is Bandage)
+            {
+                if (Health < Constants.MaxHealth)
+                {
+                    Health += item.Health;
+                    if (Health > Constants.MaxHealth) Health = Constants.MaxHealth;
+                    return true;
+                }
+            }
             else throw new Exception("Unknow item : " + item.GetType());
 
             return false;

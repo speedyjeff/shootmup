@@ -50,7 +50,8 @@ namespace shootMup
                                     new Wall(WallDirection.Vertical, roof.Height/2, 20) { X = roof.X - roof.Width / 2 + 40, Y = roof.Y - 80  },
                                     new Wall(WallDirection.Vertical, roof.Height/2, 20) { X = roof.X + roof.Width / 2 - 40, Y = roof.Y - 80 },
                                     new Wall(WallDirection.Horiztonal, roof.Width-40, 20) { X = roof.X, Y = roof.Y + roof.Height / 2 - 40 },
-                                    roof
+                                    roof,
+                                    new Bandage() { X = 350, Y = 800}
             })
             {
                 All.Add(elem.Id, elem);
