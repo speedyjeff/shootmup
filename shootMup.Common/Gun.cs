@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 
 namespace shootMup.Common
@@ -15,8 +16,9 @@ namespace shootMup.Common
 
         // damage
         public int Distance { get; protected set; }
-        public float Spread { get; protected set; }
+        public float Spread { get; protected set; } // degrees
         public int Damage { get; protected set; }
+        public int Delay { get; protected set; } // ms
 
         public virtual string EmptySoundPath() => "media/empty.wav";
         public virtual string ReloadSoundPath() => "media/reload.wav";
@@ -26,6 +28,8 @@ namespace shootMup.Common
         {
             CanAcquire = true;
             IsSolid = false;
+            Shotdelay = new Stopwatch();
+            ResetShotdelay();
         }
 
         public void AddAmmo(int ammo)
@@ -56,19 +60,35 @@ namespace shootMup.Common
             if (delta > Ammo) delta = Ammo;
             Clip += delta;
             Ammo -= delta;
+            ResetShotdelay();
             return true;
         }
 
         public virtual bool CanShoot()
         {
-            return (Clip > 0);
+            return (Clip > 0) && CheckShotdelay();
         }
 
         public virtual bool Shoot()
         {
             if (!CanShoot()) return false;
             Clip--;
+            ResetShotdelay();
             return true;
         }
+
+        #region private
+        private Stopwatch Shotdelay;
+
+        private void ResetShotdelay()
+        {
+            Shotdelay.Stop(); Shotdelay.Reset(); Shotdelay.Start();
+        }
+
+        private bool CheckShotdelay()
+        {
+            return (Shotdelay.ElapsedMilliseconds > Delay);
+        }
+        #endregion
     }
 }

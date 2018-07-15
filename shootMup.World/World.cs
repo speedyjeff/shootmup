@@ -43,7 +43,11 @@ namespace shootMup
                                     new Wall(WallDirection.Horiztonal, Width, 20) { X = Width / 2, Y = Height - 10 },
                                     new Wall(WallDirection.Vertical, Height, 20) { X = Width - 10, Y = Height / 2 },
                                     new Pistol() { X = 350, Y = 200 },
+                                    new AK47() { X = 350, Y = 400 },
+                                    new Shotgun() { X = 350, Y = 350 },
                                     new Ammo() { X = 350, Y = 150 },
+                                    new Ammo() { X = 400, Y = 150 },
+                                    new Ammo() { X = 450, Y = 150 },
                                     new Helmet() { X = 200, Y = 300 },
                                     new Rock() { X = 750, Y = 250 },
                                     // a hut
@@ -131,6 +135,10 @@ namespace shootMup
 
                 case Constants.Pickup:
                     Pickup();
+                    break;
+
+                case Constants.Drop:
+                    Drop();
                     break;
 
                 case Constants.Reload:
@@ -335,6 +343,37 @@ namespace shootMup
             return (y3 - y1) * (x2 - x1) > (y2 - y1) * (x3 - x1);
         }
 
+        public bool ApplyBulletTrajectory(Gun gun, float x, float y, float angle)
+        {
+            float x1 = x;
+            float y1 = y;
+            float a = (float)Math.Cos(angle * Math.PI / 180) * gun.Distance;
+            float o = (float)Math.Sin(angle * Math.PI / 180) * gun.Distance;
+            float x2 = x1 + o;
+            float y2 = y1 - a;
+
+            Bullets.Add(new BulletTrajectory()
+            {
+                X1 = x1,
+                Y1 = y1,
+                X2 = x2,
+                Y2 = y2,
+                Damage = gun.Damage,
+                Duration = Constants.BulletDuration
+            });
+
+            // determine damage
+            var elem = IntersectingLine(x1, y1, x2, y2);
+
+            if (elem != null && elem.TakesDamage)
+            {
+                elem.ReduceHealth(gun.Damage);
+                return true;
+            }
+
+            return false;
+        }
+
         // player actions
         private bool Move(float xdelta, float ydelta)
         {
@@ -401,31 +440,11 @@ namespace shootMup
             {
                 case GunStateEnum.Fired:
                     // show the bullet
-                    if (Player.Primary.Spread != 0) throw new Exception("NYI - bullet spread");
-                    float x1 = Player.X;
-                    float y1 = Player.Y;
-                    float a = (float)Math.Cos(Player.Angle * Math.PI / 180) * Player.Primary.Distance;
-                    float o = (float)Math.Sin(Player.Angle * Math.PI / 180) * Player.Primary.Distance;
-                    float x2 = x1 + o;
-                    float y2 = y1 - a;
-
-                    Bullets.Add(new BulletTrajectory()
+                    ApplyBulletTrajectory(Player.Primary, Player.X, Player.Y, Player.Angle);
+                    if (Player.Primary.Spread != 0)
                     {
-                        X1 = x1,
-                        Y1 = y1,
-                        X2 = x2,
-                        Y2 = y2,
-                        Damage = Player.Primary.Damage,
-                        Duration = Constants.BulletDuration,
-                        Spread = Player.Primary.Spread
-                    });
-
-                    // determine damage
-                    var elem = IntersectingLine(x1, y1, x2, y2);
-
-                    if (elem != null && elem.TakesDamage)
-                    {
-                        elem.ReduceHealth(Player.Primary.Damage);
+                        ApplyBulletTrajectory(Player.Primary, Player.X, Player.Y, Player.Angle - (Player.Primary.Spread/2));
+                        ApplyBulletTrajectory(Player.Primary, Player.X, Player.Y, Player.Angle + (Player.Primary.Spread / 2));
                     }
 
                     // play sound
@@ -442,6 +461,18 @@ namespace shootMup
         private void SwitchWeapon()
         {
             Player.SwitchWeapon();
+        }
+
+        private void Drop()
+        {
+            var item = Player.DropPrimary();
+
+            if (item != null)
+            {
+                item.X = Player.X;
+                item.Y = Player.Y;
+                All.Add(item.Id, item);
+            }
         }
 
         #endregion

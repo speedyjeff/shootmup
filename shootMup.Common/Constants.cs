@@ -23,6 +23,8 @@ namespace shootMup.Common
 
         public const char Switch = '1';
 
+        public const char Drop = '0';
+
         // mouse
         public const char LeftMouse = (char)250;
         public const char RightMouse = (char)249;

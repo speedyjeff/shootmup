@@ -4,31 +4,31 @@ using System.Text;
 
 namespace shootMup.Common
 {
-    public class Pistol : Gun
+    public class AK47 : Gun
     {
-        public override string FiredSoundPath() => "media/pistol.wav";
-
-        public Pistol() : base()
+        public AK47() : base()
         {
             // looks
             Width = 50;
             Height = 5;
-            Name = "Pistol";
+            Name = "AK47";
 
             // capacity
-            ClipCapacity = 6;
+            ClipCapacity = 20;
 
             // damage
-            Damage = 25;
-            Distance = 600;
+            Damage = 15;
+            Distance = 500;
             Spread = 0;
-            Delay = 1000;
+            Delay = 100;
         }
+
+        public override string FiredSoundPath() => "media/ak47.wav";
 
         public override void Draw(IGraphics g)
         {
             g.Rectangle(RGBA.Black, X - Width / 2, Y - Height / 2, Width, Height / 2);
-            g.Ellipse(RGBA.Black, X - Width/2, Y, 10, 10);
+            g.Ellipse(RGBA.Black, X - Width / 2, Y, 10, 10);
             base.Draw(g);
         }
     }

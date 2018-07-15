@@ -11,7 +11,6 @@ namespace shootMup.Common
         public float X2 { get; set; }
         public float Y2 { get; set; }
         public float Damage { get; set; }
-        public float Spread { get; set; }
         public int Duration { get; set; }
 
         public BulletTrajectory() : base()

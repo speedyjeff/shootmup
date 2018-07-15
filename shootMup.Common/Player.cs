@@ -69,8 +69,8 @@ namespace shootMup.Common
             {
                 if (Primary != null && Secondary == null)
                 {
-                    Primary = null;
                     Secondary = Primary;
+                    Primary = null;
                 }
                 if (Primary == null)
                 {
@@ -139,6 +139,14 @@ namespace shootMup.Common
             Primary = Secondary;
             Secondary = tmp;
             return (Primary != null || Secondary != null);
+        }
+
+        public Element DropPrimary()
+        {
+            if (Primary == null) return null;
+            var tmp = Primary;
+            Primary = null;
+            return tmp;
         }
     }
 }
