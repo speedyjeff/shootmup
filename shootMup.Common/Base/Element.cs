@@ -27,7 +27,7 @@ namespace shootMup.Common
         public bool CanAcquire { get; protected set; } = false;
         public bool IsTransparent { get; protected set; } = false;
         public string Name { get; protected set; } = "";
-        public static bool Debug_DrawHitBox { get; } = false;
+        public static bool Debug_DrawHitBox { get; } = true;
 
         public bool IsDead => (TakesDamage ? Health <= 0 : false);
 

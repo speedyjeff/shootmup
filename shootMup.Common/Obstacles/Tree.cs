@@ -8,6 +8,7 @@ namespace shootMup.Common
     {
         public Tree() : base()
         {
+            Name = "Tree";
             CanMove = false;
             TakesDamage = true;
             IsSolid = true;

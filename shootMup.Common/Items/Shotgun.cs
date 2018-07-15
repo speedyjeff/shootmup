@@ -9,8 +9,8 @@ namespace shootMup.Common
         public Shotgun() : base()
         {
             // looks
-            Width = 50;
-            Height = 5;
+            Width = 100;
+            Height = 20;
             Name = "Shotgun";
 
             // capacity

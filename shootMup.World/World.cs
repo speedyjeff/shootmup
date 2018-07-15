@@ -13,7 +13,7 @@ namespace shootMup
         public World(IGraphics surface, ISounds sounds)
         {
             // init
-            Bullets = new List<BulletTrajectory>();
+            Ephemerial = new List<EphemerialElement>();
             ZoomFactor = 0;
 
             // graphics
@@ -60,8 +60,8 @@ namespace shootMup
             Surface.Clear(new RGBA() { R = 70, G = 169, B = 52, A = 255 });
 
             // add any bullets
-            var toremove = new List<BulletTrajectory>();
-            foreach (var b in Bullets)
+            var toremove = new List<EphemerialElement>();
+            foreach (var b in Ephemerial)
             {
                 b.Draw(Surface);
                 b.Duration--;
@@ -69,7 +69,7 @@ namespace shootMup
             }
             foreach (var b in toremove)
             {
-                Bullets.Remove(b);
+                Ephemerial.Remove(b);
             }
 
             // TODO find a better way to avoid drawing all the elements
@@ -101,18 +101,22 @@ namespace shootMup
             switch (key)
             {
                 // move
+                case Constants.S:
                 case Constants.s:
                 case Constants.DownArrow:
                     ydelta = speed;
                     break;
+                case Constants.A:
                 case Constants.a:
                 case Constants.LeftArrow:
                     xdelta = -1* speed;
                     break;
+                case Constants.D:
                 case Constants.d:
                 case Constants.RightArrow:
                     xdelta = speed;
                     break;
+                case Constants.W:
                 case Constants.w:
                 case Constants.UpArrow:
                     ydelta = -1* speed;
@@ -122,16 +126,19 @@ namespace shootMup
                     SwitchWeapon();
                     break;
 
+                case Constants.F:
                 case Constants.f:
                     Pickup();
                     break;
 
+                case Constants.Q:
                 case Constants.x2:
                 case Constants.q:
                 case Constants.x0:
                     Drop();
                     break;
 
+                case Constants.R:
                 case Constants.r:
                     Reload();
                     break;
@@ -185,7 +192,7 @@ namespace shootMup
         private const string NothingSoundPath = "media/nothing.wav";
         private const string PickupSoundPath = "media/pickup.wav";
         private ISounds Sounds;
-        private List<BulletTrajectory> Bullets;
+        private List<EphemerialElement> Ephemerial;
 
         private bool TranslateCoordinates(float x, float y, float width, float height, out float tx, out float ty, out float twidth, out float theight)
         {
@@ -291,10 +298,46 @@ namespace shootMup
             return null;
         }
 
+        private float DistanceBetweenPoints(float x1, float y1, float x2, float y2)
+        {
+            // a^2 + b^2 = c^2
+            //  a = |x1 - x2|
+            //  b = |y1 - y2|
+            //  c = result
+            return (float)Math.Sqrt(
+                Math.Pow(Math.Abs(x1 - x2), 2) + Math.Pow(Math.Abs(y1- y2), 2)
+                );
+        }
+
+        private float DistanceToObject(Element elem1, Element elem2)
+        {
+            // this is an approximation, consider the shortest distance between any two points in these objects
+            var e1 = new Tuple<float, float>[]
+            {
+                new Tuple<float,float>(elem1.X, elem1.Y),
+                new Tuple<float,float>(elem1.X - (elem1.Width / 2), elem1.Y - (elem1.Height / 2)),
+                new Tuple<float,float>(elem1.X + (elem1.Width / 2),elem1.Y + (elem1.Height / 2))
+            };
+
+            var e2 = new Tuple<float, float>[]
+            {
+                new Tuple<float,float>(elem2.X, elem2.Y),
+                new Tuple<float,float>(elem2.X - (elem2.Width / 2), elem2.Y - (elem2.Height / 2)),
+                new Tuple<float,float>(elem2.X + (elem2.Width / 2),elem2.Y + (elem2.Height / 2))
+            };
+
+            var minDistance = float.MaxValue;
+            for(int i=0; i<e1.Length; i++)
+                for(int j=i+1; j<e2.Length; j++)
+                    minDistance = Math.Min(DistanceBetweenPoints(e1[i].Item1, e1[i].Item2, e2[j].Item1, e2[j].Item2), minDistance);
+            return minDistance;
+        }
+
         private Element IntersectingLine(float x11, float y11, float x12, float y12)
         {
             // must ensure to find the closest object that intersects
             Element item = null;
+            float prvDistance = 0;
 
             // check collisions
             foreach (var elem in All.Values)
@@ -312,17 +355,38 @@ namespace shootMup
                 // TODO! This only checks a diagnoal line and is incomplete
 
                 // https://stackoverflow.com/questions/3838329/how-can-i-check-if-two-segments-intersect
-                if (CalcCcw(x11, y11, x21, y21, x22, y22) != CalcCcw(x12, y12, x21, y21, x22, y22)
-                    && CalcCcw(x11, y11, x12, y12, x21, y21) != CalcCcw(x11, y11, x12, y12, x22, y22))
-                    collision = true;
+                //if (CalcCcw(x11, y11, x21, y21, x22, y22) != CalcCcw(x12, y12, x21, y21, x22, y22)
+                //   && CalcCcw(x11, y11, x12, y12, x21, y21) != CalcCcw(x11, y11, x12, y12, x22, y22))
+                //   collision = true;
+
+                // top
+                collision = IntersectingLine(x11, y11, x12, y12,
+                    x21, y21, x22, y21);
+                // bottom
+                collision |= IntersectingLine(x11, y11, x12, y12,
+                    x21, y22, x22, y22);
+                // left
+                collision |= IntersectingLine(x11, y11, x12, y12,
+                    x21, y21, x21, y22);
+                // left
+                collision |= IntersectingLine(x11, y11, x12, y12,
+                    x22, y21, x22, y22);
 
                 if (collision)
                 {
-                    if (item == null) item = elem;
+                    if (item == null)
+                    {
+                        item = elem;
+                        prvDistance = DistanceToObject(Player, elem);
+                    }
                     else
                     {
-                        //throw new Exception("NYI - multiple collisions");
-                        System.Diagnostics.Debug.WriteLine("Multiple objects found on collision");
+                        var distance = DistanceToObject(Player, elem);
+                        if (distance < prvDistance)
+                        {
+                            item = elem;
+                            prvDistance = distance;
+                        }
                     }
                 }
             }
@@ -330,36 +394,72 @@ namespace shootMup
             return item;
         }
 
+        private bool IntersectingLine(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4)
+        {
+            // https://stackoverflow.com/questions/3838329/how-can-i-check-if-two-segments-intersect
+            if (CalcCcw(x1, y1, x3, y3, x4, y4) != CalcCcw(x2, y2, x3, y3, x4, y4)
+                && CalcCcw(x1, y1, x2, y2, x3, y3) != CalcCcw(x1, y1, x2, y2, x4, y4))
+                return true;
+            return false;
+        }
+
         private bool CalcCcw(float x1, float y1, float x2, float y2, float x3, float y3)
         {
             return (y3 - y1) * (x2 - x1) > (y2 - y1) * (x3 - x1);
         }
 
-        public bool ApplyBulletTrajectory(Gun gun, float x, float y, float angle)
+        private void GetBulletTrajectory(float x, float y, float angle, float distance, out float x1, out float y1, out float x2, out float y2)
         {
-            float x1 = x;
-            float y1 = y;
-            float a = (float)Math.Cos(angle * Math.PI / 180) * gun.Distance;
-            float o = (float)Math.Sin(angle * Math.PI / 180) * gun.Distance;
-            float x2 = x1 + o;
-            float y2 = y1 - a;
+            x1 = x;
+            y1 = y;
+            float a = (float)Math.Cos(angle * Math.PI / 180) * distance;
+            float o = (float)Math.Sin(angle * Math.PI / 180) * distance;
+            x2 = x1 + o;
+            y2 = y1 - a;
+        }
 
-            Bullets.Add(new BulletTrajectory()
-            {
-                X1 = x1,
-                Y1 = y1,
-                X2 = x2,
-                Y2 = y2,
-                Damage = gun.Damage,
-                Duration = Constants.BulletDuration
-            });
+        private bool ApplyBulletTrajectory(Gun gun, float x, float y, float angle)
+        {
+            float x1, y1, x2, y2;
+            GetBulletTrajectory(x, y, angle, gun.Distance, out x1, out y1, out x2, out y2);
 
             // determine damage
             var elem = IntersectingLine(x1, y1, x2, y2);
 
-            if (elem != null && elem.TakesDamage)
+            if (elem != null)
             {
-                elem.ReduceHealth(gun.Damage);
+                // apply damage
+                if (elem.TakesDamage)
+                {
+                    elem.ReduceHealth(gun.Damage);
+
+                    if (elem.IsDead)
+                    {
+                        Ephemerial.Add(new Message()
+                        {
+                            X = Player.X,
+                            Y = Player.Y + (Height / 3) - 16,
+                            Text = string.Format("player killed {0}", elem.Name),
+                            Duration = Constants.EphemerialElementDuration
+                        });
+                    }
+                }
+
+                // reduce the visual shot on screen based on where the bullet hit
+                var distance = DistanceToObject(Player, elem);
+                GetBulletTrajectory(x, y, angle, distance, out x1, out y1, out x2, out y2);
+
+                // add bullet effect
+                Ephemerial.Add(new BulletTrajectory()
+                {
+                    X1 = x1,
+                    Y1 = y1,
+                    X2 = x2,
+                    Y2 = y2,
+                    Damage = gun.Damage,
+                    Duration = Constants.EphemerialElementDuration
+                });
+
                 return true;
             }
 

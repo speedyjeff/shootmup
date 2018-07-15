@@ -4,7 +4,7 @@ using System.Text;
 
 namespace shootMup.Common
 {
-    public class BulletTrajectory : Thing
+    public class BulletTrajectory : EphemerialElement
     {
         public float X1 { get; set; }
         public float Y1 { get; set; }

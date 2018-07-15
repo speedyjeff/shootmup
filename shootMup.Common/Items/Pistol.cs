@@ -12,8 +12,8 @@ namespace shootMup.Common
         public Pistol() : base()
         {
             // looks
-            Width = 50;
-            Height = 5;
+            Width = 100;
+            Height = 20;
             Name = "Pistol";
 
             // capacity

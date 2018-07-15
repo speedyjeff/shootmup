@@ -14,19 +14,26 @@ namespace shootMup.Common
 
         public const char Space = (char)248;
 
+        public const char W = 'W';
         public const char w = 'w';
+        public const char S = 'S';
         public const char s = 's';
+        public const char A = 'A';
         public const char a = 'a';
+        public const char D = 'D';
         public const char d = 'd';
 
+        public const char F = 'F';
         public const char f = 'f';
 
+        public const char R = 'R';
         public const char r = 'r';
 
         public const char x1 = '1';
 
         public const char x0 = '0';
         public const char x2 = '2';
+        public const char Q = 'Q';
         public const char q = 'q';
 
         // mouse
@@ -37,6 +44,6 @@ namespace shootMup.Common
         public static int Speed = 10;
         public const int MaxSheld = 100;
         public const int MaxHealth = 100;
-        public const int BulletDuration = 10;
+        public const int EphemerialElementDuration = 10;
     }
 }

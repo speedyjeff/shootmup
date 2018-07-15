@@ -9,8 +9,8 @@ namespace shootMup.Common
         public AK47() : base()
         {
             // looks
-            Width = 50;
-            Height = 5;
+            Width = 100;
+            Height = 20;
             Name = "AK47";
 
             // capacity
@@ -23,7 +23,7 @@ namespace shootMup.Common
             Delay = 100;
         }
 
-        public override string FiredSoundPath() => "media/ak47.wav";
+        public override string FiredSoundPath() => "media/ak47.2.wav";
         public override string ImagePath => "media/ak47.png";
     }
 }
