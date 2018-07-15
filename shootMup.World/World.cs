@@ -26,37 +26,14 @@ namespace shootMup
             // TODO - initialize based on on disk artifact
 
             // initialize the world
-            Height = 10000;
-            Width = 10000;
             WindowX = 200;
             WindowY = 200;
             All = new Dictionary<int, Element>();
             Player = new Player() { X = WindowX, Y = WindowY };
             // player
             All.Add(Player.Id, Player);
-            // items
-            var roof = new Roof() { X = 800, Y = 800 };
-            foreach (var elem in new Element[] {
-                                    new Tree() { X = 125, Y = 125 },
-                                    new Wall(WallDirection.Horiztonal, Width, 20) { X = Width / 2, Y = 10 },
-                                    new Wall(WallDirection.Vertical, Height, 20) { X = 10, Y = Height / 2 },
-                                    new Wall(WallDirection.Horiztonal, Width, 20) { X = Width / 2, Y = Height - 10 },
-                                    new Wall(WallDirection.Vertical, Height, 20) { X = Width - 10, Y = Height / 2 },
-                                    new Pistol() { X = 350, Y = 200 },
-                                    new AK47() { X = 350, Y = 400 },
-                                    new Shotgun() { X = 350, Y = 350 },
-                                    new Ammo() { X = 350, Y = 150 },
-                                    new Ammo() { X = 400, Y = 150 },
-                                    new Ammo() { X = 450, Y = 150 },
-                                    new Helmet() { X = 200, Y = 300 },
-                                    new Rock() { X = 750, Y = 250 },
-                                    // a hut
-                                    new Wall(WallDirection.Vertical, roof.Height/2, 20) { X = roof.X - roof.Width / 2 + 40, Y = roof.Y - 80  },
-                                    new Wall(WallDirection.Vertical, roof.Height/2, 20) { X = roof.X + roof.Width / 2 - 40, Y = roof.Y - 80 },
-                                    new Wall(WallDirection.Horiztonal, roof.Width-40, 20) { X = roof.X, Y = roof.Y + roof.Height / 2 - 40 },
-                                    roof,
-                                    new Bandage() { X = 350, Y = 800}
-            })
+            // test world
+            foreach(var elem in WorldGenerator.Test(out Width, out Height))
             {
                 All.Add(elem.Id, elem);
             }
