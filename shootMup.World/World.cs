@@ -116,7 +116,7 @@ namespace shootMup
                 case Constants.DownArrow:
                     ydelta = speed;
                     break;
-                case Constants.Up:
+                case Constants.Left:
                 case Constants.LeftArrow:
                     xdelta = -1* speed;
                     break;
@@ -124,7 +124,7 @@ namespace shootMup
                 case Constants.RightArrow:
                     xdelta = speed;
                     break;
-                case Constants.Left:
+                case Constants.Up:
                 case Constants.UpArrow:
                     ydelta = -1* speed;
                     break;
