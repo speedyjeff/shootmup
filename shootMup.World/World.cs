@@ -32,7 +32,7 @@ namespace shootMup
             Player = new Player() { X = WindowX, Y = WindowY };
             // player
             All.Add(Player.Id, Player);
-            if (true)
+            if (false)
             {
                 // test world
                 foreach (var elem in WorldGenerator.Test(out Width, out Height))
@@ -40,11 +40,22 @@ namespace shootMup
                     All.Add(elem.Id, elem);
                 }
             }
-            else
+            else if (false)
             {
+                // random gen
                 Width = 10000;
                 Height = 10000;
                 foreach (var elem in WorldGenerator.Randomgen(Width, Height))
+                {
+                    All.Add(elem.Id, elem);
+                }
+            }
+            else
+            {
+                // hunger games
+                Width = 1000;
+                Height = 1000;
+                foreach (var elem in WorldGenerator.HungerGames(Width, Height))
                 {
                     All.Add(elem.Id, elem);
                 }
@@ -168,15 +179,126 @@ namespace shootMup
             }
         }
 
-        public void Angle(float angle)
-        {
-            if (angle < 0 || angle > 360) throw new Exception("Invalid angle : " + angle);
-            Player.Angle = angle;
-        }
-
         public void Zoom(float delta)
         {
             ZoomFactor += delta;
+        }
+
+        // player actions
+        public bool Turn(float angle)
+        {
+            if (angle < 0 || angle > 360) throw new Exception("Invalid angle : " + angle);
+            Player.Angle = angle;
+            return true;
+        }
+
+        public bool Move(float xdelta, float ydelta)
+        {
+            if (Player.IsDead) return false;
+
+            // check for a collision first
+            if (HasCollision(xdelta, ydelta))
+            {
+                return false;
+            }
+
+            // move the player
+            Player.Move(xdelta, ydelta);
+
+            // move the screen
+            WindowX += xdelta;
+            WindowY += ydelta;
+
+            return true;
+        }
+
+        public bool Pickup()
+        {
+            // see if we are over an item
+            Element item = IntersectingRectangles();
+
+            if (item != null)
+            {
+                // pickup the item
+                if (Player.Take(item))
+                {
+                    // remove the item from the playing field
+                    // TODO! dangeour remove!
+                    All.Remove(item.Id);
+
+                    // play sound
+                    Sounds.Play(PickupSoundPath);
+
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public bool Reload()
+        {
+            var state = Player.Reload();
+            switch (state)
+            {
+                case GunStateEnum.Reloaded: Sounds.Play(Player.Primary.ReloadSoundPath()); return true;
+                case GunStateEnum.None:
+                case GunStateEnum.NoRounds: Sounds.Play(NothingSoundPath); break;
+                default: throw new Exception("Unknown GunState : " + state);
+            }
+
+            return false;
+        }
+
+        public bool Shoot()
+        {
+            var state = Player.Shoot();
+
+            // apply state change
+            switch (state)
+            {
+                case GunStateEnum.Fired:
+                    // show the bullet
+                    ApplyBulletTrajectory(Player.Primary, Player.X, Player.Y, Player.Angle);
+                    if (Player.Primary.Spread != 0)
+                    {
+                        ApplyBulletTrajectory(Player.Primary, Player.X, Player.Y, Player.Angle - (Player.Primary.Spread / 2));
+                        ApplyBulletTrajectory(Player.Primary, Player.X, Player.Y, Player.Angle + (Player.Primary.Spread / 2));
+                    }
+
+                    // play sound
+                    Sounds.Play(Player.Primary.FiredSoundPath());
+
+                    return true;
+
+                // just play the sound
+                case GunStateEnum.NeedsReload: Sounds.Play(Player.Primary.EmptySoundPath()); break;
+                case GunStateEnum.None: Sounds.Play(NothingSoundPath); break;
+                default: throw new Exception("Unknown GunState : " + state);
+            }
+
+            return false;
+        }
+
+        public bool SwitchWeapon()
+        {
+            return Player.SwitchWeapon();
+        }
+
+        public bool Drop()
+        {
+            var item = Player.DropPrimary();
+
+            if (item != null)
+            {
+                item.X = Player.X;
+                item.Y = Player.Y;
+                All.Add(item.Id, item);
+
+                return true;
+            }
+
+            return false;
         }
 
         #region private
@@ -352,12 +474,7 @@ namespace shootMup
                 float x22 = elem.X + (elem.Width / 2);
                 float y22 = elem.Y + (elem.Height / 2);
 
-                // TODO! This only checks a diagnoal line and is incomplete
-
                 // https://stackoverflow.com/questions/3838329/how-can-i-check-if-two-segments-intersect
-                //if (CalcCcw(x11, y11, x21, y21, x22, y22) != CalcCcw(x12, y12, x21, y21, x22, y22)
-                //   && CalcCcw(x11, y11, x12, y12, x21, y21) != CalcCcw(x11, y11, x12, y12, x22, y22))
-                //   collision = true;
 
                 // top
                 collision = IntersectingLine(x11, y11, x12, y12,
@@ -374,6 +491,7 @@ namespace shootMup
 
                 if (collision)
                 {
+                    // check if this is the closest collision
                     if (item == null)
                     {
                         item = elem;
@@ -439,7 +557,7 @@ namespace shootMup
                         {
                             X = Player.X,
                             Y = Player.Y + (Height / 3) - 16,
-                            Text = string.Format("player killed {0}", elem.Name),
+                            Text = string.Format("player {0} killed {0}", Player.Name, elem.Name),
                             Duration = Constants.EphemerialElementDuration
                         });
                     }
@@ -448,125 +566,21 @@ namespace shootMup
                 // reduce the visual shot on screen based on where the bullet hit
                 var distance = DistanceToObject(Player, elem);
                 GetBulletTrajectory(x, y, angle, distance, out x1, out y1, out x2, out y2);
-
-                // add bullet effect
-                Ephemerial.Add(new BulletTrajectory()
-                {
-                    X1 = x1,
-                    Y1 = y1,
-                    X2 = x2,
-                    Y2 = y2,
-                    Damage = gun.Damage,
-                    Duration = Constants.EphemerialElementDuration
-                });
-
-                return true;
             }
 
-            return false;
-        }
-
-        // player actions
-        private bool Move(float xdelta, float ydelta)
-        {
-            if (Player.IsDead) return false;
-
-            // check for a collision first
-            if (HasCollision(xdelta, ydelta))
+            // add bullet effect
+            Ephemerial.Add(new BulletTrajectory()
             {
-                return false;
-            }
+                X1 = x1,
+                Y1 = y1,
+                X2 = x2,
+                Y2 = y2,
+                Damage = gun.Damage,
+                Duration = Constants.EphemerialElementDuration
+            });
 
-            // move the player
-            Player.Move(xdelta, ydelta);
-
-            // move the screen
-            WindowX += xdelta;
-            WindowY += ydelta;
-
-            return true;
+            return elem != null;
         }
-
-        private bool Pickup()
-        {
-            // see if we are over an item
-            Element item = IntersectingRectangles();
-
-            if (item != null)
-            {
-                // pickup the item
-                if (Player.Take(item))
-                {
-                    // remove the item from the playing field
-                    // TODO! dangeour remove!
-                    All.Remove(item.Id);
-
-                    // play sound
-                    Sounds.Play(PickupSoundPath);
-
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        public void Reload()
-        {
-            var state = Player.Reload();
-            switch (state)
-            {
-                case GunStateEnum.Reloaded: Sounds.Play(Player.Primary.ReloadSoundPath()); break;
-                case GunStateEnum.None:
-                case GunStateEnum.NoRounds: Sounds.Play(NothingSoundPath); break;
-                default: throw new Exception("Unknown GunState : " + state);
-            }
-        }
-
-        public void Shoot()
-        {
-            var state = Player.Shoot();
-
-            // apply state change
-            switch(state)
-            {
-                case GunStateEnum.Fired:
-                    // show the bullet
-                    ApplyBulletTrajectory(Player.Primary, Player.X, Player.Y, Player.Angle);
-                    if (Player.Primary.Spread != 0)
-                    {
-                        ApplyBulletTrajectory(Player.Primary, Player.X, Player.Y, Player.Angle - (Player.Primary.Spread/2));
-                        ApplyBulletTrajectory(Player.Primary, Player.X, Player.Y, Player.Angle + (Player.Primary.Spread / 2));
-                    }
-
-                    // play sound
-                    Sounds.Play(Player.Primary.FiredSoundPath());
-                    break;
-
-                // just play the sound
-                case GunStateEnum.NeedsReload: Sounds.Play(Player.Primary.EmptySoundPath()); break;
-                case GunStateEnum.None: Sounds.Play(NothingSoundPath); break;
-                default: throw new Exception("Unknown GunState : " + state);
-            }
-        }
-
-        private void SwitchWeapon()
-        {
-            Player.SwitchWeapon();
-        }
-
-        private void Drop()
-        {
-            var item = Player.DropPrimary();
-
-            if (item != null)
-            {
-                item.X = Player.X;
-                item.Y = Player.Y;
-                All.Add(item.Id, item);
-            }
-        }
-
         #endregion
     }
 }

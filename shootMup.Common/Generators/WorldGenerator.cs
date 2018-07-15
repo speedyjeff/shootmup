@@ -82,7 +82,7 @@ namespace shootMup.Common
                     }
 
                     // place an item
-                    var item = RandomgenItem(ix, iy, chunkSize, rand);
+                    var item = RandomgenItem(ix, iy, rand);
                     
                     if (item != null)
                     {
@@ -99,7 +99,38 @@ namespace shootMup.Common
             return elements;
         }
 
-        public static Element RandomgenItem(float x, float y, float window, Random rand)
+        public static List<Element> HungerGames(int width, int height)
+        {
+            var elements = new List<Element>();
+
+            // put all the goodies in the middle - no health
+            var rand = new Random();
+            float x = width / 2;
+            float y = height / 2;
+            float dim = width / 10;
+            int count = 25;
+            while(true)
+            {
+                float rx = x + (rand.Next() % dim) * (rand.Next() % 2 == 0 ? -1 : 1);
+                float ry = y + (rand.Next() % dim) * (rand.Next() % 2 == 0 ? -1 : 1);
+
+                var item = RandomgenItem(rx, ry, rand);
+
+                if (item != null && !(item is Bandage) && !(item is Helmet))
+                {
+                    elements.Add(item);
+
+                    if (count-- <= 0) break;
+                }
+            }
+
+            elements.AddRange(WorldHelper.MakeBorders(width, height, 20));
+
+            return elements;
+        }
+
+        #region private
+        private static Element RandomgenItem(float x, float y, Random rand)
         {
             switch (rand.Next() % 10)
             {
@@ -133,7 +164,7 @@ namespace shootMup.Common
             return null;
         }
 
-        public static List<Element> RandomgenObstacle(float x, float y, float window, Random rand)
+        private static List<Element> RandomgenObstacle(float x, float y, float window, Random rand)
         {
             // choose initial obstacle
             switch (rand.Next() % 12)
@@ -176,5 +207,6 @@ namespace shootMup.Common
 
             return null;
         }
+        #endregion
     }
 }

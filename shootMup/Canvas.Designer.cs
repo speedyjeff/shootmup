@@ -132,7 +132,7 @@ namespace shootMup
                 angle += 360;
             }
 
-            World.Angle(angle);
+            World.Turn(angle);
         }
 
         private void OnMouseDown(object sender, MouseEventArgs e)
