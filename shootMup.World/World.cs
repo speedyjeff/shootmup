@@ -65,8 +65,24 @@ namespace shootMup
         {
             // draw all the elements
             Surface.Clear(new RGBA() { R = 70, G = 169, B = 52, A = 255 });
+
+            // add any bullets
+            var toremove = new List<BulletTrajectory>();
+            foreach (var b in Bullets)
+            {
+                b.Draw(Surface);
+                b.Duration--;
+                if (b.Duration < 0) toremove.Add(b);
+            }
+            foreach (var b in toremove)
+            {
+                Bullets.Remove(b);
+            }
+
+            // TODO find a better way to avoid drawing all the elements
             foreach (var elem in All.Values)
             {
+                if (elem.Id == Player.Id) continue;
                 if (elem.IsDead) continue;
                 if (elem.IsTransparent)
                 {
@@ -78,28 +94,9 @@ namespace shootMup
                     if (IntersectingRectangles(x11, y11, x12, y12, elem) != null) continue;
                 }
                 elem.Draw(Surface);
-                if (elem.CanAcquire)
-                {
-                    Surface.Text(RGBA.Black, elem.X - elem.Width / 2, elem.Y - elem.Height / 2 - 20, string.Format("[{0}] {1}", Constants.Pickup, elem.Name));
-                }
-                if (elem.TakesDamage)
-                {
-                    Surface.Text(RGBA.Black, elem.X - elem.Width / 2, elem.Y - elem.Height / 2 - 20, string.Format("{0}/{1}", elem.Health, elem.Sheld));
-                }
             }
-
-            // add any bullets
-            var toremove = new List<BulletTrajectory>();
-            foreach (var b in Bullets)
-            {
-                Surface.Line(new RGBA() { A = 255, R = 255 }, b.X1, b.Y1, b.X2, b.Y2);
-                b.Duration--;
-                if (b.Duration < 0) toremove.Add(b);
-            }
-            foreach(var b in toremove)
-            {
-                Bullets.Remove(b);
-            }
+            // draw the player last
+            Player.Draw(Surface);
         }
 
         public void KeyPress(char key)
@@ -126,6 +123,10 @@ namespace shootMup
                 case Constants.Left:
                 case Constants.UpArrow:
                     ydelta = -1* speed;
+                    break;
+
+                case Constants.Switch:
+                    SwitchWeapon();
                     break;
 
                 case Constants.Pickup:
@@ -414,7 +415,8 @@ namespace shootMup
                         Y1 = y1,
                         X2 = x2,
                         Y2 = y2,
-                        Duration = 10,
+                        Damage = Player.Primary.Damage,
+                        Duration = Constants.BulletDuration,
                         Spread = Player.Primary.Spread
                     });
 
@@ -436,6 +438,12 @@ namespace shootMup
                 default: throw new Exception("Unknown GunState : " + state);
             }
         }
+
+        private void SwitchWeapon()
+        {
+            Player.SwitchWeapon();
+        }
+
         #endregion
     }
 }

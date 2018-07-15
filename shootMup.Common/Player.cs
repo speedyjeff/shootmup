@@ -11,7 +11,7 @@ namespace shootMup.Common
             CanMove = true;
             TakesDamage = true;
             IsSolid = true;
-            Health = 100;
+            Health = 50;
             Sheld = 0;
 
             // hit box
@@ -25,6 +25,7 @@ namespace shootMup.Common
 
         public override void Draw(IGraphics g)
         {
+            // draw player
             g.RotateTransform(Angle);
             {
                 if (Primary != null) g.Rectangle(RGBA.Black, X - 10, Y - Height, 20, Height);
@@ -32,6 +33,33 @@ namespace shootMup.Common
                 if (Sheld > 0) g.Ellipse(new RGBA() { R = 85, G = 85, B = 85, A = 255 }, X - 25, Y - 25, 50, 50);
             }
             g.RotateTransform(-1*Angle);
+
+            // draw HUD
+
+            // health
+            g.Rectangle(new RGBA() { G = 255, A = 255 }, X - (g.Width / 4), Y + (g.Height / 2) - 80, (Health / Constants.MaxHealth) * (g.Width / 2), 20, true);
+            g.Rectangle(RGBA.Black, X - (g.Width/4), Y + (g.Height / 2) - 80, g.Width / 2, 20, false);
+
+            // sheld
+            g.Rectangle(new RGBA() { R=255, G = 255, A = 255 }, X - (g.Width / 4), Y + (g.Height / 2) - 100, (Sheld / Constants.MaxSheld) * (g.Width / 4), 20, true);
+            g.Rectangle(RGBA.Black, X - (g.Width / 4), Y + (g.Height / 2) - 100, g.Width / 4, 20, false);
+
+            // primary weapon
+            g.Rectangle(RGBA.Black, X + (g.Width / 2) - 100, Y + (g.Height / 6), 60, 30, false);
+            if (Primary != null)
+            {
+                g.Text(RGBA.Black, X + (g.Width / 2) - 100, Y + (g.Height / 6) - 25, String.Format("{0}/{1}", Primary.Clip, Primary.Ammo));
+                g.Text(RGBA.Black, X + (g.Width / 2) - 100, Y + (g.Height / 6) + 2, Primary.Name);
+            }
+
+            // secondary weapon
+            g.Rectangle(RGBA.Black, X + (g.Width / 2) - 100, Y + (g.Height / 4) + 10, 60, 30, false);
+            if (Secondary != null)
+            {
+                g.Text(RGBA.Black, X + (g.Width / 2) - 100, Y + (g.Height / 4) - 15, String.Format("{0}/{1}", Secondary.Clip, Secondary.Ammo));
+                g.Text(RGBA.Black, X + (g.Width / 2) - 100, Y + (g.Height / 4) + 12, Secondary.Name);
+            }
+
             base.Draw(g);
         }
 
@@ -39,9 +67,16 @@ namespace shootMup.Common
         {
             if (item is Gun)
             {
-                if (Primary != null && Secondary == null) Secondary = Primary;
-                Primary = item as Gun;
-                return true;
+                if (Primary != null && Secondary == null)
+                {
+                    Primary = null;
+                    Secondary = Primary;
+                }
+                if (Primary == null)
+                {
+                    Primary = item as Gun;
+                    return true;
+                }
             }
             else if (item is Ammo)
             {
@@ -96,6 +131,14 @@ namespace shootMup.Common
             bool reload = Primary.Reload();
             if (reload) return GunStateEnum.Reloaded;
             else throw new Exception("Failed to reload");
+        }
+
+        public bool SwitchWeapon()
+        {
+            var tmp = Primary;
+            Primary = Secondary;
+            Secondary = tmp;
+            return (Primary != null || Secondary != null);
         }
     }
 }

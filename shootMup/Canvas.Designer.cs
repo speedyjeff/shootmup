@@ -51,6 +51,7 @@ namespace shootMup
                 Name = "shootMup";
                 Text = "shootMup";
                 Resize += OnResize;
+                DoubleBuffered = true;
 
                 // double buffer
                 Surface = new WritableGraphics( BufferedGraphicsManager.Current );
@@ -73,7 +74,6 @@ namespace shootMup
                 MouseDown += OnMouseDown;
                 MouseMove += OnMouseMove;
                 MouseWheel += OnMouseWheel;
-
 
                 OnPaintTimer.Start();
          }
@@ -100,7 +100,7 @@ namespace shootMup
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            Surface.RawRender(e.Graphics);
+                Surface.RawRender(e.Graphics);
         }
 
         private void OnResize(object sender, EventArgs e)

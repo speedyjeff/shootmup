@@ -21,6 +21,8 @@ namespace shootMup.Common
 
         public const char Reload = 'r';
 
+        public const char Switch = '1';
+
         // mouse
         public const char LeftMouse = (char)250;
         public const char RightMouse = (char)249;
@@ -29,5 +31,6 @@ namespace shootMup.Common
         public static int Speed = 10;
         public const int MaxSheld = 100;
         public const int MaxHealth = 100;
+        public const int BulletDuration = 10;
     }
 }

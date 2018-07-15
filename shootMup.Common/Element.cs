@@ -39,6 +39,14 @@ namespace shootMup.Common
         public virtual void Draw(IGraphics g)
         {
             if (Debug_DrawHitBox) g.Rectangle(RGBA.Black, X-(Width/2), Y-(Height/2), Width, Height, false);
+            if (CanAcquire)
+            {
+                g.Text(RGBA.Black, X - Width / 2, Y - Height / 2 - 20, string.Format("[{0}] {1}", Constants.Pickup, Name));
+            }
+            if (TakesDamage)
+            {
+                g.Text(RGBA.Black, X - Width / 2, Y - Height / 2 - 20, string.Format("{0}/{1}", Health, Sheld));
+            }
         }
 
         public void Move(float xDelta, float yDelta)

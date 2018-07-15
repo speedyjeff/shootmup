@@ -102,7 +102,7 @@ namespace shootMup
             Surface.Graphics.DrawString(text, new Font("Arial", 16), new SolidBrush(Color.FromArgb(color.A, color.R, color.G, color.B)), sx, sy);
         }
 
-        public void Line(RGBA color, float x1, float y1, float x2, float y2)
+        public void Line(RGBA color, float x1, float y1, float x2, float y2, float thickness)
         {
             float sx1 = x1;
             float sy1 = y1;
@@ -122,7 +122,7 @@ namespace shootMup
             // safe guard accidental usage
             x2 = y2 = 0;
 
-            Surface.Graphics.DrawLine(new Pen(Color.FromArgb(color.A, color.R, color.G, color.B), 5.0f), sx1, sy1, sx2, sy2);
+            Surface.Graphics.DrawLine(new Pen(Color.FromArgb(color.A, color.R, color.G, color.B), thickness), sx1, sy1, sx2, sy2);
         }
 
         public void RotateTransform(float angle)
