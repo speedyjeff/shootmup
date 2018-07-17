@@ -48,7 +48,7 @@ namespace shootMup
             float sy = y;
             float swidth = width;
             float sheight = height;
-            if (Translate != null && !Translate(Width, Height, x, y, width, height, out sx, out sy, out swidth, out sheight)) return;
+            if (Translate != null && !Translate(x, y, width, height, out sx, out sy, out swidth, out sheight)) return;
 
             // safe guard accidental usage
             x = y = width = height = 0;
@@ -71,7 +71,7 @@ namespace shootMup
             float sy = y;
             float swidth = width;
             float sheight = height;
-            if (Translate != null && !Translate(Width, Height, x, y, width, height, out sx, out sy, out swidth, out sheight)) return;
+            if (Translate != null && !Translate(x, y, width, height, out sx, out sy, out swidth, out sheight)) return;
 
             // safe guard accidental usage
             x = y = width = height = 0;
@@ -94,7 +94,7 @@ namespace shootMup
             float sy = y;
             float swidth = 0;
             float sheight = 0;
-            if (Translate != null && !Translate(Width, Height, x, y, 0, 0, out sx, out sy, out swidth, out sheight)) return;
+            if (Translate != null && !Translate(x, y, 0, 0, out sx, out sy, out swidth, out sheight)) return;
 
             // safe guard accidental usage
             x = y = 0;
@@ -111,14 +111,14 @@ namespace shootMup
             float height = Math.Abs(y1 - y2);
             float swidth = width;
             float sheight = height;
-            if (Translate != null && !Translate(Width, Height, x1, y1, width, height, out sx1, out sy1, out swidth, out sheight)) return;
+            if (Translate != null && !Translate(x1, y1, width, height, out sx1, out sy1, out swidth, out sheight)) return;
 
             // safe guard accidental usage
             x1 = y1 = 0;
 
             float sx2 = x2;
             float sy2 = y2;
-            if (Translate != null && !Translate(Width, Height, x2, y2, width, height, out sx2, out sy2, out swidth, out sheight)) return;
+            if (Translate != null && !Translate(x2, y2, width, height, out sx2, out sy2, out swidth, out sheight)) return;
 
             // safe guard accidental usage
             x2 = y2 = 0;
@@ -141,7 +141,7 @@ namespace shootMup
             float sy = y;
             float swidth = 0;
             float sheight = 0;
-            if (Translate != null && !Translate(Width, Height, x, y, 0, 0, out sx, out sy, out swidth, out sheight)) return;
+            if (Translate != null && !Translate(x, y, 0, 0, out sx, out sy, out swidth, out sheight)) return;
 
             // safe guard accidental usage
             x = y = 0;

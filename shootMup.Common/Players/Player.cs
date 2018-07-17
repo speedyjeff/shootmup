@@ -113,8 +113,16 @@ namespace shootMup.Common
         {
             // check if we have a primary weapon
             if (Primary == null) return GunStateEnum.None;
-            // check if there are rounds
-            if (!Primary.CanShoot()) return GunStateEnum.NeedsReload;
+            // check if there is a round in the clip
+            int rounds;
+            Primary.RoundsInClip(out rounds);
+            if (rounds <= 0)
+            {
+                if (Primary.HasAmmo()) return GunStateEnum.NeedsReload;
+                else return GunStateEnum.NoRounds;
+            }
+            // check if gun ready to fire
+            if (!Primary.CanShoot()) return GunStateEnum.LoadingRound;
 
             bool fired = Primary.Shoot();
             if (fired) return GunStateEnum.Fired;
@@ -125,8 +133,9 @@ namespace shootMup.Common
         {
             // check if we have a primary weapon
             if (Primary == null) return GunStateEnum.None;
+            if (!Primary.HasAmmo()) return GunStateEnum.NoRounds;
             // check if there are rounds
-            if (!Primary.CanReload()) return GunStateEnum.NoRounds;
+            if (Primary.RoundsInClip(out int rounds)) return GunStateEnum.FullyLoaded;
 
             bool reload = Primary.Reload();
             if (reload) return GunStateEnum.Reloaded;

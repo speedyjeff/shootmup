@@ -18,11 +18,6 @@ namespace shootMup
 
             // TODO - initialize based on on disk artifact
 
-            // initialize the world
-            WindowX = human.X;
-            WindowY = human.Y;
-
-            
             // add players
             All.Add(human.Id, human);
             if (otherPlayers != null && otherPlayers.Length > 0)
@@ -30,7 +25,7 @@ namespace shootMup
                 foreach (var o in otherPlayers) All.Add(o.Id, o);
             }
             // create the board
-            if (false)
+            if (true)
             {
                 // test world
                 int width;
@@ -69,16 +64,26 @@ namespace shootMup
 
         public bool Turn(Player player, float angle)
         {
-            if (angle < 0 || angle > 360) throw new Exception("Invalid angle : " + angle);
+            // clean up angle
+            if (angle < 0) angle *= -1;
+            angle = angle % 360;
+            // adjust angle
             player.Angle = angle;
             return true;
         }
 
-        public bool Move(Player player, float xdelta, float ydelta)
+        public bool Move(Player player, ref float xdelta, ref float ydelta)
         {
+            float speed = Constants.Speed * SpeedFactor;
+
             if (player.IsDead) return false;
 
-            // TODO! check if the delta is legal
+            // check if the delta is legal
+            if (Math.Abs(xdelta) + Math.Abs(ydelta) > 1) return false;
+
+            // adjust for speed
+            xdelta *= speed;
+            ydelta *= speed;
 
             // check for a collision first
             if (HasCollision(player, xdelta, ydelta))
@@ -89,14 +94,10 @@ namespace shootMup
             // move the player
             player.Move(xdelta, ydelta);
 
-            // move the screen
-            WindowX += xdelta;
-            WindowY += ydelta;
-
             return true;
         }
 
-        public bool Pickup(Player player)
+        public Type Pickup(Player player)
         {
             // see if we are over an item
             Element item = IntersectingRectangles(player);
@@ -110,11 +111,11 @@ namespace shootMup
                     // TODO! dangeour remove!
                     All.Remove(item.Id);
 
-                    return true;
+                    return item.GetType();
                 }
             }
 
-            return false;
+            return null;
         }
 
         public GunStateEnum Reload(Player player)
@@ -129,13 +130,24 @@ namespace shootMup
             // apply state change
             if (state == GunStateEnum.Fired)
             {
+                bool killShot = false;
+                bool targetDied = false; // used to change the fired state
+                bool targetHit = false;
+
                 // show the bullet
-                ApplyBulletTrajectory(player, player.Primary, player.X, player.Y, player.Angle);
+                targetHit |= ApplyBulletTrajectory(player, player.Primary, player.X, player.Y, player.Angle, out killShot);
+                targetDied |= killShot;
                 if (player.Primary.Spread != 0)
                 {
-                    ApplyBulletTrajectory(player, player.Primary, player.X, player.Y, player.Angle - (player.Primary.Spread / 2));
-                    ApplyBulletTrajectory(player, player.Primary, player.X, player.Y, player.Angle + (player.Primary.Spread / 2));
+                    targetHit |= ApplyBulletTrajectory(player, player.Primary, player.X, player.Y, player.Angle - (player.Primary.Spread / 2), out killShot);
+                    targetDied |= killShot;
+                    targetHit |= ApplyBulletTrajectory(player, player.Primary, player.X, player.Y, player.Angle + (player.Primary.Spread / 2), out killShot);
+                    targetDied |= killShot;
                 }
+
+                // adjust state accordingly
+                if (targetDied) state = GunStateEnum.FiredAndKilled;
+                else if (targetHit) state = GunStateEnum.FiredWithContact;
             }
 
             return state;
@@ -146,7 +158,7 @@ namespace shootMup
             return player.SwitchWeapon();
         }
 
-        public bool Drop(Player player)
+        public Type Drop(Player player)
         {
             var item = player.DropPrimary();
 
@@ -156,43 +168,13 @@ namespace shootMup
                 item.Y = player.Y;
                 All.Add(item.Id, item);
 
-                return true;
+                return item.GetType();
             }
 
-            return false;
+            return null;
         }
 
         // support
-        public bool TranslateCoordinates(float windowWidth, float windowHeight, float x, float y, float width, float height, out float tx, out float ty, out float twidth, out float theight)
-        {
-            // translate the x and y based on the current window
-            // windowWidth & windowHeight are the current windows width & height
-            float windowHWidth = windowWidth / 2.0f;
-            float windowHHeight = windowHeight / 2.0f;
-
-            float x1 = WindowX - windowHWidth;
-            float y1 = WindowY - windowHHeight;
-            float x2 = WindowX + windowHWidth;
-            float y2 = WindowY + windowHHeight;
-
-            tx = ty = twidth = theight = 0;
-
-            // check if inside the window
-            if (x < (x1 - width) || x > (x2 + width)) return false;
-            if (y < (y1 - height) || y > (y2 + height)) return false;
-
-            // now translate to the window
-            tx = x - x1;
-            ty = y - y1;
-
-            // scale the input
-            // TODO!
-            twidth = width;
-            theight = height;
-
-            return true;
-        }
-
         public bool IsTouching(Element elem1, Element elem2)
         {
             float x11 = (elem1.X) - (elem1.Width / 2);
@@ -207,8 +189,7 @@ namespace shootMup
         public List<EphemerialElement> Ephemerial { get; private set; }
 
         #region private
-        private float WindowX;
-        private float WindowY;
+        private int SpeedFactor = 2;
 
         private bool HasCollision(Player player, float xdelta, float ydelta)
         {
@@ -400,12 +381,13 @@ namespace shootMup
             y2 = y1 - a;
         }
 
-        private bool ApplyBulletTrajectory(Player player, Gun gun, float x, float y, float angle)
+        private bool ApplyBulletTrajectory(Player player, Gun gun, float x, float y, float angle, out bool killShot)
         {
             float x1, y1, x2, y2;
             GetBulletTrajectory(x, y, angle, gun.Distance, out x1, out y1, out x2, out y2);
 
             // determine damage
+            killShot = false;
             var elem = IntersectingLine(player, x1, y1, x2, y2);
 
             if (elem != null)
@@ -424,6 +406,9 @@ namespace shootMup
                             Text = string.Format("player {0} killed {0}", player.Name, elem.Name),
                             Duration = Constants.EphemerialElementDuration
                         });
+
+                        // indicate that the element died
+                        killShot = true;
                     }
                 }
 

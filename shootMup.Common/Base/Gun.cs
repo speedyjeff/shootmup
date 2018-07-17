@@ -5,7 +5,7 @@ using System.Text;
 
 namespace shootMup.Common
 {
-    public enum GunStateEnum { None, NeedsReload, Fired, NoRounds, Reloaded };
+    public enum GunStateEnum { None, NeedsReload, Fired, FiredWithContact, FiredAndKilled, NoRounds, Reloaded, FullyLoaded, LoadingRound };
 
     public class Gun : Thing
     {
@@ -33,6 +33,11 @@ namespace shootMup.Common
             ResetShotdelay();
         }
 
+        public bool HasAmmo()
+        {
+            return Ammo > 0;
+        }
+
         public void AddAmmo(int ammo)
         {
             if (ammo > 0)
@@ -47,10 +52,18 @@ namespace shootMup.Common
             if (ClipCapacity <= 0) throw new Exception("Must have a positive clip capacity");
         }
 
+
+        // returns true if full
+        public bool RoundsInClip(out int rounds)
+        {
+            rounds = Clip;
+            return Clip >= ClipCapacity;
+        }
+
         public virtual bool CanReload()
         {
-            if (Ammo <= 0) return false;
-            if (Clip >= ClipCapacity) return false;
+            if (!HasAmmo()) return false;
+            if (RoundsInClip(out int rounds)) return false;
             return true;
         }
 
@@ -71,7 +84,7 @@ namespace shootMup.Common
         }
 
         public virtual bool Shoot()
-        {
+        {            
             if (!CanShoot()) return false;
             Clip--;
             ResetShotdelay();
