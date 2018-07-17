@@ -110,8 +110,7 @@ namespace shootMup
 
         private void OnMouseWheel(object sender, MouseEventArgs e)
         {
-            if (e.Delta > 0) World.Zoom(1); // zoom in
-            else if (e.Delta < 0) World.Zoom(-1); // zoom out
+            World.Mousewheel(e.Delta);
         }
 
         private void OnMouseMove(object sender, MouseEventArgs e)
@@ -132,7 +131,7 @@ namespace shootMup
                 angle += 360;
             }
 
-            World.Turn(angle);
+            World.Mousemove(e.X, e.Y, angle);
         }
 
         private void OnMouseDown(object sender, MouseEventArgs e)
@@ -150,8 +149,8 @@ namespace shootMup
         private void OnKeyPressed(object sender, KeyPressEventArgs e)
         {
             // menu
-            if (e.KeyChar == '-') World.Zoom(-1); // zoom out
-            else if (e.KeyChar == '=' || e.KeyChar == '+') World.Zoom(1); // zoom in
+            if (e.KeyChar == '-') World.Mousewheel(-1); // zoom out
+            else if (e.KeyChar == '=' || e.KeyChar == '+') World.Mousewheel(1); // zoom in
 
             // user input
             else World.KeyPress(e.KeyChar);
