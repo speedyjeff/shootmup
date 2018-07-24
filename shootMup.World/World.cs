@@ -17,7 +17,7 @@ namespace shootMup
             Player = new Player() { X = WindowX, Y = WindowY };
 
             Map = new Map(Player /* human */, null /* other players */);
-            ZoomFactor = 0;
+            ZoomFactor = 1; // 100%
 
             // graphics
             Surface = surface;
@@ -135,32 +135,35 @@ namespace shootMup
         private const string PickupSoundPath = "media/pickup.wav";
 
         // support
-        private bool TranslateCoordinates(float x, float y, float width, float height, out float tx, out float ty, out float twidth, out float theight)
+        private bool TranslateCoordinates(float x, float y, float width, float height, float other, out float tx, out float ty, out float twidth, out float theight, out float tother)
         {
-            // translate the x and y based on the current window
+            tx = ty = twidth = theight = tother = 0;
+
+            // determine scaling factor
+            float scale = (1 / ZoomFactor);
+            width *= ZoomFactor;
+            height *= ZoomFactor;
+
             // Surface.Width & Surface.Height are the current windows width & height
             float windowHWidth = Surface.Width / 2.0f;
             float windowHHeight = Surface.Height / 2.0f;
 
-            float x1 = WindowX - windowHWidth;
-            float y1 = WindowY - windowHHeight;
-            float x2 = WindowX + windowHWidth;
-            float y2 = WindowY + windowHHeight;
-
-            tx = ty = twidth = theight = 0;
+            // check if in the window (do not use these as screen coordinates)
+            float x1 = WindowX - (windowHWidth*scale);
+            float y1 = WindowY - (windowHHeight * scale);
+            float x2 = WindowX + (windowHWidth * scale);
+            float y2 = WindowY + (windowHHeight * scale);
 
             // check if inside the window
             if (x < (x1 - width) || x > (x2 + width)) return false;
             if (y < (y1 - height) || y > (y2 + height)) return false;
 
             // now translate to the window
-            tx = x - x1;
-            ty = y - y1;
-
-            // scale the input
-            // TODO!
+            tx = ((x - WindowX) * ZoomFactor) + windowHWidth;
+            ty = ((y - WindowY) * ZoomFactor) + windowHHeight;
             twidth = width;
             theight = height;
+            tother = other * ZoomFactor;
 
             return true;
         }

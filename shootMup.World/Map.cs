@@ -25,7 +25,7 @@ namespace shootMup
                 foreach (var o in otherPlayers) All.Add(o.Id, o);
             }
             // create the board
-            if (true)
+            if (false)
             {
                 // test world
                 int width;
@@ -37,7 +37,7 @@ namespace shootMup
                 Width = width;
                 Height = height;
             }
-            else if (false)
+            else if (true)
             {
                 // random gen
                 Width = 10000;
@@ -47,7 +47,7 @@ namespace shootMup
                     All.Add(elem.Id, elem);
                 }
             }
-            else
+            else if (false)
             {
                 // hunger games
                 Width = 1000;
@@ -56,6 +56,10 @@ namespace shootMup
                 {
                     All.Add(elem.Id, elem);
                 }
+            }
+            else
+            {
+                // empty
             }
         }
 
