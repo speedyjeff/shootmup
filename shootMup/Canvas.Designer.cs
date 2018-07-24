@@ -138,7 +138,7 @@ namespace shootMup
         {
             if (e.Button == MouseButtons.Left) World.KeyPress(Common.Constants.LeftMouse);
             else if (e.Button == MouseButtons.Right) OnMoveTimer.Start();
-            else if (e.Button == MouseButtons.Middle) World.KeyPress(Common.Constants.r);
+            else if (e.Button == MouseButtons.Middle) World.KeyPress(Common.Constants.MiddleMouse);
         }
 
         private void OnMouseUp(object sender, MouseEventArgs e)
@@ -148,12 +148,7 @@ namespace shootMup
 
         private void OnKeyPressed(object sender, KeyPressEventArgs e)
         {
-            // menu
-            if (e.KeyChar == '-') World.Mousewheel(-1); // zoom out
-            else if (e.KeyChar == '=' || e.KeyChar == '+') World.Mousewheel(1); // zoom in
-
-            // user input
-            else World.KeyPress(e.KeyChar);
+            World.KeyPress(e.KeyChar);
             e.Handled = true;
         }
 

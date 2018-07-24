@@ -12,7 +12,19 @@ namespace shootMup.Common
         // center
         public float X { get; set; }
         public float Y { get; set; }
-        public float Angle { get; set; }
+        public float Angle
+        {
+            get
+            {
+                return _angle;
+            }
+            set
+            {
+                if (value < 0) value *= -1;
+                if (value > 360) value = value % 360;
+                _angle = value;
+            }
+        }
 
         // bounds (hit box)
         public float Height { get; protected set; }
@@ -41,7 +53,7 @@ namespace shootMup.Common
             if (Debug_DrawHitBox) g.Rectangle(RGBA.Black, X-(Width/2), Y-(Height/2), Width, Height, false);
             if (CanAcquire)
             {
-                g.Text(RGBA.Black, X - Width / 2, Y - Height / 2 - 20, string.Format("[{0}] {1}", Constants.f, Name));
+                g.Text(RGBA.Black, X - Width / 2, Y - Height / 2 - 20, string.Format("[{0}] {1}", Constants.Pickup2, Name));
             }
             if (TakesDamage)
             {
@@ -77,6 +89,7 @@ namespace shootMup.Common
         }
 
         #region private
+        private float _angle;
         private static int NextId = 0;
         private static int GetNextId()
         {

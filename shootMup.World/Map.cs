@@ -62,134 +62,153 @@ namespace shootMup
         public int Width { get; private set; }
         public int Height { get; private set; }
 
-        public bool Turn(Player player, float angle)
+        public void Paint(Player player, IGraphics g)
         {
-            // clean up angle
-            if (angle < 0) angle *= -1;
-            angle = angle % 360;
-            // adjust angle
-            player.Angle = angle;
-            return true;
+            lock (All)
+            {
+                // draw all the elements
+                g.Clear(new RGBA() { R = 70, G = 169, B = 52, A = 255 });
+
+                // add any ephemerial elements
+                var toremove = new List<EphemerialElement>();
+                foreach (var b in Ephemerial)
+                {
+                    b.Draw(g);
+                    b.Duration--;
+                    if (b.Duration < 0) toremove.Add(b);
+                }
+                foreach (var b in toremove)
+                {
+                    Ephemerial.Remove(b);
+                }
+
+                // draw all elements
+                float x11 = (player.X) - (player.Width / 2);
+                float y11 = (player.Y) - (player.Height / 2);
+                float x12 = (player.X) + (player.Width / 2);
+                float y12 = (player.Y) + (player.Height / 2);
+                foreach (var elem in All.Values)
+                {
+                    if (elem is Player) continue;
+                    if (elem.IsDead) continue;
+                    if (elem.IsTransparent)
+                    {
+                        // if the player is intersecting with this item, then do not display it
+                        if (IntersectingRectangles(x11, y11, x12, y12, elem) != null) continue;
+                    }
+                    elem.Draw(g);
+                }
+            }
         }
 
         public bool Move(Player player, ref float xdelta, ref float ydelta)
         {
-            float speed = Constants.Speed * SpeedFactor;
-
-            if (player.IsDead) return false;
-
-            // check if the delta is legal
-            if (Math.Abs(xdelta) + Math.Abs(ydelta) > 1) return false;
-
-            // adjust for speed
-            xdelta *= speed;
-            ydelta *= speed;
-
-            // check for a collision first
-            if (HasCollision(player, xdelta, ydelta))
+            lock (All)
             {
-                return false;
+                float speed = Constants.Speed * SpeedFactor;
+
+                if (player.IsDead) return false;
+
+                // check if the delta is legal
+                if (Math.Abs(xdelta) + Math.Abs(ydelta) > 1) return false;
+
+                // adjust for speed
+                xdelta *= speed;
+                ydelta *= speed;
+
+                // check for a collision first
+                if (HasCollision(player, xdelta, ydelta))
+                {
+                    return false;
+                }
+
+                // move the player
+                player.Move(xdelta, ydelta);
+
+                return true;
             }
-
-            // move the player
-            player.Move(xdelta, ydelta);
-
-            return true;
         }
 
         public Type Pickup(Player player)
         {
-            // see if we are over an item
-            Element item = IntersectingRectangles(player);
-
-            if (item != null)
+            lock (All)
             {
-                // pickup the item
-                if (player.Take(item))
+                // see if we are over an item
+                Element item = IntersectingRectangles(player);
+
+                if (item != null)
                 {
-                    // remove the item from the playing field
-                    // TODO! dangeour remove!
-                    All.Remove(item.Id);
+                    // pickup the item
+                    if (player.Take(item))
+                    {
+                        // remove the item from the playing field
+                        // TODO! dangeour remove!
+                        All.Remove(item.Id);
 
-                    return item.GetType();
+                        return item.GetType();
+                    }
                 }
+
+                return null;
             }
-
-            return null;
-        }
-
-        public GunStateEnum Reload(Player player)
-        {
-            return player.Reload();
         }
 
         public GunStateEnum Shoot(Player player)
         {
-            var state = player.Shoot();
-
-            // apply state change
-            if (state == GunStateEnum.Fired)
+            lock (All)
             {
-                bool killShot = false;
-                bool targetDied = false; // used to change the fired state
-                bool targetHit = false;
+                var state = player.Shoot();
 
-                // show the bullet
-                targetHit |= ApplyBulletTrajectory(player, player.Primary, player.X, player.Y, player.Angle, out killShot);
-                targetDied |= killShot;
-                if (player.Primary.Spread != 0)
+                // apply state change
+                if (state == GunStateEnum.Fired)
                 {
-                    targetHit |= ApplyBulletTrajectory(player, player.Primary, player.X, player.Y, player.Angle - (player.Primary.Spread / 2), out killShot);
+                    bool killShot = false;
+                    bool targetDied = false; // used to change the fired state
+                    bool targetHit = false;
+
+                    // show the bullet
+                    targetHit |= ApplyBulletTrajectory(player, player.Primary, player.X, player.Y, player.Angle, out killShot);
                     targetDied |= killShot;
-                    targetHit |= ApplyBulletTrajectory(player, player.Primary, player.X, player.Y, player.Angle + (player.Primary.Spread / 2), out killShot);
-                    targetDied |= killShot;
+                    if (player.Primary.Spread != 0)
+                    {
+                        targetHit |= ApplyBulletTrajectory(player, player.Primary, player.X, player.Y, player.Angle - (player.Primary.Spread / 2), out killShot);
+                        targetDied |= killShot;
+                        targetHit |= ApplyBulletTrajectory(player, player.Primary, player.X, player.Y, player.Angle + (player.Primary.Spread / 2), out killShot);
+                        targetDied |= killShot;
+                    }
+
+                    // adjust state accordingly
+                    if (targetDied) state = GunStateEnum.FiredAndKilled;
+                    else if (targetHit) state = GunStateEnum.FiredWithContact;
                 }
 
-                // adjust state accordingly
-                if (targetDied) state = GunStateEnum.FiredAndKilled;
-                else if (targetHit) state = GunStateEnum.FiredWithContact;
+                return state;
             }
-
-            return state;
-        }
-
-        public bool SwitchWeapon(Player player)
-        {
-            return player.SwitchWeapon();
         }
 
         public Type Drop(Player player)
         {
-            var item = player.DropPrimary();
-
-            if (item != null)
+            lock (All)
             {
-                item.X = player.X;
-                item.Y = player.Y;
-                All.Add(item.Id, item);
+                var item = player.DropPrimary();
 
-                return item.GetType();
+                if (item != null)
+                {
+                    item.X = player.X;
+                    item.Y = player.Y;
+                    All.Add(item.Id, item);
+
+                    return item.GetType();
+                }
+
+                return null;
             }
-
-            return null;
         }
-
-        // support
-        public bool IsTouching(Element elem1, Element elem2)
-        {
-            float x11 = (elem1.X) - (elem1.Width / 2);
-            float y11 = (elem1.Y) - (elem1.Height / 2);
-            float x12 = (elem1.X) + (elem1.Width / 2);
-            float y12 = (elem1.Y) + (elem1.Height / 2);
-
-            return IntersectingRectangles(x11, y11, x12, y12, elem2) != null;
-        }
-
-        public Dictionary<int, Element> All { get; private set; }
-        public List<EphemerialElement> Ephemerial { get; private set; }
 
         #region private
         private int SpeedFactor = 2;
+        private Dictionary<int, Element> All { get; set; }
+        private List<EphemerialElement> Ephemerial { get; set; }
 
         private bool HasCollision(Player player, float xdelta, float ydelta)
         {

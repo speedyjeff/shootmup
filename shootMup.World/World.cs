@@ -32,36 +32,12 @@ namespace shootMup
 
         public void Paint()
         {
-            // draw all the elements
-            Surface.Clear(new RGBA() { R = 70, G = 169, B = 52, A = 255 });
+            // draw the map
+            Map.Paint(Player, Surface);
 
-            // add any bullets
-            var toremove = new List<EphemerialElement>();
-            foreach (var b in Map.Ephemerial)
-            {
-                b.Draw(Surface);
-                b.Duration--;
-                if (b.Duration < 0) toremove.Add(b);
-            }
-            foreach (var b in toremove)
-            {
-                Map.Ephemerial.Remove(b);
-            }
-
-            // TODO find a better way to avoid drawing all the elements
-            foreach (var elem in Map.All.Values)
-            {
-                if (elem.Id == Player.Id) continue;
-                if (elem.IsDead) continue;
-                if (elem.IsTransparent)
-                {
-                    // if the player is intersecting with this item, then do not display it
-                    if (Map.IsTouching(Player, elem)) continue;
-                }
-                elem.Draw(Surface);
-            }
-            // draw the player last
+            // draw the players
             Player.Draw(Surface);
+            // todo draw other players\
         }
 
         public void KeyPress(char key)
@@ -72,45 +48,45 @@ namespace shootMup
             switch (key)
             {
                 // move
-                case Constants.S:
-                case Constants.s:
+                case Constants.Down:
+                case Constants.Down2:
                 case Constants.DownArrow:
                     ydelta = 1;
                     break;
-                case Constants.A:
-                case Constants.a:
+                case Constants.Left:
+                case Constants.Left2:
                 case Constants.LeftArrow:
                     xdelta = -1;
                     break;
-                case Constants.D:
-                case Constants.d:
+                case Constants.Right:
+                case Constants.Right2:
                 case Constants.RightArrow:
                     xdelta = 1;
                     break;
-                case Constants.W:
-                case Constants.w:
+                case Constants.Up:
+                case Constants.Up2:
                 case Constants.UpArrow:
                     ydelta = -1;
                     break;
 
-                case Constants.x1:
+                case Constants.Switch:
                     SwitchWeapon(Player);
                     break;
 
-                case Constants.F:
-                case Constants.f:
+                case Constants.Pickup:
+                case Constants.Pickup2:
                     Pickup(Player);
                     break;
 
-                case Constants.Q:
-                case Constants.x2:
-                case Constants.q:
-                case Constants.x0:
+                case Constants.Drop3:
+                case Constants.Drop2:
+                case Constants.Drop4:
+                case Constants.Drop:
                     Drop(Player);
                     break;
 
-                case Constants.R:
-                case Constants.r:
+                case Constants.Reload:
+                case Constants.MiddleMouse:
                     Reload(Player);
                     break;
 
@@ -136,7 +112,9 @@ namespace shootMup
 
         public void Mousewheel(float delta)
         {
-            ZoomFactor += delta;
+            if (delta < 0) ZoomFactor -= Constants.ZoomStep;
+            else if (delta > 0) ZoomFactor += Constants.ZoomStep;
+            if (ZoomFactor < Constants.ZoomStep) ZoomFactor = Constants.ZoomStep;
         }
 
         public void Mousemove(float x, float y, float angle)
@@ -190,7 +168,7 @@ namespace shootMup
         // human movements
         private void SwitchWeapon(Player player)
         {
-            Map.SwitchWeapon(player);
+            player.SwitchWeapon();
         }
 
         private void Pickup(Player player)
@@ -209,7 +187,7 @@ namespace shootMup
 
         private void Reload(Player player)
         {
-            var state = Map.Reload(player);
+            var state = player.Reload();
             switch (state)
             {
                 case GunStateEnum.Reloaded:
@@ -266,7 +244,7 @@ namespace shootMup
 
         private void Turn(Player player, float angle)
         {
-            Map.Turn(player, angle);
+            player.Angle = angle;
         }
         #endregion
     }
