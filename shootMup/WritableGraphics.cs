@@ -51,7 +51,7 @@ namespace shootMup
             float swidth = width;
             float sheight = height;
             float sthickness = thickness;
-            if (Translate != null && DoTranslation && !Translate(x, y, width, height, thickness, out sx, out sy, out swidth, out sheight, out sthickness)) return;
+            if (Translate != null && DoTranslation && !Translate(DoScaling, x, y, width, height, thickness, out sx, out sy, out swidth, out sheight, out sthickness)) return;
 
             // safe guard accidental usage
             x = y = width = height = thickness = 0;
@@ -76,7 +76,7 @@ namespace shootMup
             float swidth = width;
             float sheight = height;
             float sthickness = thickness;
-            if (Translate != null && DoTranslation && !Translate(x, y, width, height, thickness, out sx, out sy, out swidth, out sheight, out sthickness)) return;
+            if (Translate != null && DoTranslation && !Translate(DoScaling, x, y, width, height, thickness, out sx, out sy, out swidth, out sheight, out sthickness)) return;
 
             // safe guard accidental usage
             x = y = width = height = thickness = 0;
@@ -101,7 +101,7 @@ namespace shootMup
             float swidth = 0;
             float sheight = 0;
             float sfontsize = fontsize;
-            if (Translate != null && DoTranslation && !Translate(x, y, 0, 0, fontsize, out sx, out sy, out swidth, out sheight, out sfontsize)) return;
+            if (Translate != null && DoTranslation && !Translate(DoScaling, x, y, 0, 0, fontsize, out sx, out sy, out swidth, out sheight, out sfontsize)) return;
 
             // safe guard accidental usage
             x = y = fontsize = 0;
@@ -119,7 +119,7 @@ namespace shootMup
             float swidth = width;
             float sheight = height;
             float sthickness = thickness;
-            if (Translate != null && DoTranslation && !Translate(x1, y1, width, height, thickness, out sx1, out sy1, out swidth, out sheight, out sthickness)) return;
+            if (Translate != null && DoTranslation && !Translate(DoScaling, x1, y1, width, height, thickness, out sx1, out sy1, out swidth, out sheight, out sthickness)) return;
 
             // safe guard accidental usage
             x1 = y1 = thickness = 0;
@@ -127,7 +127,7 @@ namespace shootMup
             float sx2 = x2;
             float sy2 = y2;
             float sother = 0;
-            if (Translate != null && DoTranslation && !Translate(x2, y2, width, height, 0, out sx2, out sy2, out swidth, out sheight, out sother)) return;
+            if (Translate != null && DoTranslation && !Translate(DoScaling, x2, y2, width, height, 0, out sx2, out sy2, out swidth, out sheight, out sother)) return;
 
             // safe guard accidental usage
             x2 = y2 = 0;
@@ -151,7 +151,7 @@ namespace shootMup
             float swidth = 0;
             float sheight = 0;
             float sother = 0;
-            if (Translate != null && DoTranslation && !Translate(x, y, img.Width, img.Height, 0, out sx, out sy, out swidth, out sheight, out sother)) return;
+            if (Translate != null && DoTranslation && !Translate(DoScaling, x, y, img.Width, img.Height, 0, out sx, out sy, out swidth, out sheight, out sother)) return;
 
             // safe guard accidental usage
             x = y = 0;
@@ -169,12 +169,15 @@ namespace shootMup
 
         public void EnableTranslation()
         {
+            DoScaling = true;
             DoTranslation = true;
         }
 
-        public void DisableTranslation()
+        public void DisableTranslation(bool nonScaledTranslation)
         {
             DoTranslation = false;
+            DoScaling = false;
+            if (nonScaledTranslation) DoTranslation = true;
         }
 
         public int Height { get; private set; }
@@ -191,6 +194,7 @@ namespace shootMup
         private TranslateCoordinatesDelegate Translate;
         private Dictionary<string, Image> ImageCache;
         private bool DoTranslation;
+        private bool DoScaling;
         // TODO! color cache
         #endregion
     }

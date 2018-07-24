@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 using shootMup.Common;
@@ -12,16 +13,24 @@ namespace shootMup
     {
         public World(IGraphics surface, ISounds sounds)
         {
+            // graphics
+            Surface = surface;
+            Surface.SetTranslateCoordinates(TranslateCoordinates);
+
+            // setup player
             WindowX = 200;
             WindowY = 200;
             Player = new Player() { X = WindowX, Y = WindowY };
 
+            // create map
             Map = new Map(Player /* human */, null /* other players */);
-            ZoomFactor = 1; // 100%
 
-            // graphics
-            Surface = surface;
-            Surface.SetTranslateCoordinates(TranslateCoordinates);
+            // start the player in the air
+            Player.Z = 1;
+            ZoomFactor = 0.05f;
+            ParachuteTimer = new Timer(PlayerParachute, null, 0, 500);
+
+
 
             // sounds
             Sounds = sounds;
@@ -37,7 +46,7 @@ namespace shootMup
 
             // draw the players
             Player.Draw(Surface);
-            // todo draw other players\
+            // todo draw other players
         }
 
         public void KeyPress(char key)
@@ -130,19 +139,36 @@ namespace shootMup
         private Map Map;
         private float WindowX;
         private float WindowY;
+        private Timer ParachuteTimer;
 
         private const string NothingSoundPath = "media/nothing.wav";
         private const string PickupSoundPath = "media/pickup.wav";
 
+        private void PlayerParachute(object state)
+        {
+            if (Player.Z <= 0)
+            {
+                Player.Z = 0;
+                ParachuteTimer.Dispose();
+                return;
+            }
+
+            // decend
+            Player.Z -= (Constants.ZoomStep/2);
+            ZoomFactor += (Constants.ZoomStep/2);
+        }
+
         // support
-        private bool TranslateCoordinates(float x, float y, float width, float height, float other, out float tx, out float ty, out float twidth, out float theight, out float tother)
+        private bool TranslateCoordinates(bool autoScale, float x, float y, float width, float height, float other, out float tx, out float ty, out float twidth, out float theight, out float tother)
         {
             tx = ty = twidth = theight = tother = 0;
 
+            float zoom = (autoScale) ? ZoomFactor : 1;
+
             // determine scaling factor
-            float scale = (1 / ZoomFactor);
-            width *= ZoomFactor;
-            height *= ZoomFactor;
+            float scale = (1 / zoom);
+            width *= zoom;
+            height *= zoom;
 
             // Surface.Width & Surface.Height are the current windows width & height
             float windowHWidth = Surface.Width / 2.0f;
@@ -159,11 +185,11 @@ namespace shootMup
             if (y < (y1 - height) || y > (y2 + height)) return false;
 
             // now translate to the window
-            tx = ((x - WindowX) * ZoomFactor) + windowHWidth;
-            ty = ((y - WindowY) * ZoomFactor) + windowHHeight;
+            tx = ((x - WindowX) * zoom) + windowHWidth;
+            ty = ((y - WindowY) * zoom) + windowHHeight;
             twidth = width;
             theight = height;
-            tother = other * ZoomFactor;
+            tother = other * zoom;
 
             return true;
         }

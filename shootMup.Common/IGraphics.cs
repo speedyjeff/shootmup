@@ -15,7 +15,7 @@ namespace shootMup.Common
         public static RGBA White = new RGBA() { R = 255, G = 255, B = 255, A = 255 };
     }
 
-    public delegate bool TranslateCoordinatesDelegate(float x, float y, float width, float height, float other, out float tx, out float ty, out float twidth, out float theight, out float tother);
+    public delegate bool TranslateCoordinatesDelegate(bool autoScale, float x, float y, float width, float height, float other, out float tx, out float ty, out float twidth, out float theight, out float tother);
 
     public interface IGraphics
     {
@@ -29,7 +29,7 @@ namespace shootMup.Common
 
         void RotateTransform(float angle);
 
-        void DisableTranslation();
+        void DisableTranslation(bool nonScaledTranslation=false);
         void EnableTranslation();
 
         // details

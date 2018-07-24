@@ -26,14 +26,29 @@ namespace shootMup.Common
         public override void Draw(IGraphics g)
         {
             // draw player
-            g.RotateTransform(Angle);
+            if (Z > 0)
             {
-                if (Primary != null) g.Rectangle(RGBA.Black, X - 2, Y - Height, 4, Height);
-                g.Ellipse(new RGBA() { R = 255, G = 0, B = 0, A = 255 }, X - (Width / 2), Y - (Width / 2), Width, Height);
-                if (Sheld > 0) g.Ellipse(new RGBA() { R = 85, G = 85, B = 85, A = 255 }, X - 25, Y - 25, 50, 50);
+                g.DisableTranslation(true /* nonScaledTranslation */);
+                {
+                    // we are in a parachute
+                    g.Ellipse(new RGBA() { R = 255, G = 0, B = 0, A = 255 }, X - (Width / 2), Y - (Height / 2), Width, Height);
+                    g.Rectangle(new RGBA() { R =146, G = 27, B=167, A = 255 }, X - Width, Y, Width*2, Height/2, true);
+                    g.Line(RGBA.Black, X - Width, Y, X, Y - (Height / 4), 5f);
+                    g.Line(RGBA.Black, X, Y - (Height / 4), X + Width, Y, 5f);
+                }
+                g.EnableTranslation();
             }
-            g.RotateTransform(-1*Angle);
-
+            else
+            {
+                // on ground
+                g.RotateTransform(Angle);
+                {
+                    if (Primary != null) g.Rectangle(RGBA.Black, X - 2, Y - Height, 4, Height);
+                    g.Ellipse(new RGBA() { R = 255, G = 0, B = 0, A = 255 }, X - (Width / 2), Y - (Height / 2), Width, Height);
+                    if (Sheld > 0) g.Ellipse(new RGBA() { R = 85, G = 85, B = 85, A = 255 }, X - 25, Y - 25, 50, 50);
+                }
+                g.RotateTransform(-1 * Angle);
+            }
             // draw HUD
 
             g.DisableTranslation();

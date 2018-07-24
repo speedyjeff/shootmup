@@ -12,6 +12,7 @@ namespace shootMup.Common
         // center
         public float X { get; set; }
         public float Y { get; set; }
+        public float Z { get; set; }
         public float Angle
         {
             get
@@ -39,13 +40,15 @@ namespace shootMup.Common
         public bool CanAcquire { get; protected set; } = false;
         public bool IsTransparent { get; protected set; } = false;
         public string Name { get; protected set; } = "";
-        public static bool Debug_DrawHitBox { get; } = true;
+        public static bool Debug_DrawHitBox { get; } = false;
 
         public bool IsDead => (TakesDamage ? Health <= 0 : false);
 
         public Element()
         {
             Id = GetNextId();
+            X = Y = Z = 0;
+            // Z == 0 means on the ground
         }
 
         public virtual void Draw(IGraphics g)
@@ -55,7 +58,7 @@ namespace shootMup.Common
             {
                 g.Text(RGBA.Black, X - Width / 2, Y - Height / 2 - 20, string.Format("[{0}] {1}", Constants.Pickup2, Name));
             }
-            if (TakesDamage)
+            if (TakesDamage && !(this is Player))
             {
                 g.Text(RGBA.Black, X - Width / 2, Y - Height / 2 - 20, string.Format("{0}/{1}", Health, Sheld));
             }
