@@ -11,8 +11,8 @@ namespace shootMup.Common
             Sheld = 20;
             CanAcquire = true;
             Name = "Helmet";
-            Height = 50;
-            Width = 50;
+            Height = 25;
+            Width = 25;
         }
 
         public override void Draw(IGraphics g)

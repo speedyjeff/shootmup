@@ -13,15 +13,20 @@ namespace shootMup.Common
             IsSolid = true;
             Health = 50;
             Sheld = 0;
+            DisplayHud = true;
+            Color = new RGBA() { R = 255, A = 255 };
 
             // hit box
-            Height = 100;
-            Width = 100;
+            Height = 50;
+            Width = 50;
         }
 
         // weapons
         public Gun Primary { get; private set; }
         public Gun Secondary { get; private set; }
+
+        public bool DisplayHud { get; protected set; }
+        public RGBA Color { get; protected set; }
 
         public override void Draw(IGraphics g)
         {
@@ -31,8 +36,8 @@ namespace shootMup.Common
                 g.DisableTranslation(true /* nonScaledTranslation */);
                 {
                     // we are in a parachute
-                    g.Ellipse(new RGBA() { R = 255, G = 0, B = 0, A = 255 }, X - (Width / 2), Y - (Height / 2), Width, Height);
-                    g.Rectangle(new RGBA() { R =146, G = 27, B=167, A = 255 }, X - Width, Y, Width*2, Height/2, true);
+                    g.Ellipse(Color, X - (Width / 2), Y - (Height / 2), Width, Height);
+                    g.Rectangle(new RGBA() { R = 146, G = 27, B = 167, A = 255 }, X - Width, Y, Width * 2, Height / 2, true);
                     g.Line(RGBA.Black, X - Width, Y, X, Y - (Height / 4), 5f);
                     g.Line(RGBA.Black, X, Y - (Height / 4), X + Width, Y, 5f);
                 }
@@ -41,43 +46,54 @@ namespace shootMup.Common
             else
             {
                 // on ground
-                g.RotateTransform(Angle);
-                {
-                    if (Primary != null) g.Rectangle(RGBA.Black, X - 2, Y - Height, 4, Height);
-                    g.Ellipse(new RGBA() { R = 255, G = 0, B = 0, A = 255 }, X - (Width / 2), Y - (Height / 2), Width, Height);
-                    if (Sheld > 0) g.Ellipse(new RGBA() { R = 85, G = 85, B = 85, A = 255 }, X - 25, Y - 25, 50, 50);
-                }
-                g.RotateTransform(-1 * Angle);
-            }
-            // draw HUD
-
-            g.DisableTranslation();
-            {
-                // health
-                g.Rectangle(new RGBA() { G = 255, A = 255 }, (g.Width / 4), g.Height - 80, (Health / Constants.MaxHealth) * (g.Width / 2), 20, true);
-                g.Rectangle(RGBA.Black, g.Width / 4, g.Height - 80, g.Width / 2, 20, false);
-
-                // sheld
-                g.Rectangle(new RGBA() { R = 255, G = 255, A = 255 }, g.Width / 4, g.Height - 90, (Sheld / Constants.MaxSheld) * (g.Width / 4), 10, true);
-                g.Rectangle(RGBA.Black, g.Width / 4, g.Height - 90, g.Width / 4, 10, false);
-
-                // primary weapon
-                g.Rectangle(RGBA.Black, g.Width - 100, g.Height / 6, 60, 30, false);
                 if (Primary != null)
                 {
-                    g.Text(RGBA.Black, g.Width - 100, (g.Height / 6) - 25, String.Format("{0}/{1}", Primary.Clip, Primary.Ammo));
-                    g.Text(RGBA.Black, g.Width - 100, (g.Height / 6) + 2, Primary.Name);
+                    // draw a line in the direction of the weapon
+                    var distance = Width;
+                    var x1 = X;
+                    var y1 = Y;
+                    float a = (float)Math.Cos(Angle * Math.PI / 180) * distance;
+                    float o = (float)Math.Sin(Angle * Math.PI / 180) * distance;
+                    var x2 = x1 + o;
+                    var y2 = y1 - a;
+                    g.Line(RGBA.Black, x1, y1, x2, y2, 10);
                 }
-
-                // secondary weapon
-                g.Rectangle(RGBA.Black, g.Width - 100, (g.Height / 4) + 10, 60, 30, false);
-                if (Secondary != null)
-                {
-                    g.Text(RGBA.Black, g.Width - 100, (g.Height / 4) - 15, String.Format("{0}/{1}", Secondary.Clip, Secondary.Ammo));
-                    g.Text(RGBA.Black, g.Width - 100, (g.Height / 4) + 12, Secondary.Name);
-                }
+                g.Ellipse(Color, X - (Width / 2), Y - (Height / 2), Width, Height);
+                if (Sheld > 0) g.Ellipse(new RGBA() { R = 85, G = 85, B = 85, A = 255 }, X - (Width/4), Y - (Height/4), (Width / 2), (Width / 2));
             }
-            g.EnableTranslation();
+
+            // draw HUD
+
+            if (DisplayHud)
+            {
+                g.DisableTranslation();
+                {
+                    // health
+                    g.Rectangle(new RGBA() { G = 255, A = 255 }, (g.Width / 4), g.Height - 80, (Health / Constants.MaxHealth) * (g.Width / 2), 20, true);
+                    g.Rectangle(RGBA.Black, g.Width / 4, g.Height - 80, g.Width / 2, 20, false);
+
+                    // sheld
+                    g.Rectangle(new RGBA() { R = 255, G = 255, A = 255 }, g.Width / 4, g.Height - 90, (Sheld / Constants.MaxSheld) * (g.Width / 4), 10, true);
+                    g.Rectangle(RGBA.Black, g.Width / 4, g.Height - 90, g.Width / 4, 10, false);
+
+                    // primary weapon
+                    g.Rectangle(RGBA.Black, g.Width - 100, g.Height / 6, 60, 30, false);
+                    if (Primary != null)
+                    {
+                        g.Text(RGBA.Black, g.Width - 100, (g.Height / 6) - 25, String.Format("{0}/{1}", Primary.Clip, Primary.Ammo));
+                        g.Text(RGBA.Black, g.Width - 100, (g.Height / 6) + 2, Primary.Name);
+                    }
+
+                    // secondary weapon
+                    g.Rectangle(RGBA.Black, g.Width - 100, (g.Height / 4) + 10, 60, 30, false);
+                    if (Secondary != null)
+                    {
+                        g.Text(RGBA.Black, g.Width - 100, (g.Height / 4) - 15, String.Format("{0}/{1}", Secondary.Clip, Secondary.Ammo));
+                        g.Text(RGBA.Black, g.Width - 100, (g.Height / 4) + 12, Secondary.Name);
+                    }
+                }
+                g.EnableTranslation();
+            }
 
             base.Draw(g);
         }

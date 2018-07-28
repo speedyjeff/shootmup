@@ -10,6 +10,7 @@ namespace shootMup.Common
         {
             CanMove = false;
             TakesDamage = false;
+            ShowDamage = true;
             IsSolid = true;
             Health = 0;
         }

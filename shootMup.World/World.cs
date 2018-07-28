@@ -16,21 +16,47 @@ namespace shootMup
             // graphics
             Surface = surface;
             Surface.SetTranslateCoordinates(TranslateCoordinates);
+            ZoomFactor = 1;
 
             // setup player
             WindowX = 200;
             WindowY = 200;
             Player = new Player() { X = WindowX, Y = WindowY };
 
+            // add bots
+            OtherPlayers = new Player[1]
+            {
+                new RandomAI() { X = 400, Y = 400}
+            };
+
             // create map
-            Map = new Map(Player /* human */, null /* other players */);
+            Ephemerial = new List<EphemerialElement>();
+            Map = new Map(Player /* human */, OtherPlayers /* other players */);
+            Map.OnEphemerialEvent += (item) =>
+            {
+                lock (Ephemerial)
+                {
+                    Ephemerial.Add(item);
+                }
+            };
 
             // start the player in the air
-            Player.Z = 1;
-            ZoomFactor = 0.05f;
-            ParachuteTimer = new Timer(PlayerParachute, null, 0, 500);
+            if (false)
+            {
+                Player.Z = 1;
+                ZoomFactor = 0.05f;
+                ParachuteTimer = new Timer(PlayerParachute, null, 0, 500);
+            }
 
-
+            // startup the timer to drive the AI
+            if (OtherPlayers != null)
+            {
+                AITimers = new Timer[OtherPlayers.Length];
+                for (int i = 0; i < OtherPlayers.Length; i++)
+                {
+                    AITimers[i] = new Timer(AIMove, OtherPlayers[i], 0, 100);
+                }
+            }
 
             // sounds
             Sounds = sounds;
@@ -42,11 +68,48 @@ namespace shootMup
         public void Paint()
         {
             // draw the map
-            Map.Paint(Player, Surface);
+            // clear the board
+            Surface.Clear(new RGBA() { R = 70, G = 169, B = 52, A = 255 });
+
+            // add any ephemerial elements
+            lock (Ephemerial)
+            {
+                var toremove = new List<EphemerialElement>();
+                foreach (var b in Ephemerial)
+                {
+                    b.Draw(Surface);
+                    b.Duration--;
+                    if (b.Duration < 0) toremove.Add(b);
+                }
+                foreach (var b in toremove)
+                {
+                    Ephemerial.Remove(b);
+                }
+            }
+
+            // draw all elements
+            foreach (var elem in Map.WithinWindow(Player.X, Player.Y, Surface.Width * (1 / ZoomFactor), Surface.Height * (1 / ZoomFactor)))
+            {
+                if (elem is Player) continue;
+                if (elem.IsDead) continue;
+                if (elem.IsTransparent)
+                {
+                    // if the player is intersecting with this item, then do not display it
+                    if (Map.IsTouching(Player, elem)) continue;
+                }
+                elem.Draw(Surface);
+            }
+
+            // TODO! AI players under roofs require special logic
 
             // draw the players
             Player.Draw(Surface);
             // todo draw other players
+            foreach(var othr in OtherPlayers)
+            {
+                if (othr.IsDead) continue;
+                othr.Draw(Surface);
+            }
         }
 
         public void KeyPress(char key)
@@ -134,12 +197,15 @@ namespace shootMup
         #region private
         private IGraphics Surface;
         private Player Player;
+        private List<EphemerialElement> Ephemerial;
         private float ZoomFactor;
         private ISounds Sounds;
         private Map Map;
         private float WindowX;
         private float WindowY;
         private Timer ParachuteTimer;
+        private Player[] OtherPlayers;
+        private Timer[] AITimers;
 
         private const string NothingSoundPath = "media/nothing.wav";
         private const string PickupSoundPath = "media/pickup.wav";
@@ -156,6 +222,60 @@ namespace shootMup
             // decend
             Player.Z -= (Constants.ZoomStep/2);
             ZoomFactor += (Constants.ZoomStep/2);
+        }
+
+        private void AIMove(object state)
+        {
+            if (state is AI)
+            {
+                AI ai = state as AI;
+                float xdelta = 0;
+                float ydelta = 0;
+                float angle = 0;
+
+                // TODO will likely want to translate into a copy of the list with reduced details
+                List<Element> elements = Map.WithinWindow(ai.X, ai.Y, Surface.Width * (1 / ZoomFactor), Surface.Height * (1 / ZoomFactor)).ToList();
+
+                var action = ai.Action(elements, ref xdelta, ref ydelta, ref angle);
+
+                // move first
+                var moved = Map.Move(ai, ref xdelta, ref ydelta);
+                ai.Feedback(AIActionEnum.Move, null, moved);
+
+                // turn
+                ai.Angle = angle;
+
+                // perform action
+                Type item = null;
+                switch(action)
+                {
+                    case AIActionEnum.Drop:
+                        item = Map.Drop(ai);
+                        ai.Feedback(action, item, item != null);
+                        break;
+                    case AIActionEnum.Pickup:
+                        item = Map.Pickup(ai);
+                        ai.Feedback(action, item, item != null);
+                        break;
+                    case AIActionEnum.Reload:
+                        var reloaded = ai.Reload();
+                        ai.Feedback(action, reloaded, reloaded == GunStateEnum.Reloaded);
+                        break;
+                    case AIActionEnum.Shoot:
+                        var shoot = Map.Shoot(ai);
+                        ai.Feedback(action, shoot, shoot == GunStateEnum.Fired || shoot == GunStateEnum.FiredAndKilled || shoot == GunStateEnum.FiredWithContact);
+                        break;
+                    case AIActionEnum.SwitchWeapon:
+                        var swap = ai.SwitchWeapon();
+                        ai.Feedback(action, null, swap);
+                        break;
+                    case AIActionEnum.Move:
+                    case AIActionEnum.None:
+                        break;
+                    default: throw new Exception("Unknown ai action : " + action);
+                }
+            }
+            
         }
 
         // support

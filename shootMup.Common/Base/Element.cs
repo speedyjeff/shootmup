@@ -36,6 +36,7 @@ namespace shootMup.Common
         public float Sheld { get; set; } = 0;
         public bool CanMove { get; protected set; } = false;
         public bool TakesDamage { get; protected set; } = false;
+        public bool ShowDamage { get; protected set; } = false;
         public bool IsSolid { get; protected set; } = false;
         public bool CanAcquire { get; protected set; } = false;
         public bool IsTransparent { get; protected set; } = false;
@@ -58,7 +59,7 @@ namespace shootMup.Common
             {
                 g.Text(RGBA.Black, X - Width / 2, Y - Height / 2 - 20, string.Format("[{0}] {1}", Constants.Pickup2, Name));
             }
-            if (TakesDamage && !(this is Player))
+            if (TakesDamage && ShowDamage)
             {
                 g.Text(RGBA.Black, X - Width / 2, Y - Height / 2 - 20, string.Format("{0}/{1}", Health, Sheld));
             }

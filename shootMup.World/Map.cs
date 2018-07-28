@@ -14,7 +14,6 @@ namespace shootMup
         {
             // init
             All = new Dictionary<int, Element>();
-            Ephemerial = new List<EphemerialElement>();
 
             // TODO - initialize based on on disk artifact
 
@@ -66,41 +65,32 @@ namespace shootMup
         public int Width { get; private set; }
         public int Height { get; private set; }
 
-        public void Paint(Player player, IGraphics g)
+        public event Action<EphemerialElement> OnEphemerialEvent;
+
+        public IEnumerable<Element> WithinWindow(float x, float y, float width, float height)
         {
+            // return objects that are within the window
             lock (All)
             {
-                // draw all the elements
-                g.Clear(new RGBA() { R = 70, G = 169, B = 52, A = 255 });
+                var x1 = x - width / 2;
+                var y1 = y - height / 2;
+                var x2 = x + width / 2;
+                var y2 = y + height / 2;
 
-                // add any ephemerial elements
-                var toremove = new List<EphemerialElement>();
-                foreach (var b in Ephemerial)
-                {
-                    b.Draw(g);
-                    b.Duration--;
-                    if (b.Duration < 0) toremove.Add(b);
-                }
-                foreach (var b in toremove)
-                {
-                    Ephemerial.Remove(b);
-                }
-
-                // draw all elements
-                float x11 = (player.X) - (player.Width / 2);
-                float y11 = (player.Y) - (player.Height / 2);
-                float x12 = (player.X) + (player.Width / 2);
-                float y12 = (player.Y) + (player.Height / 2);
                 foreach (var elem in All.Values)
                 {
-                    if (elem is Player) continue;
                     if (elem.IsDead) continue;
-                    if (elem.IsTransparent)
+
+                    var x3 = elem.X - elem.Width / 2;
+                    var y3 = elem.Y - elem.Height / 2;
+                    var x4 = elem.X + elem.Width / 2;
+                    var y4 = elem.Y + elem.Height / 2;
+
+                    if (IntersectingRectangles(x1, y1, x2, y2, 
+                        x3, y3, x4, y4))
                     {
-                        // if the player is intersecting with this item, then do not display it
-                        if (IntersectingRectangles(x11, y11, x12, y12, elem) != null) continue;
+                        yield return elem;
                     }
-                    elem.Draw(g);
                 }
             }
         }
@@ -209,10 +199,19 @@ namespace shootMup
             }
         }
 
+        public bool IsTouching(Element elem1, Element elem2)
+        {
+            float x1 = (elem1.X) - (elem1.Width / 2);
+            float y1 = (elem1.Y) - (elem1.Height / 2);
+            float x2 = (elem1.X) + (elem1.Width / 2);
+            float y2 = (elem1.Y) + (elem1.Height / 2);
+
+            return IntersectingRectangles(x1, y1, x2, y2, elem2) != null;
+        }
+
         #region private
         private int SpeedFactor = 2;
         private Dictionary<int, Element> All { get; set; }
-        private List<EphemerialElement> Ephemerial { get; set; }
 
         private bool HasCollision(Player player, float xdelta, float ydelta)
         {
@@ -267,25 +266,32 @@ namespace shootMup
             float x22 = elem.X + (elem.Width / 2);
             float y22 = elem.Y + (elem.Height / 2);
 
+            if (IntersectingRectangles(x11, y11, x12, y12, x21, y21, x22, y22)) return elem;
+            else return null;
+        }
+
+        private bool IntersectingRectangles(float x11, float y11, float x12, float y12, 
+            float x21, float y21, float x22, float y22)
+        { 
             if (x21 > x11 && x21 < x12)
             {
-                if (y21 > y11 && y21 < y12) return elem;
-                if (y21 < y11 && y22 > y12) return elem;
-                if (y22 > y11 && y22 < y12) return elem;
+                if (y21 > y11 && y21 < y12) return true;
+                if (y21 < y11 && y22 > y12) return true;
+                if (y22 > y11 && y22 < y12) return true;
             }
             else if (x22 > x11 && x22 < x12)
             {
-                if (y22 > y11 && y22 < y12) return elem;
-                if (y21 < y11 && y22 > y12) return elem;
-                if (y21 > y11 && y21 < y12) return elem;
+                if (y22 > y11 && y22 < y12) return true;
+                if (y21 < y11 && y22 > y12) return true;
+                if (y21 > y11 && y21 < y12) return true;
             }
             else if ((y21 > y11 && y21 < y12) || (y22 > y11 && y22 < y12))
             {
-                if (x21 < x11 && x22 > x12) return elem;
+                if (x21 < x11 && x22 > x12) return true;
             }
-            else if (y21 < y11 && x21 < x11 && y22 > y12 && x22 > x12) return elem;
+            else if (y21 < y11 && x21 < x11 && y22 > y12 && x22 > x12) return true;
 
-            return null;
+            return false;
         }
 
         private float DistanceBetweenPoints(float x1, float y1, float x2, float y2)
@@ -422,13 +428,16 @@ namespace shootMup
 
                     if (elem.IsDead)
                     {
-                        Ephemerial.Add(new Message()
+                        if (OnEphemerialEvent != null)
                         {
-                            X = player.X,
-                            Y = player.Y + (Height / 3) - 16,
-                            Text = string.Format("player {0} killed {0}", player.Name, elem.Name),
-                            Duration = Constants.EphemerialElementDuration
-                        });
+                            OnEphemerialEvent(new Message()
+                            {
+                                X = player.X,
+                                Y = player.Y + (Height / 3) - 16,
+                                Text = string.Format("player {0} killed {0}", player.Name, elem.Name),
+                                Duration = Constants.EphemerialElementDuration
+                            });
+                        }
 
                         // indicate that the element died
                         killShot = true;
@@ -441,15 +450,18 @@ namespace shootMup
             }
 
             // add bullet effect
-            Ephemerial.Add(new BulletTrajectory()
+            if (OnEphemerialEvent != null)
             {
-                X1 = x1,
-                Y1 = y1,
-                X2 = x2,
-                Y2 = y2,
-                Damage = gun.Damage,
-                Duration = Constants.EphemerialElementDuration
-            });
+                OnEphemerialEvent(new BulletTrajectory()
+                {
+                    X1 = x1,
+                    Y1 = y1,
+                    X2 = x2,
+                    Y2 = y2,
+                    Damage = gun.Damage,
+                    Duration = Constants.EphemerialElementDuration
+                });
+            }
 
             return elem != null;
         }
