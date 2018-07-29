@@ -28,6 +28,8 @@ namespace shootMup.Common
         public bool DisplayHud { get; protected set; }
         public RGBA Color { get; protected set; }
 
+        public virtual string HurtSoundPath => "media/hurt.wav";
+
         public override void Draw(IGraphics g)
         {
             // draw player
@@ -49,13 +51,8 @@ namespace shootMup.Common
                 if (Primary != null)
                 {
                     // draw a line in the direction of the weapon
-                    var distance = Width;
-                    var x1 = X;
-                    var y1 = Y;
-                    float a = (float)Math.Cos(Angle * Math.PI / 180) * distance;
-                    float o = (float)Math.Sin(Angle * Math.PI / 180) * distance;
-                    var x2 = x1 + o;
-                    var y2 = y1 - a;
+                    float x1, y1, x2, y2;
+                    Collision.CalculateLineByAngle(X, Y, Angle, Width, out x1, out y1, out x2, out y2);
                     g.Line(RGBA.Black, x1, y1, x2, y2, 10);
                 }
                 g.Ellipse(Color, X - (Width / 2), Y - (Height / 2), Width, Height);

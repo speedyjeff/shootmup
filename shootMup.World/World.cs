@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -26,7 +27,7 @@ namespace shootMup
             // add bots
             OtherPlayers = new Player[1]
             {
-                new RandomAI() { X = 400, Y = 400}
+                new SimpleAI() { X = 400, Y = 400}
             };
 
             // create map
@@ -37,6 +38,13 @@ namespace shootMup
                 lock (Ephemerial)
                 {
                     Ephemerial.Add(item);
+                }
+            };
+            Map.OnElementHit += (item) =>
+            {
+                if (item is Player && item.Id == Player.Id)
+                {
+                    Sounds.Play(Player.HurtSoundPath);
                 }
             };
 
@@ -54,7 +62,7 @@ namespace shootMup
                 AITimers = new Timer[OtherPlayers.Length];
                 for (int i = 0; i < OtherPlayers.Length; i++)
                 {
-                    AITimers[i] = new Timer(AIMove, OtherPlayers[i], 0, 100);
+                    AITimers[i] = new Timer(AIMove, i, 0, 100);
                 }
             }
 
@@ -103,7 +111,7 @@ namespace shootMup
             // TODO! AI players under roofs require special logic
 
             // draw the players
-            Player.Draw(Surface);
+            if (!Player.IsDead) Player.Draw(Surface);
             // todo draw other players
             foreach(var othr in OtherPlayers)
             {
@@ -226,21 +234,32 @@ namespace shootMup
 
         private void AIMove(object state)
         {
-            if (state is AI)
+            int index = (int)state;
+            Stopwatch timer = new Stopwatch();
+
+            timer.Start();
+            if (OtherPlayers[index] is AI)
             {
-                AI ai = state as AI;
+                AI ai = OtherPlayers[index] as AI;
                 float xdelta = 0;
                 float ydelta = 0;
                 float angle = 0;
+
+                if (System.Threading.Interlocked.CompareExchange(ref ai.RunningState, 1, 0) != 0) return;
+
+                if (ai.IsDead)
+                {
+                    // stop the timer
+                    AITimers[index].Dispose();
+                    return;
+                }
 
                 // TODO will likely want to translate into a copy of the list with reduced details
                 List<Element> elements = Map.WithinWindow(ai.X, ai.Y, Surface.Width * (1 / ZoomFactor), Surface.Height * (1 / ZoomFactor)).ToList();
 
                 var action = ai.Action(elements, ref xdelta, ref ydelta, ref angle);
 
-                // move first
-                var moved = Map.Move(ai, ref xdelta, ref ydelta);
-                ai.Feedback(AIActionEnum.Move, null, moved);
+                System.Diagnostics.Debug.WriteLine("AI {0} {1} {2} {3}", action, angle, xdelta, ydelta);
 
                 // turn
                 ai.Angle = angle;
@@ -274,8 +293,17 @@ namespace shootMup
                         break;
                     default: throw new Exception("Unknown ai action : " + action);
                 }
-            }
             
+                // move last
+                var moved = Map.Move(ai, ref xdelta, ref ydelta);
+                ai.Feedback(AIActionEnum.Move, null, moved);
+
+                // set state back to not running
+                System.Threading.Volatile.Write(ref ai.RunningState, 0);
+            }
+            timer.Stop();
+
+            if (timer.ElapsedMilliseconds > 30) System.Diagnostics.Debug.WriteLine("**AIMove Duration {0} ms", timer.ElapsedMilliseconds);
         }
 
         // support
@@ -317,11 +345,13 @@ namespace shootMup
         // human movements
         private void SwitchWeapon(Player player)
         {
+            if (player.IsDead) return;
             player.SwitchWeapon();
         }
 
         private void Pickup(Player player)
         {
+            if (player.IsDead) return;
             if (Map.Pickup(player) != null)
             {
                 // play sound
@@ -330,12 +360,14 @@ namespace shootMup
         }
 
         private void Drop(Player player)
-        {
+        { 
+            if (player.IsDead) return;
             Map.Drop(player);
         }
 
         private void Reload(Player player)
         {
+            if (player.IsDead) return;
             var state = player.Reload();
             switch (state)
             {
@@ -355,6 +387,7 @@ namespace shootMup
 
         private void Shoot(Player player)
         {
+            if (player.IsDead) return;
             var state = Map.Shoot(player);
 
             // play sounds
@@ -379,6 +412,7 @@ namespace shootMup
 
         private void Move(Player player, float xdelta, float ydelta)
         {
+            if (player.IsDead) return;
             if (Map.Move(player, ref xdelta, ref ydelta))
             {
                 // move the screen
@@ -393,6 +427,7 @@ namespace shootMup
 
         private void Turn(Player player, float angle)
         {
+            if (player.IsDead) return;
             player.Angle = angle;
         }
         #endregion

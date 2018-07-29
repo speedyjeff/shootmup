@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.27703.2035
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "shootMup", "shootMup\shootMup.csproj", "{C0264C8C-B2AA-49A9-AD37-C2B1A9524F2D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "shootMup.Common", "shootMup.Common\shootMup.Common.csproj", "{14D7490E-02AE-49D8-9860-48CA4271F8BA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "shootMup.Common", "shootMup.Common\shootMup.Common.csproj", "{14D7490E-02AE-49D8-9860-48CA4271F8BA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "shootMup.World", "shootMup.World\shootMup.World.csproj", "{4DEDEE14-2239-4609-8E86-5715B564609A}"
 EndProject

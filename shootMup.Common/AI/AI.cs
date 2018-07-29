@@ -14,6 +14,8 @@ namespace shootMup.Common
             DisplayHud = false;
             Color = new RGBA() { R = 0, G = 0, B = 255, A = 255 };
         }
+
+        public volatile int RunningState;
         
         public virtual AIActionEnum Action(List<Element> elements, ref float xdelta, ref float ydelta, ref float angle)
         {

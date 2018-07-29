@@ -90,7 +90,7 @@ namespace shootMup
             World.Paint();
             Refresh();
             duration.Stop();
-            if (duration.ElapsedMilliseconds > 30) System.Diagnostics.Debug.WriteLine("**Duration {0} ms", duration.ElapsedMilliseconds);
+            if (duration.ElapsedMilliseconds > 30) System.Diagnostics.Debug.WriteLine("**Paint Duration {0} ms", duration.ElapsedMilliseconds);
         }
 
         private void OnMoveTimer_Tick(object sender, EventArgs e)
@@ -120,16 +120,8 @@ namespace shootMup
             //   270         90
             //         180
 
-            // normalize x,y
-            float y = ((float)Height / 2.0f - (float)e.Y) / ((float)Height / 2.0f);
-            float x = ((float)e.X - (float)Width / 2.0f) / ((float)Width / 2.0f);
-            float angle = (float)(Math.Atan2(x,y) * (180/Math.PI));
-
-            // determine which quadrant the mouse is in
-            if (angle < 0)
-            {
-                angle += 360;
-            }
+            // Width/2 and Height/2 act as the center point
+            float angle = Common.Collision.CalculateAngleFromPoint(Width / 2.0f, Height / 2.0f, e.X, e.Y);
 
             World.Mousemove(e.X, e.Y, angle);
         }

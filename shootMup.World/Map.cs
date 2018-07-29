@@ -66,6 +66,8 @@ namespace shootMup
         public int Height { get; private set; }
 
         public event Action<EphemerialElement> OnEphemerialEvent;
+        public event Action<Element> OnElementHit;
+        public event Action<Element> OnElementDied;
 
         public IEnumerable<Element> WithinWindow(float x, float y, float width, float height)
         {
@@ -86,7 +88,7 @@ namespace shootMup
                     var x4 = elem.X + elem.Width / 2;
                     var y4 = elem.Y + elem.Height / 2;
 
-                    if (IntersectingRectangles(x1, y1, x2, y2, 
+                    if (Collision.IntersectingRectangles(x1, y1, x2, y2, 
                         x3, y3, x4, y4))
                     {
                         yield return elem;
@@ -104,7 +106,7 @@ namespace shootMup
                 if (player.IsDead) return false;
 
                 // check if the delta is legal
-                if (Math.Abs(xdelta) + Math.Abs(ydelta) > 1) return false;
+                if (Math.Abs(xdelta) + Math.Abs(ydelta) > 1.00001) return false;
 
                 // adjust for speed
                 xdelta *= speed;
@@ -266,67 +268,14 @@ namespace shootMup
             float x22 = elem.X + (elem.Width / 2);
             float y22 = elem.Y + (elem.Height / 2);
 
-            if (IntersectingRectangles(x11, y11, x12, y12, x21, y21, x22, y22)) return elem;
+            if (Collision.IntersectingRectangles(x11, y11, x12, y12, x21, y21, x22, y22)) return elem;
             else return null;
-        }
-
-        private bool IntersectingRectangles(float x11, float y11, float x12, float y12, 
-            float x21, float y21, float x22, float y22)
-        { 
-            if (x21 > x11 && x21 < x12)
-            {
-                if (y21 > y11 && y21 < y12) return true;
-                if (y21 < y11 && y22 > y12) return true;
-                if (y22 > y11 && y22 < y12) return true;
-            }
-            else if (x22 > x11 && x22 < x12)
-            {
-                if (y22 > y11 && y22 < y12) return true;
-                if (y21 < y11 && y22 > y12) return true;
-                if (y21 > y11 && y21 < y12) return true;
-            }
-            else if ((y21 > y11 && y21 < y12) || (y22 > y11 && y22 < y12))
-            {
-                if (x21 < x11 && x22 > x12) return true;
-            }
-            else if (y21 < y11 && x21 < x11 && y22 > y12 && x22 > x12) return true;
-
-            return false;
-        }
-
-        private float DistanceBetweenPoints(float x1, float y1, float x2, float y2)
-        {
-            // a^2 + b^2 = c^2
-            //  a = |x1 - x2|
-            //  b = |y1 - y2|
-            //  c = result
-            return (float)Math.Sqrt(
-                Math.Pow(Math.Abs(x1 - x2), 2) + Math.Pow(Math.Abs(y1 - y2), 2)
-                );
         }
 
         private float DistanceToObject(Element elem1, Element elem2)
         {
-            // this is an approximation, consider the shortest distance between any two points in these objects
-            var e1 = new Tuple<float, float>[]
-            {
-                new Tuple<float,float>(elem1.X, elem1.Y),
-                new Tuple<float,float>(elem1.X - (elem1.Width / 2), elem1.Y - (elem1.Height / 2)),
-                new Tuple<float,float>(elem1.X + (elem1.Width / 2),elem1.Y + (elem1.Height / 2))
-            };
-
-            var e2 = new Tuple<float, float>[]
-            {
-                new Tuple<float,float>(elem2.X, elem2.Y),
-                new Tuple<float,float>(elem2.X - (elem2.Width / 2), elem2.Y - (elem2.Height / 2)),
-                new Tuple<float,float>(elem2.X + (elem2.Width / 2),elem2.Y + (elem2.Height / 2))
-            };
-
-            var minDistance = float.MaxValue;
-            for (int i = 0; i < e1.Length; i++)
-                for (int j = i + 1; j < e2.Length; j++)
-                    minDistance = Math.Min(DistanceBetweenPoints(e1[i].Item1, e1[i].Item2, e2[j].Item1, e2[j].Item2), minDistance);
-            return minDistance;
+            return Collision.DistanceToObject(elem1.X, elem1.Y, elem1.Width, elem1.Height,
+                elem2.X, elem2.Y, elem2.Width, elem2.Height);
         }
 
         private Element IntersectingLine(Player player, float x11, float y11, float x12, float y12)
@@ -340,6 +289,7 @@ namespace shootMup
             {
                 bool collision = false;
                 if (elem.Id == player.Id) continue;
+                if (elem.IsDead) continue;
                 if (!elem.IsSolid || elem.CanAcquire) continue;
 
                 // check if these would collide if moved
@@ -400,20 +350,10 @@ namespace shootMup
             return (y3 - y1) * (x2 - x1) > (y2 - y1) * (x3 - x1);
         }
 
-        private void GetBulletTrajectory(float x, float y, float angle, float distance, out float x1, out float y1, out float x2, out float y2)
-        {
-            x1 = x;
-            y1 = y;
-            float a = (float)Math.Cos(angle * Math.PI / 180) * distance;
-            float o = (float)Math.Sin(angle * Math.PI / 180) * distance;
-            x2 = x1 + o;
-            y2 = y1 - a;
-        }
-
         private bool ApplyBulletTrajectory(Player player, Gun gun, float x, float y, float angle, out bool killShot)
         {
             float x1, y1, x2, y2;
-            GetBulletTrajectory(x, y, angle, gun.Distance, out x1, out y1, out x2, out y2);
+            Collision.CalculateLineByAngle(x, y, angle, gun.Distance, out x1, out y1, out x2, out y2);
 
             // determine damage
             killShot = false;
@@ -426,8 +366,12 @@ namespace shootMup
                 {
                     elem.ReduceHealth(gun.Damage);
 
+                    if (OnElementHit != null) OnElementHit(elem); 
+
                     if (elem.IsDead)
                     {
+                        if (OnElementDied != null) OnElementDied(elem);
+
                         if (OnEphemerialEvent != null)
                         {
                             OnEphemerialEvent(new Message()
@@ -446,7 +390,7 @@ namespace shootMup
 
                 // reduce the visual shot on screen based on where the bullet hit
                 var distance = DistanceToObject(player, elem);
-                GetBulletTrajectory(x, y, angle, distance, out x1, out y1, out x2, out y2);
+                Collision.CalculateLineByAngle(x, y, angle, distance, out x1, out y1, out x2, out y2);
             }
 
             // add bullet effect
