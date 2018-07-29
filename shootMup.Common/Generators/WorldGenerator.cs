@@ -63,18 +63,18 @@ namespace shootMup.Common
                     if (obstacles != null && obstacles.Count == 1)
                     {
                         // adjust the item placement
-                        if (obstacles[0] is Rock) ix -= (width / 2);
+                        if (obstacles[0] is Rock) ix -= (chunkSize / 2);
                         if (obstacles[0] is Wall)
                         {
                             if ((obstacles[0] as Wall).Width > (obstacles[0] as Wall).Height)
                             {
                                 // horizontal
-                                iy += height / 2;
+                                iy += chunkSize / 2;
                             }
                             else
                             {
                                 // vertical
-                                ix += width / 2;
+                                ix += chunkSize / 2;
                             }
                         }
                     }
@@ -84,6 +84,10 @@ namespace shootMup.Common
                     
                     if (item != null)
                     {
+                        if (item.X < 0 || item.X > width ||
+                            item.Y < 0 || item.Y > height)
+                            System.Diagnostics.Debug.WriteLine("Put an item outside of the wall");
+
                         // add the item first (so it renders correctly)
                         elements.Add(item);
                     }
@@ -106,7 +110,7 @@ namespace shootMup.Common
             float x = width / 2;
             float y = height / 2;
             float dim = width / 10;
-            int count = 25;
+            int count = 100;
             while(true)
             {
                 float rx = x + (rand.Next() % dim) * (rand.Next() % 2 == 0 ? -1 : 1);

@@ -19,6 +19,7 @@ namespace shootMup.Common
         //  direction rules:
         //    if right next/touching an object, move around
         //    if item, possible pickup (depending on other action)
+        //    if in a crowd, move elsewhere
         //    move closer to items/players of interest
         //
         //  0. if no weapn, go towards weapon
@@ -40,10 +41,16 @@ namespace shootMup.Common
 
             // in general keep going in the previous direction, unless there is a reason to change
             PreviousAngle = -1;
+
+            // TODO make it configuarble that some of these rules are applied by some bots but not all
+            //  for example, prefer AK47 or run away
         }
 
         public override AIActionEnum Action(List<Element> elements, ref float xdelta, ref float ydelta, ref float angle)
         {
+            var playerCount = 0;
+            float playerX = 0;
+            float playerY = 0;
             var distances = new ItemDetails[(int)ItemType.LENGTH];
             for (int i = 0; i < distances.Length; i++) { distances[i].Angle = -1; distances[i].Distance = float.MaxValue; }
 
@@ -59,7 +66,13 @@ namespace shootMup.Common
                 var elangle = Collision.CalculateAngleFromPoint(X, Y, elem.X, elem.Y);
 
                 var index = (int)ItemType.LENGTH;
-                if (elem is Player) index = (int)ItemType.Player;
+                if (elem is Player)
+                {
+                    index = (int)ItemType.Player;
+                    playerCount++;
+                    playerX += elem.X;
+                    playerY += elem.Y;
+                }
                 else if (elem is Bandage) index = (int)ItemType.Health;
                 else if (elem is Helmet) index = (int)ItemType.Sheld;
                 else if (elem is AK47) index = (int)ItemType.WeaponAK47;
@@ -80,6 +93,13 @@ namespace shootMup.Common
                 {
                     // the item may be solid and cannot move through
                 }
+            }
+
+            // calculate the average center (if there are players near by)
+            if (playerCount >= 1)
+            {
+                playerX /= (float)playerCount;
+                playerY /= (float)playerCount;
             }
 
             // choose an action - set the rules in reverse order in order to set precedence
@@ -209,6 +229,15 @@ namespace shootMup.Common
                         angle = weapon.Angle;
                     }
                 }
+            }
+
+            // if there are too many players, then run away
+            if (playerCount >= 5)
+            {
+                // choose an angle opposite from where the center of the other players are
+                angle = Collision.CalculateAngleFromPoint(X, Y, playerX, playerY);
+                // go the opposite way
+                angle = (angle + 180) % 360;
             }
           
             // choose defaults

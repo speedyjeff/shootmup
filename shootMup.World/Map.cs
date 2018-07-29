@@ -40,7 +40,7 @@ namespace shootMup
                     All.Add(elem.Id, elem);
                 }
             }
-            else if (false)
+            else if (true)
             {
                 // hunger games
                 foreach (var elem in WorldGenerator.HungerGames(Width, Height))
@@ -201,6 +201,8 @@ namespace shootMup
 
         public bool IsTouching(Element elem1, Element elem2)
         {
+            if (elem1.Z != elem2.Z) return false;
+
             float x1 = (elem1.X) - (elem1.Width / 2);
             float y1 = (elem1.Y) - (elem1.Height / 2);
             float x2 = (elem1.X) + (elem1.Width / 2);

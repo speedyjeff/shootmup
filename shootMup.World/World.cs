@@ -30,14 +30,64 @@ namespace shootMup
             Human = new Player() { X = WindowX, Y = WindowY, Name = "You" };
 
             // add all the players
-            Players = new Player[99];
+            Players = new Player[100];
             Players[0] = Human;
 
-            for(int i=1; i<Players.Length; i++)
+            // place the players in a diagnoal pattern
+            if (false)
             {
-                float diag = (width / Players.Length) * i;
-                if (diag < 100) throw new Exception("Too many ai players for this board size");
-                Players[i] = new SimpleAI() { X = diag, Y = diag, Name = string.Format("ai{0}", i) }; // AI
+                for (int i = 1; i < Players.Length; i++)
+                {
+                    float diag = (width / Players.Length) * i;
+                    if (diag < 100) throw new Exception("Too many ai players for this board size");
+                    Players[i] = new SimpleAI() { X = diag, Y = diag, Name = string.Format("ai{0}", i) }; // AI
+                }
+            }
+            else
+            {
+                // place players around the borders
+                float delta = (((width + height) * 2) / (Players.Length+5));
+                if (delta < 100) throw new Exception("Too many ai players for this board size");
+                float ydelta = delta;
+                float xdelta = 0;
+                float x = 50;
+                float y = 50;
+                for (int i = 1; i < Players.Length; i++)
+                {
+                    x += xdelta;
+                    y += ydelta;
+
+                    if (y > height)
+                    {
+                        // bottom left corner
+                        y -= delta;
+                        xdelta = ydelta;
+                        ydelta = 0;
+                        x += xdelta;
+                    }
+                    else if (x > width)
+                    {
+                        // bottom right corner
+                        x -= delta;
+                        ydelta = xdelta * -1;
+                        xdelta = 0;
+                        y += ydelta;
+                    }
+                    else if (y < 0)
+                    {
+                        // top right corner
+                        y += delta;
+                        xdelta = ydelta;
+                        ydelta = 0;
+                        x += xdelta;
+                    }
+                    else if (x < 0)
+                    {
+                        throw new Exception("Failed to properly distribute all the players evenly");
+                    }
+
+                    Players[i] = new SimpleAI() { X = x, Y = y, Name = string.Format("ai{0}", i) }; // AI
+                }
             }
 
             // create map
@@ -96,6 +146,7 @@ namespace shootMup
             Surface.Clear(new RGBA() { R = 70, G = 169, B = 52, A = 255 });
 
             // draw all elements
+            var hidden = new bool[Players.Length];
             foreach (var elem in Map.WithinWindow(Human.X, Human.Y, Surface.Width * (1 / ZoomFactor), Surface.Height * (1 / ZoomFactor)))
             {
                 if (elem is Player) continue;
@@ -104,19 +155,25 @@ namespace shootMup
                 {
                     // if the player is intersecting with this item, then do not display it
                     if (Map.IsTouching(Human, elem)) continue;
+
+                    // check if one of the bots is hidden by this object
+                    for (int i=0; i<Players.Length; i++)
+                    {
+                        if (Players[i].Id == Human.Id) continue;
+                        hidden[i] |= Map.IsTouching(Players[i], elem);
+                    }
                 }
                 elem.Draw(Surface);
             }
 
-            // TODO! AI players under roofs require special logic
-
             // draw the players
             int alive = 0;
-            foreach(var othr in Players)
+            for(int i=0; i<Players.Length; i++)
             {
-                if (othr.IsDead) continue;
+                if (Players[i].IsDead) continue;
                 alive++;
-                othr.Draw(Surface);
+                if (hidden[i]) continue;
+                Players[i].Draw(Surface);
             }
 
             // add any ephemerial elements
@@ -326,8 +383,9 @@ namespace shootMup
                     return;
                 }
 
+                // NOTE: Do not apply the ZoomFactor (as it distorts the AI when debugging) - TODO may want to allow this while parachuting
                 // TODO will likely want to translate into a copy of the list with reduced details
-                List<Element> elements = Map.WithinWindow(ai.X, ai.Y, Surface.Width * (1 / ZoomFactor), Surface.Height * (1 / ZoomFactor)).ToList();
+                List<Element> elements = Map.WithinWindow(ai.X, ai.Y, Surface.Width /** (1 / ZoomFactor)*/, Surface.Height /* (1 / ZoomFactor)*/).ToList();
 
                 var action = ai.Action(elements, ref xdelta, ref ydelta, ref angle);
 
@@ -373,7 +431,7 @@ namespace shootMup
             }
             timer.Stop();
 
-            if (timer.ElapsedMilliseconds > 30) System.Diagnostics.Debug.WriteLine("**AIMove Duration {0} ms", timer.ElapsedMilliseconds);
+            if (timer.ElapsedMilliseconds > 100) System.Diagnostics.Debug.WriteLine("**AIMove Duration {0} ms", timer.ElapsedMilliseconds);
         }
 
         // support
@@ -391,16 +449,6 @@ namespace shootMup
             // Surface.Width & Surface.Height are the current windows width & height
             float windowHWidth = Surface.Width / 2.0f;
             float windowHHeight = Surface.Height / 2.0f;
-
-            // check if in the window (do not use these as screen coordinates)
-            float x1 = WindowX - (windowHWidth*scale);
-            float y1 = WindowY - (windowHHeight * scale);
-            float x2 = WindowX + (windowHWidth * scale);
-            float y2 = WindowY + (windowHHeight * scale);
-
-            // check if inside the window
-            if (x < (x1 - width) || x > (x2 + width)) return false;
-            if (y < (y1 - height) || y > (y2 + height)) return false;
 
             // now translate to the window
             tx = ((x - WindowX) * zoom) + windowHWidth;
