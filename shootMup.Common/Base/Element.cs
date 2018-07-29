@@ -40,26 +40,25 @@ namespace shootMup.Common
         public bool IsSolid { get; protected set; } = false;
         public bool CanAcquire { get; protected set; } = false;
         public bool IsTransparent { get; protected set; } = false;
-        public string Name { get; protected set; } = "";
-        public static bool Debug_DrawHitBox { get; } = false;
+        public string Name { get; set; } = "";
 
         public bool IsDead => (TakesDamage ? Health <= 0 : false);
 
         public Element()
         {
             Id = GetNextId();
-            X = Y = Z = 0;
-            // Z == 0 means on the ground
+            X = Y = 0;
+            Z = Constants.Ground;
         }
 
         public virtual void Draw(IGraphics g)
         {
-            if (Debug_DrawHitBox) g.Rectangle(RGBA.Black, X-(Width/2), Y-(Height/2), Width, Height, false);
+            if (Constants.Debug_ShowHitBoxes) g.Rectangle(RGBA.Black, X-(Width/2), Y-(Height/2), Width, Height, false);
             if (CanAcquire)
             {
                 g.Text(RGBA.Black, X - Width / 2, Y - Height / 2 - 20, string.Format("[{0}] {1}", Constants.Pickup2, Name));
             }
-            if (TakesDamage && ShowDamage)
+            if (TakesDamage && ShowDamage && Z == Constants.Ground)
             {
                 g.Text(RGBA.Black, X - Width / 2, Y - Height / 2 - 20, string.Format("{0}/{1}", Health, Sheld));
             }

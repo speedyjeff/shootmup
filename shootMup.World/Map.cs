@@ -10,37 +10,31 @@ namespace shootMup
 {
     public class Map
     {
-        public Map(Player human, Player[] otherPlayers)
+        public Map(int width, int height, Player[] players)
         {
             // init
             All = new Dictionary<int, Element>();
+            Width = width;
+            Height = height;
 
             // TODO - initialize based on on disk artifact
 
             // add players
-            All.Add(human.Id, human);
-            if (otherPlayers != null && otherPlayers.Length > 0)
-            {
-                foreach (var o in otherPlayers) All.Add(o.Id, o);
-            }
+            foreach (var o in players) All.Add(o.Id, o);
+
             // create the board
             if (false)
             {
                 // test world
-                int width;
-                int height;
-                foreach (var elem in WorldGenerator.Test(out width, out height))
+                foreach (var elem in WorldGenerator.Test(Width, Height))
                 {
                     All.Add(elem.Id, elem);
                 }
-                Width = width;
-                Height = height;
+
             }
             else if (true)
             {
                 // random gen
-                Width = 10000;
-                Height = 10000;
                 foreach (var elem in WorldGenerator.Randomgen(Width, Height))
                 {
                     All.Add(elem.Id, elem);
@@ -49,8 +43,6 @@ namespace shootMup
             else if (false)
             {
                 // hunger games
-                Width = 1000;
-                Height = 1000;
                 foreach (var elem in WorldGenerator.HungerGames(Width, Height))
                 {
                     All.Add(elem.Id, elem);
@@ -127,6 +119,8 @@ namespace shootMup
 
         public Type Pickup(Player player)
         {
+            if (player.Z != Constants.Ground) return null;
+
             lock (All)
             {
                 // see if we are over an item
@@ -151,6 +145,8 @@ namespace shootMup
 
         public GunStateEnum Shoot(Player player)
         {
+            if (player.Z != Constants.Ground) return GunStateEnum.None;
+
             lock (All)
             {
                 var state = player.Shoot();
@@ -184,6 +180,8 @@ namespace shootMup
 
         public Type Drop(Player player)
         {
+            if (player.Z != Constants.Ground) return null;
+
             lock (All)
             {
                 var item = player.DropPrimary();
@@ -223,7 +221,15 @@ namespace shootMup
             float x12 = (player.X + xdelta) + (player.Width / 2);
             float y12 = (player.Y + ydelta) + (player.Height / 2);
 
-            return IntersectingRectangles(player, x11, y11, x12, y12) != null;
+            var elem = IntersectingRectangles(player, x11, y11, x12, y12);
+
+            if (elem != null)
+            {
+                // check if they are within the same Z plane (approximation of height)
+                if (elem.Z >= player.Z) return true;
+            }
+
+            return false;
         }
 
         private Element IntersectingRectangles(Player player)
@@ -370,16 +376,16 @@ namespace shootMup
 
                     if (elem.IsDead)
                     {
+                        // increment kills
+                        player.Kills++;
+
                         if (OnElementDied != null) OnElementDied(elem);
 
                         if (OnEphemerialEvent != null)
                         {
                             OnEphemerialEvent(new Message()
                             {
-                                X = player.X,
-                                Y = player.Y + (Height / 3) - 16,
-                                Text = string.Format("player {0} killed {0}", player.Name, elem.Name),
-                                Duration = Constants.EphemerialElementDuration
+                                Text = string.Format("Player {0} killed {1}", player.Name, elem.Name)
                             });
                         }
 
@@ -402,8 +408,7 @@ namespace shootMup
                     Y1 = y1,
                     X2 = x2,
                     Y2 = y2,
-                    Damage = gun.Damage,
-                    Duration = Constants.EphemerialElementDuration
+                    Damage = gun.Damage
                 });
             }
 

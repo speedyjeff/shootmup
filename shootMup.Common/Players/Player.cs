@@ -15,6 +15,7 @@ namespace shootMup.Common
             Sheld = 0;
             DisplayHud = true;
             Color = new RGBA() { R = 255, A = 255 };
+            Kills = 0;
 
             // hit box
             Height = 50;
@@ -28,12 +29,14 @@ namespace shootMup.Common
         public bool DisplayHud { get; protected set; }
         public RGBA Color { get; protected set; }
 
+        public int Kills { get; set; }
+
         public virtual string HurtSoundPath => "media/hurt.wav";
 
         public override void Draw(IGraphics g)
         {
             // draw player
-            if (Z > 0)
+            if (Z > Constants.Ground)
             {
                 g.DisableTranslation(true /* nonScaledTranslation */);
                 {

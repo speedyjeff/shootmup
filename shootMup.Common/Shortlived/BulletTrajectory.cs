@@ -13,7 +13,8 @@ namespace shootMup.Common
         public float Damage { get; set; }
 
         public BulletTrajectory() : base()
-        { 
+        {
+            Duration = 10;
         }
 
         public override void Draw(IGraphics g)

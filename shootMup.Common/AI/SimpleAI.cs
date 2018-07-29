@@ -4,7 +4,7 @@ using System.Text;
 
 namespace shootMup.Common
 {
-    enum ItemType { Player=0, Ammo=1, Weapon=2, Health=3, Sheld=4, LENGTH=5}
+    enum ItemType { Player=0, Ammo=1, Weapon=2, Health=3, Sheld=4, WeaponAK47 = 5, LENGTH=6}
     struct ItemDetails
     {
         public float Distance;
@@ -25,7 +25,8 @@ namespace shootMup.Common
         //  1. if have a weapon
         //    1.a if no ammo, go towards ammo
         //    1.b if not loaded, reload
-        //    1.c if a player is near, move towards and shoot in that direction
+        //    1.c if primary is not an ak47, move towards and pickup
+        //    1.d if a player is near and can shoot, move towards and shoot in that direction
         //  2. if low on health, go towards health
         //  3. if low on sheld, go towards sheald
 
@@ -59,6 +60,7 @@ namespace shootMup.Common
                 if (elem is Player) index = (int)ItemType.Player;
                 else if (elem is Bandage) index = (int)ItemType.Health;
                 else if (elem is Helmet) index = (int)ItemType.Sheld;
+                else if (elem is AK47) index = (int)ItemType.WeaponAK47;
                 else if (elem is Gun) index = (int)ItemType.Weapon;
                 else if (elem is Ammo) index = (int)ItemType.Ammo;
 
@@ -157,6 +159,23 @@ namespace shootMup.Common
                     // choose direction via another decision
                 }
 
+                // pick up ak47
+                if (!(Primary is AK47) && distances[(int)ItemType.WeaponAK47].IsValid)
+                {
+                    // there is an AK47 either close or touching
+                    if (distances[(int)ItemType.WeaponAK47].IsTouching(Width / 2))
+                    {
+                        // choose to pickup
+                        action = AIActionEnum.Pickup;
+                        // set direction via another decision
+                    }
+                    else
+                    {
+                        // choose action via another decision
+                        angle = distances[(int)ItemType.WeaponAK47].Angle;
+                    }
+                }
+
                 // shoot a player
                 if (Primary.CanShoot() && distances[(int)ItemType.Player].IsValid)
                 {
@@ -170,11 +189,13 @@ namespace shootMup.Common
             // 0) No weapon
             if (Primary == null)
             {
+                var weapon = distances[(int)ItemType.WeaponAK47].IsValid ? distances[(int)ItemType.WeaponAK47] : distances[(int)ItemType.Weapon];
+
                 // is there a weapon within view
-                if (distances[(int)ItemType.Weapon].IsValid)
+                if (weapon.IsValid)
                 {
                     // there is a weapon either close or touching
-                    if (distances[(int)ItemType.Weapon].IsTouching(Width/2))
+                    if (weapon.IsTouching(Width/2))
                     {
                         // choose to pickup
                         action = AIActionEnum.Pickup;
@@ -183,7 +204,7 @@ namespace shootMup.Common
                     else
                     {
                         // choose action via another decision
-                        angle = distances[(int)ItemType.Weapon].Angle;
+                        angle = weapon.Angle;
                     }
                 }
             }
@@ -247,7 +268,7 @@ namespace shootMup.Common
                     CorrectiveAngle += 45;
                     break;
                 case AIActionEnum.Pickup:
-                    System.Diagnostics.Debug.WriteLine("Failed to pickup");
+                    if (Constants.Debug_AIMoveDiag) System.Diagnostics.Debug.WriteLine("Failed to pickup");
                     break;
             }
         }

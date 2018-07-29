@@ -6,13 +6,11 @@ namespace shootMup.Common
 {
     public static class WorldGenerator
     {
-        public static List<Element> Test(out int width, out int height)
+        public static List<Element> Test(int width, int height)
         {
             var elements = new List<Element>();
 
-            // width and height
-            width = 1000;
-            height = 1000;
+            if (width < 1000 || height < 1000) throw new Exception("Must have at least 1000 wdith & height");
 
             // borders
             elements.AddRange( WorldHelper.MakeBorders(width, height, 20));

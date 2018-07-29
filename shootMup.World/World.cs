@@ -14,6 +14,11 @@ namespace shootMup
     {
         public World(IGraphics surface, ISounds sounds)
         {
+            // init
+            Ephemerial = new List<EphemerialElement>();
+            int width = 10000;
+            int height = 10000;
+
             // graphics
             Surface = surface;
             Surface.SetTranslateCoordinates(TranslateCoordinates);
@@ -22,17 +27,21 @@ namespace shootMup
             // setup player
             WindowX = 200;
             WindowY = 200;
-            Player = new Player() { X = WindowX, Y = WindowY };
+            Human = new Player() { X = WindowX, Y = WindowY, Name = "You" };
 
-            // add bots
-            OtherPlayers = new Player[1]
+            // add all the players
+            Players = new Player[20];
+            Players[0] = Human;
+
+            for(int i=1; i<Players.Length; i++)
             {
-                new SimpleAI() { X = 400, Y = 400}
-            };
+                float diag = (width / Players.Length) * i;
+                if (diag < 100) throw new Exception("Too many ai players for this board size");
+                Players[i] = new SimpleAI() { X = diag, Y = diag, Name = string.Format("ai{0}", i) }; // AI
+            }
 
             // create map
-            Ephemerial = new List<EphemerialElement>();
-            Map = new Map(Player /* human */, OtherPlayers /* other players */);
+            Map = new Map(width, height, Players);
             Map.OnEphemerialEvent += (item) =>
             {
                 lock (Ephemerial)
@@ -42,26 +51,33 @@ namespace shootMup
             };
             Map.OnElementHit += (item) =>
             {
-                if (item is Player && item.Id == Player.Id)
+                if (item is Player && item.Id == Human.Id)
                 {
-                    Sounds.Play(Player.HurtSoundPath);
+                    Sounds.Play(Human.HurtSoundPath);
                 }
             };
 
-            // start the player in the air
-            if (false)
+            // start the players in the air
+            if (true)
             {
-                Player.Z = 1;
+                ParachuteTimers = new Timer[ Players.Length ];
+
                 ZoomFactor = 0.05f;
-                ParachuteTimer = new Timer(PlayerParachute, null, 0, 500);
+
+                for (int i=0; i<Players.Length; i++)
+                {
+                    Players[i].Z = Constants.Sky;
+                    ParachuteTimers[i] = new Timer(PlayerParachute, i, 0, 500);
+                }
             }
 
             // startup the timer to drive the AI
-            if (OtherPlayers != null)
+            if (Players != null)
             {
-                AITimers = new Timer[OtherPlayers.Length];
-                for (int i = 0; i < OtherPlayers.Length; i++)
+                AITimers = new Timer[Players.Length];
+                for (int i = 0; i < Players.Length; i++)
                 {
+                    if (Players[i].Id == Human.Id) continue;
                     AITimers[i] = new Timer(AIMove, i, 0, 100);
                 }
             }
@@ -79,12 +95,43 @@ namespace shootMup
             // clear the board
             Surface.Clear(new RGBA() { R = 70, G = 169, B = 52, A = 255 });
 
+            // draw all elements
+            foreach (var elem in Map.WithinWindow(Human.X, Human.Y, Surface.Width * (1 / ZoomFactor), Surface.Height * (1 / ZoomFactor)))
+            {
+                if (elem is Player) continue;
+                if (elem.IsDead) continue;
+                if (elem.IsTransparent)
+                {
+                    // if the player is intersecting with this item, then do not display it
+                    if (Map.IsTouching(Human, elem)) continue;
+                }
+                elem.Draw(Surface);
+            }
+
+            // TODO! AI players under roofs require special logic
+
+            // draw the players
+            int alive = 0;
+            foreach(var othr in Players)
+            {
+                if (othr.IsDead) continue;
+                alive++;
+                othr.Draw(Surface);
+            }
+
             // add any ephemerial elements
             lock (Ephemerial)
             {
                 var toremove = new List<EphemerialElement>();
+                var messageShown = false;
                 foreach (var b in Ephemerial)
                 {
+                    if (b is Message)
+                    {
+                        // only show one message at a time
+                        if (messageShown) continue;
+                        messageShown = true;
+                    }
                     b.Draw(Surface);
                     b.Duration--;
                     if (b.Duration < 0) toremove.Add(b);
@@ -95,29 +142,12 @@ namespace shootMup
                 }
             }
 
-            // draw all elements
-            foreach (var elem in Map.WithinWindow(Player.X, Player.Y, Surface.Width * (1 / ZoomFactor), Surface.Height * (1 / ZoomFactor)))
+            // display the player counts
+            Surface.DisableTranslation();
             {
-                if (elem is Player) continue;
-                if (elem.IsDead) continue;
-                if (elem.IsTransparent)
-                {
-                    // if the player is intersecting with this item, then do not display it
-                    if (Map.IsTouching(Player, elem)) continue;
-                }
-                elem.Draw(Surface);
+                Surface.Text(RGBA.Black, Surface.Width - 200, 10, string.Format("Alive {0} of {1}", alive, Players.Length));
             }
-
-            // TODO! AI players under roofs require special logic
-
-            // draw the players
-            if (!Player.IsDead) Player.Draw(Surface);
-            // todo draw other players
-            foreach(var othr in OtherPlayers)
-            {
-                if (othr.IsDead) continue;
-                othr.Draw(Surface);
-            }
+            Surface.EnableTranslation();
         }
 
         public void KeyPress(char key)
@@ -150,44 +180,44 @@ namespace shootMup
                     break;
 
                 case Constants.Switch:
-                    SwitchWeapon(Player);
+                    SwitchWeapon(Human);
                     break;
 
                 case Constants.Pickup:
                 case Constants.Pickup2:
-                    Pickup(Player);
+                    Pickup(Human);
                     break;
 
                 case Constants.Drop3:
                 case Constants.Drop2:
                 case Constants.Drop4:
                 case Constants.Drop:
-                    Drop(Player);
+                    Drop(Human);
                     break;
 
                 case Constants.Reload:
                 case Constants.MiddleMouse:
-                    Reload(Player);
+                    Reload(Human);
                     break;
 
                 case Constants.Space:
                 case Constants.LeftMouse:
-                    Shoot(Player);
+                    Shoot(Human);
                     break;
 
                 case Constants.RightMouse:
                     // use the mouse to move in the direction of the angle
-                    float r = (Player.Angle % 90) / 90f;
+                    float r = (Human.Angle % 90) / 90f;
                     xdelta = 1 * r;
                     ydelta = 1 * (1 - r);
-                    if (Player.Angle > 0 && Player.Angle < 90) ydelta *= -1;
-                    else if (Player.Angle > 180 && Player.Angle <= 270) xdelta *= -1;
-                    else if (Player.Angle > 270) { ydelta *= -1; xdelta *= -1; }
+                    if (Human.Angle > 0 && Human.Angle < 90) ydelta *= -1;
+                    else if (Human.Angle > 180 && Human.Angle <= 270) xdelta *= -1;
+                    else if (Human.Angle > 270) { ydelta *= -1; xdelta *= -1; }
                     break;
             }
 
             // if a move command, then move
-            if (xdelta != 0 || ydelta != 0) Move(Player, xdelta, ydelta);
+            if (xdelta != 0 || ydelta != 0) Move(Human, xdelta, ydelta);
         }
 
         public void Mousewheel(float delta)
@@ -199,20 +229,20 @@ namespace shootMup
 
         public void Mousemove(float x, float y, float angle)
         {
-            Turn(Player, angle);
+            Turn(Human, angle);
         }
 
         #region private
         private IGraphics Surface;
-        private Player Player;
+        private Player Human;
         private List<EphemerialElement> Ephemerial;
         private float ZoomFactor;
         private ISounds Sounds;
         private Map Map;
         private float WindowX;
         private float WindowY;
-        private Timer ParachuteTimer;
-        private Player[] OtherPlayers;
+        private Timer[] ParachuteTimers;
+        private Player[] Players;
         private Timer[] AITimers;
 
         private const string NothingSoundPath = "media/nothing.wav";
@@ -220,16 +250,46 @@ namespace shootMup
 
         private void PlayerParachute(object state)
         {
-            if (Player.Z <= 0)
+            int index = (int)state;
+
+            if (Players[index].Z <= Constants.Ground)
             {
-                Player.Z = 0;
-                ParachuteTimer.Dispose();
+                Players[index].Z = Constants.Ground;
+                ParachuteTimers[index].Dispose();
+
+                // check if the player is touching an object, if so then move
+                int count = 100;
+                do
+                {
+                    float xdelta = 1f;
+                    float ydelta = 0;
+                    if (Map.Move(Players[index], ref xdelta, ref ydelta))
+                    {
+                        break;
+                    }
+
+                    // move over
+                    Players[index].X += 10f;
+                    if (Players[index].Id == Human.Id) WindowX += 10f;
+                }
+                while (count-- > 0);
+
+                if (count <= 0)
+                {
+                    System.Diagnostics.Debug.WriteLine("Failed to move after parachute");
+                }
+
                 return;
             }
 
             // decend
-            Player.Z -= (Constants.ZoomStep/2);
-            ZoomFactor += (Constants.ZoomStep/2);
+            Players[index].Z -= (Constants.ZoomStep/2);
+
+            if (Players[index].Id == Human.Id)
+            {
+                // zoom in
+                ZoomFactor += (Constants.ZoomStep / 2);
+            }
         }
 
         private void AIMove(object state)
@@ -238,9 +298,9 @@ namespace shootMup
             Stopwatch timer = new Stopwatch();
 
             timer.Start();
-            if (OtherPlayers[index] is AI)
+            if (Players[index] is AI)
             {
-                AI ai = OtherPlayers[index] as AI;
+                AI ai = Players[index] as AI;
                 float xdelta = 0;
                 float ydelta = 0;
                 float angle = 0;
@@ -259,7 +319,7 @@ namespace shootMup
 
                 var action = ai.Action(elements, ref xdelta, ref ydelta, ref angle);
 
-                System.Diagnostics.Debug.WriteLine("AI {0} {1} {2} {3}", action, angle, xdelta, ydelta);
+                if (Constants.Debug_AIMoveDiag) System.Diagnostics.Debug.WriteLine("AI {0} {1} {2} {3}", action, angle, xdelta, ydelta);
 
                 // turn
                 ai.Angle = angle;
