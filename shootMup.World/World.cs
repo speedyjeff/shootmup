@@ -146,6 +146,7 @@ namespace shootMup
             Surface.DisableTranslation();
             {
                 Surface.Text(RGBA.Black, Surface.Width - 200, 10, string.Format("Alive {0} of {1}", alive, Players.Length));
+                Surface.Text(RGBA.Black, Surface.Width - 200, 30, string.Format("Kills {0}", Human.Kills));
             }
             Surface.EnableTranslation();
         }

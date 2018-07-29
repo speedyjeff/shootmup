@@ -222,7 +222,10 @@ namespace shootMup.Common
             if (IsStuck())
             {
                 // take some corrective action
-                System.Diagnostics.Debug.WriteLine("AI seems stuck");
+                if (ShowDiagnostics) System.Diagnostics.Debug.WriteLine("AI seems stuck");
+                // try something new
+                angle = Rand.Next() % 360;
+                CorrectiveAngle = 0;
             }
 
             // check if our last movement was obstructed
@@ -312,8 +315,10 @@ namespace shootMup.Common
                 // reset
                 SameLocationCount = 0;
             }
+            PreviousX = X;
+            PreviousY = Y;
 
-            return (SameLocationCount > 10);
+            return (SameLocationCount > 100);
         }
         #endregion
     }

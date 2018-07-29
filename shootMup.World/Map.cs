@@ -377,7 +377,7 @@ namespace shootMup
                     if (elem.IsDead)
                     {
                         // increment kills
-                        player.Kills++;
+                        if (elem is Player) player.Kills++;
 
                         if (OnElementDied != null) OnElementDied(elem);
 
