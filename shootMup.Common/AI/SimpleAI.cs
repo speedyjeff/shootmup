@@ -35,6 +35,8 @@ namespace shootMup.Common
         public SimpleAI() : base()
         {
             Rand = new Random();
+            PreviousX = PreviousY = 0;
+            SameLocationCount = 0;
 
             // in general keep going in the previous direction, unless there is a reason to change
             PreviousAngle = -1;
@@ -216,6 +218,13 @@ namespace shootMup.Common
                 action = AIActionEnum.Move;
             }
 
+            // check if we seem to be stuck
+            if (IsStuck())
+            {
+                // take some corrective action
+                System.Diagnostics.Debug.WriteLine("AI seems stuck");
+            }
+
             // check if our last movement was obstructed
             float moveAngle = (angle + CorrectiveAngle) % 360;
             if (CorrectiveAngle > 0) CorrectiveAngle -= 15;
@@ -243,6 +252,8 @@ namespace shootMup.Common
             xdelta = (float)Math.Round(xdelta, 4);
             ydelta = (float)Math.Round(ydelta, 4);
 
+            if (ShowDiagnostics) System.Diagnostics.Debug.WriteLine("AI {0} {1} {2} {3}", action, angle, xdelta, ydelta);
+
             return action;
         }
 
@@ -268,16 +279,42 @@ namespace shootMup.Common
                     CorrectiveAngle += 45;
                     break;
                 case AIActionEnum.Pickup:
-                    if (Constants.Debug_AIMoveDiag) System.Diagnostics.Debug.WriteLine("Failed to pickup");
+                    if (ShowDiagnostics) System.Diagnostics.Debug.WriteLine("Failed to pickup");
                     break;
             }
         }
 
         #region private
         private Random Rand;
-
         private float PreviousAngle;
         private float CorrectiveAngle;
+
+        private float PreviousX;
+        private float PreviousY;
+        private int SameLocationCount;
+
+        private bool IsStuck()
+        {
+            // try to determine if we have not moved in a while
+
+            // init
+            if (PreviousX == 0) PreviousX = X;
+            if (PreviousY == 0) PreviousY = Y;
+
+            // check if basically the same place
+            if (Math.Abs(Math.Abs(PreviousX) - Math.Abs(X)) < 1f && Math.Abs(Math.Abs(PreviousY) - Math.Abs(Y)) < 1f)
+            {
+                // about the same place
+                SameLocationCount++;
+            }
+            else
+            {
+                // reset
+                SameLocationCount = 0;
+            }
+
+            return (SameLocationCount > 10);
+        }
         #endregion
     }
 }

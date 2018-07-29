@@ -62,7 +62,7 @@ namespace shootMup
                 OnPaintTimer.Interval = 50;
                 OnPaintTimer.Tick += OnPaintTimer_Tick;
                 OnMoveTimer = new Timer();
-                OnMoveTimer.Interval = 50;
+                OnMoveTimer.Interval = Common.Constants.GlobalClock / 2;
                 OnMoveTimer.Tick += OnMoveTimer_Tick;
 
                 // setup game

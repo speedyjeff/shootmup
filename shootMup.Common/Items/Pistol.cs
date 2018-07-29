@@ -23,7 +23,7 @@ namespace shootMup.Common
             Damage = 25;
             Distance = 600;
             Spread = 0;
-            Delay = 1000;
+            Delay = Constants.GlobalClock * 10;
         }
     }
 }

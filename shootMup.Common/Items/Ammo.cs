@@ -12,7 +12,14 @@ namespace shootMup.Common
             Name = "Ammo";
             Width = 25;
             Height = 25;
-            Health = 100;
+            // number of shots
+            switch(Id % 4)
+            {
+                case 0: Health = 20; break;
+                case 1: Health = 40; break;
+                case 2: Health = 80; break;
+                default: Health = 100; break;
+            }
         }
 
         public override void Draw(IGraphics g)

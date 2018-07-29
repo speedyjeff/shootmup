@@ -13,9 +13,11 @@ namespace shootMup.Common
             ShowDamage = true;
             DisplayHud = false;
             Color = new RGBA() { R = 0, G = 0, B = 255, A = 255 };
+            ShowDiagnostics = Constants.Debug_AIMoveDiag;
         }
 
         public volatile int RunningState;
+        public bool ShowDiagnostics { get; protected set; }
         
         public virtual AIActionEnum Action(List<Element> elements, ref float xdelta, ref float ydelta, ref float angle)
         {

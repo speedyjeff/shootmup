@@ -20,7 +20,7 @@ namespace shootMup.Common
             Damage = 15;
             Distance = 500;
             Spread = 0;
-            Delay = 100;
+            Delay = Constants.GlobalClock;
         }
 
         public override string FiredSoundPath() => "media/ak47.2.wav";

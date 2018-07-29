@@ -20,7 +20,7 @@ namespace shootMup.Common
             Damage = 10;
             Distance = 300;
             Spread = 30;
-            Delay = 1500;
+            Delay = Constants.GlobalClock * 15;
         }
 
         public override string FiredSoundPath() => "media/shotgun.wav";

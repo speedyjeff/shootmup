@@ -45,8 +45,10 @@ namespace shootMup.Common
         public static int Speed = 10;
         public const int MaxSheld = 100;
         public const int MaxHealth = 100;
+        public const int GlobalClock = 100; // ms
 
         // world options
+        public const float MaxZoomIn = 10f;
         public const float ZoomStep = 0.1f;
         public const float Ground = 0f;
         public const float Sky = 1f;

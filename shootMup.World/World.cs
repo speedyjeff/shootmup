@@ -25,12 +25,12 @@ namespace shootMup
             ZoomFactor = 1;
 
             // setup player
-            WindowX = 200;
-            WindowY = 200;
+            WindowX = 50;
+            WindowY = 50;
             Human = new Player() { X = WindowX, Y = WindowY, Name = "You" };
 
             // add all the players
-            Players = new Player[20];
+            Players = new Player[99];
             Players[0] = Human;
 
             for(int i=1; i<Players.Length; i++)
@@ -78,7 +78,7 @@ namespace shootMup
                 for (int i = 0; i < Players.Length; i++)
                 {
                     if (Players[i].Id == Human.Id) continue;
-                    AITimers[i] = new Timer(AIMove, i, 0, 100);
+                    AITimers[i] = new Timer(AIMove, i, 0, Constants.GlobalClock);
                 }
             }
 
@@ -224,7 +224,9 @@ namespace shootMup
         {
             if (delta < 0) ZoomFactor -= Constants.ZoomStep;
             else if (delta > 0) ZoomFactor += Constants.ZoomStep;
+            // cap the zoom capability
             if (ZoomFactor < Constants.ZoomStep) ZoomFactor = Constants.ZoomStep;
+            if (ZoomFactor > Constants.MaxZoomIn) ZoomFactor = Constants.MaxZoomIn;
         }
 
         public void Mousemove(float x, float y, float angle)
@@ -247,6 +249,15 @@ namespace shootMup
 
         private const string NothingSoundPath = "media/nothing.wav";
         private const string PickupSoundPath = "media/pickup.wav";
+
+        private void Debug_KillAll(int doNotKill)
+        {
+            foreach(var o in Players)
+            {
+                if (o.Id == Human.Id || o.Id == doNotKill) continue;
+                o.Health = 0;
+            }
+        }
 
         private void PlayerParachute(object state)
         {
@@ -318,8 +329,6 @@ namespace shootMup
                 List<Element> elements = Map.WithinWindow(ai.X, ai.Y, Surface.Width * (1 / ZoomFactor), Surface.Height * (1 / ZoomFactor)).ToList();
 
                 var action = ai.Action(elements, ref xdelta, ref ydelta, ref angle);
-
-                if (Constants.Debug_AIMoveDiag) System.Diagnostics.Debug.WriteLine("AI {0} {1} {2} {3}", action, angle, xdelta, ydelta);
 
                 // turn
                 ai.Angle = angle;
