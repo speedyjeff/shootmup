@@ -18,6 +18,8 @@ namespace shootMup
             Ephemerial = new List<EphemerialElement>();
             int width = 10000;
             int height = 10000;
+            int numPlayers = 100;
+            Menu = new Title() { Players = numPlayers };
 
             // graphics
             Surface = surface;
@@ -30,68 +32,12 @@ namespace shootMup
             Human = new Player() { X = WindowX, Y = WindowY, Name = "You" };
 
             // add all the players
-            Players = new Player[100];
+            Players = new Player[numPlayers];
             Players[0] = Human;
-
-            // place the players in a diagnoal pattern
-            if (false)
-            {
-                for (int i = 1; i < Players.Length; i++)
-                {
-                    float diag = (width / Players.Length) * i;
-                    if (diag < 100) throw new Exception("Too many ai players for this board size");
-                    Players[i] = new SimpleAI() { X = diag, Y = diag, Name = string.Format("ai{0}", i) }; // AI
-                }
-            }
-            else
-            {
-                // place players around the borders
-                float delta = (((width + height) * 2) / (Players.Length+5));
-                if (delta < 100) throw new Exception("Too many ai players for this board size");
-                float ydelta = delta;
-                float xdelta = 0;
-                float x = 50;
-                float y = 50;
-                for (int i = 1; i < Players.Length; i++)
-                {
-                    x += xdelta;
-                    y += ydelta;
-
-                    if (y > height)
-                    {
-                        // bottom left corner
-                        y -= delta;
-                        xdelta = ydelta;
-                        ydelta = 0;
-                        x += xdelta;
-                    }
-                    else if (x > width)
-                    {
-                        // bottom right corner
-                        x -= delta;
-                        ydelta = xdelta * -1;
-                        xdelta = 0;
-                        y += ydelta;
-                    }
-                    else if (y < 0)
-                    {
-                        // top right corner
-                        y += delta;
-                        xdelta = ydelta;
-                        ydelta = 0;
-                        x += xdelta;
-                    }
-                    else if (x < 0)
-                    {
-                        throw new Exception("Failed to properly distribute all the players evenly");
-                    }
-
-                    Players[i] = new SimpleAI() { X = x, Y = y, Name = string.Format("ai{0}", i) }; // AI
-                }
-            }
+            for(int i=1; i<Players.Length; i++) Players[i] = new SimpleAI() { Name = string.Format("ai{0}", i) };
 
             // create map
-            Map = new Map(width, height, Players);
+            Map = new Map(width, height, Players, PlayerPlacement.Borders);
             Map.OnEphemerialEvent += (item) =>
             {
                 lock (Ephemerial)
@@ -101,9 +47,35 @@ namespace shootMup
             };
             Map.OnElementHit += (item) =>
             {
+                // play sound if the human is hit
                 if (item is Player && item.Id == Human.Id)
                 {
                     Sounds.Play(Human.HurtSoundPath);
+                }
+            };
+            Map.OnElementDied += (item) =>
+            {
+                // check for winner/death
+                if (item is Player)
+                {
+                    // check how many players are still alive
+                    int alive = 0;
+                    var toplayers = new Dictionary<string, int>();
+                    foreach(var player in Players)
+                    {
+                        toplayers.Add(player.Name, player.Kills);
+                        if (!player.IsDead) alive++;
+                    }
+
+                    if (item.Id == Human.Id || alive == 1)
+                    {
+                        Menu = new Finish() {
+                            Kills = Human.Kills,
+                            Ranking = alive,
+                            TopPlayers = toplayers.OrderByDescending(kvp => kvp.Value).Select(kvp => string.Format("{0} [{1}]", kvp.Key, kvp.Value)).ToArray()
+                        };
+                        ShowMenu();
+                    }
                 }
             };
 
@@ -117,7 +89,7 @@ namespace shootMup
                 for (int i=0; i<Players.Length; i++)
                 {
                     Players[i].Z = Constants.Sky;
-                    ParachuteTimers[i] = new Timer(PlayerParachute, i, 0, 500);
+                    ParachuteTimers[i] = new Timer(PlayerParachute, i, 0, Constants.GlobalClock);
                 }
             }
 
@@ -134,6 +106,9 @@ namespace shootMup
 
             // sounds
             Sounds = sounds;
+
+            // show the title screen
+            ShowMenu();
 
             // initially render all the elements
             Paint();
@@ -206,10 +181,32 @@ namespace shootMup
                 Surface.Text(RGBA.Black, Surface.Width - 200, 30, string.Format("Kills {0}", Human.Kills));
             }
             Surface.EnableTranslation();
+
+            // show a menu if present
+            if (MenuBlockingInput)
+            {
+                if (Menu == null) throw new Exception("Must initalize a menu to display");
+                Menu.Draw(Surface);
+            }
         }
 
         public void KeyPress(char key)
         {
+            // inputs that are accepted while a menu is displaying
+            if (MenuBlockingInput)
+            {
+                switch(key)
+                {
+                    // menu
+                    case Constants.Esc:
+                        HideMenu();
+                        break;
+                }
+
+                return;
+            }
+
+
             float xdelta = 0;
             float ydelta = 0;
 
@@ -272,6 +269,11 @@ namespace shootMup
                     else if (Human.Angle > 180 && Human.Angle <= 270) xdelta *= -1;
                     else if (Human.Angle > 270) { ydelta *= -1; xdelta *= -1; }
                     break;
+
+                // menu
+                case Constants.Esc:
+                    ShowMenu();
+                    break;
             }
 
             // if a move command, then move
@@ -280,6 +282,12 @@ namespace shootMup
 
         public void Mousewheel(float delta)
         {
+            // block usage if a menu is being displayed
+            if (MenuBlockingInput) return;
+
+            // only if on the ground
+            if (Human.Z != Constants.Ground) return;
+
             if (delta < 0) ZoomFactor -= Constants.ZoomStep;
             else if (delta > 0) ZoomFactor += Constants.ZoomStep;
             // cap the zoom capability
@@ -289,6 +297,9 @@ namespace shootMup
 
         public void Mousemove(float x, float y, float angle)
         {
+            // block usage if a menu is being displayed
+            if (MenuBlockingInput) return;
+
             Turn(Human, angle);
         }
 
@@ -304,6 +315,8 @@ namespace shootMup
         private Timer[] ParachuteTimers;
         private Player[] Players;
         private Timer[] AITimers;
+        private Menu Menu;
+        private bool MenuBlockingInput;
 
         private const string NothingSoundPath = "media/nothing.wav";
         private const string PickupSoundPath = "media/pickup.wav";
@@ -317,8 +330,23 @@ namespace shootMup
             }
         }
 
+        private void ShowMenu()
+        {
+            if (Menu == null) throw new Exception("Need to initialize a menu first");
+            MenuBlockingInput = true;
+        }
+
+        private void HideMenu()
+        {
+            MenuBlockingInput = false;
+        }
+
         private void PlayerParachute(object state)
         {
+            // block usage if a menu is being displayed
+            if (MenuBlockingInput) return;
+
+            // execute the parachute
             int index = (int)state;
 
             if (Players[index].Z <= Constants.Ground)
@@ -352,17 +380,21 @@ namespace shootMup
             }
 
             // decend
-            Players[index].Z -= (Constants.ZoomStep/2);
+            Players[index].Z -= (Constants.ZoomStep/10);
 
             if (Players[index].Id == Human.Id)
             {
                 // zoom in
-                ZoomFactor += (Constants.ZoomStep / 2);
+                ZoomFactor += (Constants.ZoomStep / 10);
             }
         }
 
         private void AIMove(object state)
         {
+            // block usage if a menu is being displayed
+            if (MenuBlockingInput) return;
+
+            // move the AI
             int index = (int)state;
             Stopwatch timer = new Stopwatch();
 
@@ -425,6 +457,12 @@ namespace shootMup
                 // move last
                 var moved = Map.Move(ai, ref xdelta, ref ydelta);
                 ai.Feedback(AIActionEnum.Move, null, moved);
+
+                // TODO HACK to avoid AI from escaping over the border walls
+                if (ai.X < 0) ai.X = 50;
+                if (ai.X > Map.Width) ai.X = Map.Width - 50;
+                if (ai.Y < 0) ai.Y = 50;
+                if (ai.Y > Map.Height) ai.Y = Map.Height - 50;
 
                 // set state back to not running
                 System.Threading.Volatile.Write(ref ai.RunningState, 0);

@@ -48,14 +48,12 @@ namespace shootMup.Common
             {
                 for(int w = 0; w < width / chunkSize; w++)
                 {
-                    if (h == 0 && w == 0) continue;
-
-                    var x = (h * chunkSize) + (chunkSize / 2);
-                    var y = (w * chunkSize) + (chunkSize / 2);
+                    float x = (h * chunkSize) + (chunkSize / 2);
+                    float y = (w * chunkSize) + (chunkSize / 2);
 
                     // potential item location
-                    var ix = x;
-                    var iy = y;
+                    float ix = x;
+                    float iy = y;
 
                     // generate random obstacle
                     var obstacles = RandomgenObstacle(x, y, chunkSize, rand);
@@ -64,7 +62,7 @@ namespace shootMup.Common
                     {
                         // adjust the item placement
                         if (obstacles[0] is Rock) ix -= (chunkSize / 2);
-                        if (obstacles[0] is Wall)
+                        else if (obstacles[0] is Wall)
                         {
                             if ((obstacles[0] as Wall).Width > (obstacles[0] as Wall).Height)
                             {
@@ -76,6 +74,32 @@ namespace shootMup.Common
                                 // vertical
                                 ix += chunkSize / 2;
                             }
+                        }
+                        else if (obstacles[0] is Tree)
+                        {
+                            // pick an x and y that is not within width and height of the tree
+                            var window = chunkSize - 50;
+                            do
+                            {
+                                ix = (x - (window / 2)) + ((float)(rand.Next() % 100) / 100f) * window;
+                            }
+                            while (Math.Abs(Math.Abs(ix) - Math.Abs(obstacles[0].X)) < obstacles[0].Width * 2);
+                            do
+                            {
+                                iy = (y - (window / 2)) + ((float)(rand.Next() % 100) / 100f) * window;
+                            }
+                            while (Math.Abs(Math.Abs(iy) - Math.Abs(obstacles[0].Y)) < obstacles[0].Height * 2);
+                        }
+                    }
+                    else if (obstacles != null)
+                    { 
+                        // if this is an edge, check for a hut and not allow it
+                        if (h == 0 || w == 0 || h == (height/chunkSize)-1 || w == (width/chunkSize)-1)
+                        {
+                            var isHut = false;
+                            foreach (var o in obstacles) isHut |= o is Roof;
+                            // do not include the hut
+                            if (isHut) obstacles = null;
                         }
                     }
 
@@ -183,9 +207,10 @@ namespace shootMup.Common
                 case 4:
                 case 1:
                     // tree
-                    var rx = (x - (window / 2)) + ((float)(rand.Next() % 100) / 100f) * window;
-                    var ry = (y - (window / 2)) + ((float)(rand.Next() % 100) / 100f) * window;
-                    return new List<Element>() { new Tree() { X = rx, Y = ry } };
+                    window -= 40;
+                    x = (x - (window / 2)) + ((float)(rand.Next() % 100) / 100f) * window;
+                    y = (y - (window / 2)) + ((float)(rand.Next() % 100) / 100f) * window;
+                    return new List<Element>() { new Tree() { X = x, Y = y } };
                 case 2:
                     // rock
                     return new List<Element>() { new Rock() { X = x, Y = y } };

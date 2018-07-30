@@ -8,9 +8,11 @@ using shootMup.Common;
 
 namespace shootMup
 {
+    public enum PlayerPlacement { Diagnal, Borders };
+
     public class Map
     {
-        public Map(int width, int height, Player[] players)
+        public Map(int width, int height, Player[] players, PlayerPlacement placement)
         {
             // init
             All = new Dictionary<int, Element>();
@@ -51,6 +53,77 @@ namespace shootMup
             else
             {
                 // empty
+            }
+
+            // place the players in a diagnoal pattern
+            if (placement == PlayerPlacement.Diagnal)
+            {
+                for (int i = 0; i < players.Length; i++)
+                {
+                    if (players[i].X != 0 || players[i].Y != 0) continue;
+                    float diag = (width / players.Length) * i;
+                    if (diag < 100) throw new Exception("Too many ai players for this board size");
+                    players[i].X = diag;
+                    players[i].Y = diag;
+                }
+            }
+            else if (placement == PlayerPlacement.Borders)
+            {
+                // place players around the borders
+                float delta = (((width + height) * 2) / (players.Length + 5));
+                if (delta < 100) throw new Exception("Too many ai players for this board size");
+                float ydelta = delta;
+                float xdelta = 0;
+                float x = 50;
+                float y = 50;
+                for (int i = 0; i < players.Length; i++)
+                {
+                    if (players[i].X != 0 || players[i].Y != 0) continue;
+
+                    x += xdelta;
+                    y += ydelta;
+
+                    if (y > height)
+                    {
+                        // bottom left corner
+                        y -= delta;
+                        xdelta = ydelta;
+                        ydelta = 0;
+                        x += xdelta;
+                    }
+                    else if (x > width)
+                    {
+                        // bottom right corner
+                        x -= delta;
+                        ydelta = xdelta * -1;
+                        xdelta = 0;
+                        y += ydelta;
+                    }
+                    else if (y < 0)
+                    {
+                        // top right corner
+                        y += delta;
+                        xdelta = ydelta;
+                        ydelta = 0;
+                        x += xdelta;
+                    }
+                    else if (x < 0)
+                    {
+                        throw new Exception("Failed to properly distribute all the players evenly");
+                    }
+
+                    if (x < 0 || x > width || y < 0 || y > height)
+                    {
+                        System.Diagnostics.Debug.WriteLine("Placing a player outside of the borders");
+                    }
+
+                    players[i].X = x;
+                    players[i].Y = y;
+                }
+            }
+            else
+            {
+                throw new Exception("Unknown placement strategy : " + placement);
             }
         }
 

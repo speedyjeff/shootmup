@@ -93,9 +93,8 @@ namespace shootMup
             }
         }
 
-        public void Text(RGBA color, float x, float y, string text)
+        public void Text(RGBA color, float x, float y, string text, float fontsize = 16)
         {
-            float fontsize = 16;
             float sx = x;
             float sy = y;
             float swidth = 0;
@@ -135,7 +134,7 @@ namespace shootMup
             Surface.Graphics.DrawLine(new Pen(Color.FromArgb(color.A, color.R, color.G, color.B), sthickness), sx1, sy1, sx2, sy2);
         }
 
-        public void Image(string path, float x, float y)
+        public void Image(string path, float x, float y, float width = 0, float height = 0)
         {
             System.Drawing.Image img = null;
             if (!ImageCache.TryGetValue(path, out img))
@@ -148,8 +147,8 @@ namespace shootMup
 
             float sx = x;
             float sy = y;
-            float swidth = 0;
-            float sheight = 0;
+            float swidth = width == 0 ? img.Width : width;
+            float sheight = height == 0 ? img.Height : height;
             float sother = 0;
             if (Translate != null && DoTranslation && !Translate(DoScaling, x, y, img.Width, img.Height, 0, out sx, out sy, out swidth, out sheight, out sother)) return;
 

@@ -14,6 +14,7 @@ namespace shootMup.Common
 
         // keyboard
         public const char Space = (char)248;
+        public const char Esc = (char)247;
 
         public const char Up = 'W';
         public const char Up2 = 'w';
