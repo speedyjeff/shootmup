@@ -17,7 +17,7 @@ namespace shootMup.Common
             ClipCapacity = 2;
 
             // damage
-            Damage = 10;
+            Damage = 30;
             Distance = 300;
             Spread = 30;
             Delay = Constants.GlobalClock * 15;
