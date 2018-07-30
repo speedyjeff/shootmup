@@ -26,6 +26,9 @@ namespace shootMup
             Surface.SetTranslateCoordinates(TranslateCoordinates);
             ZoomFactor = 1;
 
+            // sounds
+            Sounds = sounds;
+
             // setup player
             WindowX = 50;
             WindowY = 50;
@@ -38,46 +41,9 @@ namespace shootMup
 
             // create map
             Map = new Map(width, height, Players, PlayerPlacement.Borders);
-            Map.OnEphemerialEvent += (item) =>
-            {
-                lock (Ephemerial)
-                {
-                    Ephemerial.Add(item);
-                }
-            };
-            Map.OnElementHit += (item) =>
-            {
-                // play sound if the human is hit
-                if (item is Player && item.Id == Human.Id)
-                {
-                    Sounds.Play(Human.HurtSoundPath);
-                }
-            };
-            Map.OnElementDied += (item) =>
-            {
-                // check for winner/death
-                if (item is Player)
-                {
-                    // check how many players are still alive
-                    int alive = 0;
-                    var toplayers = new Dictionary<string, int>();
-                    foreach(var player in Players)
-                    {
-                        toplayers.Add(player.Name, player.Kills);
-                        if (!player.IsDead) alive++;
-                    }
-
-                    if (item.Id == Human.Id || alive == 1)
-                    {
-                        Menu = new Finish() {
-                            Kills = Human.Kills,
-                            Ranking = alive,
-                            TopPlayers = toplayers.OrderByDescending(kvp => kvp.Value).Select(kvp => string.Format("{0} [{1}]", kvp.Key, kvp.Value)).ToArray()
-                        };
-                        ShowMenu();
-                    }
-                }
-            };
+            Map.OnEphemerialEvent += AddEphemerialElement;
+            Map.OnElementHit += HitByShoot;
+            Map.OnElementDied += PlayerDied;
 
             // start the players in the air
             if (true)
@@ -94,18 +60,12 @@ namespace shootMup
             }
 
             // startup the timer to drive the AI
-            if (Players != null)
+            AITimers = new Timer[Players.Length];
+            for (int i = 0; i < Players.Length; i++)
             {
-                AITimers = new Timer[Players.Length];
-                for (int i = 0; i < Players.Length; i++)
-                {
-                    if (Players[i].Id == Human.Id) continue;
-                    AITimers[i] = new Timer(AIMove, i, 0, Constants.GlobalClock);
-                }
+                if (Players[i].Id == Human.Id) continue;
+                AITimers[i] = new Timer(AIMove, i, 0, Constants.GlobalClock);
             }
-
-            // sounds
-            Sounds = sounds;
 
             // show the title screen
             ShowMenu();
@@ -206,7 +166,7 @@ namespace shootMup
                 return;
             }
 
-
+            // handle the user input
             float xdelta = 0;
             float ydelta = 0;
 
@@ -288,8 +248,10 @@ namespace shootMup
             // only if on the ground
             if (Human.Z != Constants.Ground) return;
 
+            // adjust the zoom
             if (delta < 0) ZoomFactor -= Constants.ZoomStep;
             else if (delta > 0) ZoomFactor += Constants.ZoomStep;
+
             // cap the zoom capability
             if (ZoomFactor < Constants.ZoomStep) ZoomFactor = Constants.ZoomStep;
             if (ZoomFactor > Constants.MaxZoomIn) ZoomFactor = Constants.MaxZoomIn;
@@ -300,6 +262,7 @@ namespace shootMup
             // block usage if a menu is being displayed
             if (MenuBlockingInput) return;
 
+            // use the angle to turn the human player
             Turn(Human, angle);
         }
 
@@ -321,6 +284,7 @@ namespace shootMup
         private const string NothingSoundPath = "media/nothing.wav";
         private const string PickupSoundPath = "media/pickup.wav";
 
+        // largely used while debugging
         private void Debug_KillAll(int doNotKill)
         {
             foreach(var o in Players)
@@ -330,6 +294,7 @@ namespace shootMup
             }
         }
 
+        // menu items
         private void ShowMenu()
         {
             if (Menu == null) throw new Exception("Need to initialize a menu first");
@@ -341,6 +306,7 @@ namespace shootMup
             MenuBlockingInput = false;
         }
 
+        // callbacks to support time lapse actions
         private void PlayerParachute(object state)
         {
             // block usage if a menu is being displayed
@@ -351,6 +317,7 @@ namespace shootMup
 
             if (Players[index].Z <= Constants.Ground)
             {
+                // ensure the player is on the ground
                 Players[index].Z = Constants.Ground;
                 ParachuteTimers[index].Dispose();
 
@@ -406,6 +373,7 @@ namespace shootMup
                 float ydelta = 0;
                 float angle = 0;
 
+                // the timer is reentrant, so only allow one instance to run
                 if (System.Threading.Interlocked.CompareExchange(ref ai.RunningState, 1, 0) != 0) return;
 
                 if (ai.IsDead)
@@ -419,6 +387,7 @@ namespace shootMup
                 // TODO will likely want to translate into a copy of the list with reduced details
                 List<Element> elements = Map.WithinWindow(ai.X, ai.Y, Surface.Width /** (1 / ZoomFactor)*/, Surface.Height /* (1 / ZoomFactor)*/).ToList();
 
+                // get action from AI
                 var action = ai.Action(elements, ref xdelta, ref ydelta, ref angle);
 
                 // turn
@@ -454,11 +423,15 @@ namespace shootMup
                     default: throw new Exception("Unknown ai action : " + action);
                 }
             
-                // move last
+                // have the AI move
                 var moved = Map.Move(ai, ref xdelta, ref ydelta);
                 ai.Feedback(AIActionEnum.Move, null, moved);
 
                 // TODO HACK to avoid AI from escaping over the border walls
+                // I believe this occurs when there is a wall next to the border and
+                // collision detection thinks the move is valid since you are going 
+                //  over one wall... but it is not valid since it allows you to 
+                //  escape over the other wall
                 if (ai.X < 0) ai.X = 50;
                 if (ai.X > Map.Width) ai.X = Map.Width - 50;
                 if (ai.Y < 0) ai.Y = 50;
@@ -475,6 +448,7 @@ namespace shootMup
         // support
         private bool TranslateCoordinates(bool autoScale, float x, float y, float width, float height, float other, out float tx, out float ty, out float twidth, out float theight, out float tother)
         {
+            // transform the world x,y coordinates into scaled and screen coordinates
             tx = ty = twidth = theight = tother = 0;
 
             float zoom = (autoScale) ? ZoomFactor : 1;
@@ -496,6 +470,14 @@ namespace shootMup
             tother = other * zoom;
 
             return true;
+        }
+
+        private void AddEphemerialElement(EphemerialElement element)
+        {
+            lock (Ephemerial)
+            {
+                Ephemerial.Add(element);
+            }
         }
 
         // human movements
@@ -585,6 +567,42 @@ namespace shootMup
         {
             if (player.IsDead) return;
             player.Angle = angle;
+        }
+
+        private void HitByShoot(Element element)
+        {
+            // play sound if the human is hit
+            if (element is Player && element.Id == Human.Id)
+            {
+                Sounds.Play(Human.HurtSoundPath);
+            }
+        }
+
+        private void PlayerDied(Element element)
+        {
+            // check for winner/death (element may be any element that can take damage)
+            if (element is Player)
+            {
+                // check how many players are still alive
+                int alive = 0;
+                var toplayers = new Dictionary<string, int>();
+                foreach (var player in Players)
+                {
+                    toplayers.Add(player.Name, player.Kills);
+                    if (!player.IsDead) alive++;
+                }
+
+                if (element.Id == Human.Id || (alive == 1 && !Human.IsDead))
+                {
+                    Menu = new Finish()
+                    {
+                        Kills = Human.Kills,
+                        Ranking = alive,
+                        TopPlayers = toplayers.OrderByDescending(kvp => kvp.Value).Select(kvp => string.Format("{0} [{1}]", kvp.Key, kvp.Value)).ToArray()
+                    };
+                    ShowMenu();
+                }
+            }
         }
         #endregion
     }
