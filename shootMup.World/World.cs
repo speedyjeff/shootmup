@@ -25,6 +25,7 @@ namespace shootMup
             Surface = surface;
             Surface.SetTranslateCoordinates(TranslateCoordinates);
             ZoomFactor = 1;
+            Background = new Restriction(width, height);
 
             // sounds
             Sounds = sounds;
@@ -40,7 +41,7 @@ namespace shootMup
             for(int i=1; i<Players.Length; i++) Players[i] = new SimpleAI() { Name = string.Format("ai{0}", i) };
 
             // create map
-            Map = new Map(width, height, Players, PlayerPlacement.Borders);
+            Map = new Map(width, height, Players, Background, PlayerPlacement.Borders);
             Map.OnEphemerialEvent += AddEphemerialElement;
             Map.OnElementHit += HitByShoot;
             Map.OnElementDied += PlayerDied;
@@ -77,8 +78,7 @@ namespace shootMup
         public void Paint()
         {
             // draw the map
-            // clear the board
-            Surface.Clear(new RGBA() { R = 70, G = 169, B = 52, A = 255 });
+            Background.Draw(Surface);
 
             // draw all elements
             var hidden = new bool[Players.Length];
@@ -143,7 +143,7 @@ namespace shootMup
             Surface.EnableTranslation();
 
             // show a menu if present
-            if (MenuBlockingInput)
+            if (Map.IsPaused)
             {
                 if (Menu == null) throw new Exception("Must initalize a menu to display");
                 Menu.Draw(Surface);
@@ -153,7 +153,7 @@ namespace shootMup
         public void KeyPress(char key)
         {
             // inputs that are accepted while a menu is displaying
-            if (MenuBlockingInput)
+            if (Map.IsPaused)
             {
                 switch(key)
                 {
@@ -243,7 +243,7 @@ namespace shootMup
         public void Mousewheel(float delta)
         {
             // block usage if a menu is being displayed
-            if (MenuBlockingInput) return;
+            if (Map.IsPaused) return;
 
             // only if on the ground
             if (Human.Z != Constants.Ground) return;
@@ -260,7 +260,7 @@ namespace shootMup
         public void Mousemove(float x, float y, float angle)
         {
             // block usage if a menu is being displayed
-            if (MenuBlockingInput) return;
+            if (Map.IsPaused) return;
 
             // use the angle to turn the human player
             Turn(Human, angle);
@@ -279,7 +279,8 @@ namespace shootMup
         private Player[] Players;
         private Timer[] AITimers;
         private Menu Menu;
-        private bool MenuBlockingInput;
+        private Background Background;
+        private int PlayerRank;
 
         private const string NothingSoundPath = "media/nothing.wav";
         private const string PickupSoundPath = "media/pickup.wav";
@@ -298,19 +299,19 @@ namespace shootMup
         private void ShowMenu()
         {
             if (Menu == null) throw new Exception("Need to initialize a menu first");
-            MenuBlockingInput = true;
+            Map.IsPaused = true;
         }
 
         private void HideMenu()
         {
-            MenuBlockingInput = false;
+            Map.IsPaused = false;
         }
 
         // callbacks to support time lapse actions
         private void PlayerParachute(object state)
         {
             // block usage if a menu is being displayed
-            if (MenuBlockingInput) return;
+            if (Map.IsPaused) return;
 
             // execute the parachute
             int index = (int)state;
@@ -367,7 +368,7 @@ namespace shootMup
         private void AIMove(object state)
         {
             // block usage if a menu is being displayed
-            if (MenuBlockingInput) return;
+            if (Map.IsPaused) return;
 
             // move the AI
             int index = (int)state;
@@ -594,18 +595,36 @@ namespace shootMup
                 // check how many players are still alive
                 int alive = 0;
                 var toplayers = new Dictionary<string, int>();
+                Player lastAlive = null;
                 foreach (var player in Players)
                 {
                     toplayers.Add(player.Name, player.Kills);
-                    if (!player.IsDead) alive++;
+                    if (!player.IsDead)
+                    {
+                        alive++;
+                        lastAlive = player;
+                    }
                 }
 
                 if (element.Id == Human.Id || (alive == 1 && !Human.IsDead))
                 {
+                    PlayerRank = alive;
                     Menu = new Finish()
                     {
                         Kills = Human.Kills,
-                        Ranking = alive,
+                        Ranking = PlayerRank,
+                        Winner = (alive ==1) ? Human.Name : "",
+                        TopPlayers = toplayers.OrderByDescending(kvp => kvp.Value).Select(kvp => string.Format("{0} [{1}]", kvp.Key, kvp.Value)).ToArray()
+                    };
+                    ShowMenu();
+                }
+                else if (alive == 1)
+                {
+                    Menu = new Finish()
+                    {
+                        Kills = Human.Kills,
+                        Ranking = PlayerRank,
+                        Winner = lastAlive.Name,
                         TopPlayers = toplayers.OrderByDescending(kvp => kvp.Value).Select(kvp => string.Format("{0} [{1}]", kvp.Key, kvp.Value)).ToArray()
                     };
                     ShowMenu();

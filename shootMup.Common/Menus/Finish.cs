@@ -14,6 +14,7 @@ namespace shootMup.Common
         public int Ranking { get; set; }
         public int Kills { get; set; }
         public string[] TopPlayers { get; set; }
+        public string Winner { get; set; }
 
         public override void Draw(IGraphics g)
         {
@@ -35,7 +36,14 @@ namespace shootMup.Common
                 }
                 else
                 {
-                    g.Text(RGBA.Black, left, top, string.Format("You placed #{0}", Ranking), 24);
+                    if (string.IsNullOrWhiteSpace(Winner))
+                    {
+                        g.Text(RGBA.Black, left, top, string.Format("You placed #{0}", Ranking), 24);
+                    }
+                    else
+                    {
+                        g.Text(RGBA.Black, left, top, string.Format("You placed #{0}, {1} won!", Ranking, Winner), 24);
+                    }
                 }
                 top += 50;
                 g.Text(RGBA.Black, left, top, string.Format("You killed {0} players", Kills));

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace shootMup.Common
 {
-    public enum AIActionEnum { None, SwitchWeapon, Pickup, Drop, Reload, Shoot, Move };
+    public enum AIActionEnum { None, SwitchWeapon, Pickup, Drop, Reload, Shoot, Move, ZoneDamage };
 
     public class AI : Player
     {

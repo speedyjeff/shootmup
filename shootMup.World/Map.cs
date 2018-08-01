@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 using shootMup.Common;
@@ -12,12 +13,13 @@ namespace shootMup
 
     public class Map
     {
-        public Map(int width, int height, Player[] players, PlayerPlacement placement)
+        public Map(int width, int height, Player[] players, Background background, PlayerPlacement placement)
         {
             // init
             All = new Dictionary<int, Element>();
             Width = width;
             Height = height;
+            Background = background;
 
             // TODO - initialize based on on disk artifact
 
@@ -125,10 +127,15 @@ namespace shootMup
             {
                 throw new Exception("Unknown placement strategy : " + placement);
             }
+
+            // setup the background update timer
+            BackgroundTimer = new Timer(BackgroundUpdate, null, 0, Constants.GlobalClock);
         }
 
         public int Width { get; private set; }
         public int Height { get; private set; }
+
+        public bool IsPaused { get; set; }
 
         public event Action<EphemerialElement> OnEphemerialEvent;
         public event Action<Element> OnElementHit;
@@ -166,11 +173,15 @@ namespace shootMup
 
         public bool Move(Player player, ref float xdelta, ref float ydelta)
         {
+            if (player.IsDead) return false;
+            if (IsPaused) return false;
+
             lock (All)
             {
-                float speed = Constants.Speed * SpeedFactor;
-
-                if (player.IsDead) return false;
+                float pace = Background.Pace(player.X, player.Y);
+                if (pace < Constants.MinSpeedMultiplier) pace = Constants.MinSpeedMultiplier;
+                if (pace > Constants.MaxSpeedMultiplier) pace = Constants.MaxSpeedMultiplier;
+                float speed = Constants.Speed * pace;
 
                 // check if the delta is legal
                 if (Math.Abs(xdelta) + Math.Abs(ydelta) > 1.00001) return false;
@@ -195,6 +206,8 @@ namespace shootMup
         public Type Pickup(Player player)
         {
             if (player.Z != Constants.Ground) return null;
+            if (player.IsDead) return null;
+            if (IsPaused) return null;
 
             lock (All)
             {
@@ -207,7 +220,6 @@ namespace shootMup
                     if (player.Take(item))
                     {
                         // remove the item from the playing field
-                        // TODO! dangeour remove!
                         All.Remove(item.Id);
 
                         return item.GetType();
@@ -221,41 +233,73 @@ namespace shootMup
         public GunStateEnum Shoot(Player player)
         {
             if (player.Z != Constants.Ground) return GunStateEnum.None;
+            if (player.IsDead) return GunStateEnum.None;
+            if (IsPaused) return GunStateEnum.None;
+
+            var hit = new HashSet<Element>();
+            var state = GunStateEnum.None;
 
             lock (All)
             {
-                var state = player.Shoot();
+                state = player.Shoot();
 
                 // apply state change
                 if (state == GunStateEnum.Fired)
                 {
-                    bool killShot = false;
-                    bool targetDied = false; // used to change the fired state
-                    bool targetHit = false;
+                    Element elem = null;
 
-                    // show the bullet
-                    targetHit |= ApplyBulletTrajectory(player, player.Primary, player.X, player.Y, player.Angle, out killShot);
-                    targetDied |= killShot;
+                    // apply the bullet via the trajectory
+                    elem = ApplyBulletTrajectory(player, player.Primary, player.X, player.Y, player.Angle);
+                    if (elem != null) hit.Add(elem);
                     if (player.Primary.Spread != 0)
                     {
-                        targetHit |= ApplyBulletTrajectory(player, player.Primary, player.X, player.Y, player.Angle - (player.Primary.Spread / 2), out killShot);
-                        targetDied |= killShot;
-                        targetHit |= ApplyBulletTrajectory(player, player.Primary, player.X, player.Y, player.Angle + (player.Primary.Spread / 2), out killShot);
-                        targetDied |= killShot;
+                        elem = ApplyBulletTrajectory(player, player.Primary, player.X, player.Y, player.Angle - (player.Primary.Spread / 2));
+                        if (elem != null) hit.Add(elem);
+                        elem = ApplyBulletTrajectory(player, player.Primary, player.X, player.Y, player.Angle + (player.Primary.Spread / 2));
+                        if (elem != null) hit.Add(elem);
                     }
-
-                    // adjust state accordingly
-                    if (targetDied) state = GunStateEnum.FiredAndKilled;
-                    else if (targetHit) state = GunStateEnum.FiredWithContact;
                 }
 
-                return state;
+            } // lock(All)
+
+            // send notifications
+            bool targetDied = false; // used to change the fired state
+            bool targetHit = false;
+            foreach (var elem in hit)
+            {
+                targetHit = true;
+
+                if (OnElementHit != null) OnElementHit(elem);
+
+                if (elem.IsDead)
+                {
+                    // increment kills
+                    if (elem is Player) player.Kills++;
+
+                    if (OnElementDied != null) OnElementDied(elem);
+
+                    if (OnEphemerialEvent != null)
+                    {
+                        OnEphemerialEvent(new Message()
+                        {
+                            Text = string.Format("Player {0} killed {1}", player.Name, elem.Name)
+                        });
+                    }
+                }
             }
+
+            // adjust state accordingly
+            if (targetDied) state = GunStateEnum.FiredAndKilled;
+            else if (targetHit) state = GunStateEnum.FiredWithContact;
+
+            return state;
         }
 
         public Type Drop(Player player)
         {
             if (player.Z != Constants.Ground) return null;
+            if (IsPaused) return null;
+            // this action is allowed for a dead player
 
             lock (All)
             {
@@ -292,8 +336,62 @@ namespace shootMup
         }
 
         #region private
-        private int SpeedFactor = 2;
         private Dictionary<int, Element> All { get; set; }
+        private Background Background;
+        private Timer BackgroundTimer;
+
+        private void BackgroundUpdate(object state)
+        {
+            if (IsPaused) return;
+            var deceased = new List<Element>();
+            lock (All)
+            {
+                // update the map
+                Background.Update();
+
+                // apply any necessary damage to the players
+                foreach(var elem in All.Values)
+                {
+                    if (elem.IsDead) continue;
+                    if (elem is Player)
+                    {
+                        var damage = Background.Damage(elem.X, elem.Y);
+                        if (damage > 0)
+                        {
+                            elem.ReduceHealth(damage);
+                            if (elem is AI)
+                            {
+                                // provide feedback that they are taking damage from the zone
+                                (elem as AI).Feedback(
+                                    AIActionEnum.ZoneDamage, 
+                                    new Tuple<float,float>(Background.X, Background.Y), // center of safe area
+                                    false);
+                            }
+
+                            if (elem.IsDead)
+                            {
+                                deceased.Add(elem);
+                            }
+                        }
+                    }
+                }
+            } // lock(All)
+
+            // notify the deceased
+            foreach (var elem in deceased)
+            {
+                // this player has died as a result of taking damage from the zone
+                if (OnElementDied != null) OnElementDied(elem);
+
+                if (OnEphemerialEvent != null)
+                {
+                    OnEphemerialEvent(new Message()
+                    {
+                        Text = string.Format("Player {0} diead in the zone", elem.Name)
+                    });
+                }
+            }
+        }
 
         private Element IntersectingRectangles(Player player, bool considerAquireable = false, float xdelta = 0, float ydelta = 0)
         {
@@ -396,13 +494,12 @@ namespace shootMup
             return item;
         }
 
-        private bool ApplyBulletTrajectory(Player player, Gun gun, float x, float y, float angle, out bool killShot)
+        private Element ApplyBulletTrajectory(Player player, Gun gun, float x, float y, float angle)
         {
             float x1, y1, x2, y2;
             Collision.CalculateLineByAngle(x, y, angle, gun.Distance, out x1, out y1, out x2, out y2);
 
             // determine damage
-            killShot = false;
             var elem = IntersectingLine(player, x1, y1, x2, y2);
 
             if (elem != null)
@@ -411,27 +508,6 @@ namespace shootMup
                 if (elem.TakesDamage)
                 {
                     elem.ReduceHealth(gun.Damage);
-
-                    if (OnElementHit != null) OnElementHit(elem); 
-
-                    if (elem.IsDead)
-                    {
-                        // increment kills
-                        if (elem is Player) player.Kills++;
-
-                        if (OnElementDied != null) OnElementDied(elem);
-
-                        if (OnEphemerialEvent != null)
-                        {
-                            OnEphemerialEvent(new Message()
-                            {
-                                Text = string.Format("Player {0} killed {1}", player.Name, elem.Name)
-                            });
-                        }
-
-                        // indicate that the element died
-                        killShot = true;
-                    }
                 }
 
                 // reduce the visual shot on screen based on where the bullet hit
@@ -452,7 +528,7 @@ namespace shootMup
                 });
             }
 
-            return elem != null;
+            return elem;
         }
         #endregion
     }

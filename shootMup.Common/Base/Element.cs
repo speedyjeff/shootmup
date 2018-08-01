@@ -60,7 +60,7 @@ namespace shootMup.Common
             }
             if (TakesDamage && ShowDamage && Z == Constants.Ground)
             {
-                g.Text(RGBA.Black, X - Width / 2, Y - Height / 2 - 20, string.Format("{0}/{1}", Health, Sheld));
+                g.Text(RGBA.Black, X - Width / 2, Y - Height / 2 - 20, string.Format("{0:0}/{1:0}", Health, Sheld));
             }
         }
 

@@ -20,6 +20,7 @@ namespace shootMup.Common
         //    if right next/touching an object, move around
         //    if item, possible pickup (depending on other action)
         //    if in a crowd, move elsewhere
+        //    if in the zone, move towards the center
         //    move closer to items/players of interest
         //
         //  0. if no weapn, go towards weapon
@@ -247,6 +248,17 @@ namespace shootMup.Common
                 action = AIActionEnum.Move;
             }
 
+            // check if we are in the Zone
+            if (InZone)
+            {
+                InZone = false;
+                // we should be moving towards the center
+                if (action == AIActionEnum.Move)
+                {
+                    angle = Collision.CalculateAngleFromPoint(X, Y, ZoneX, ZoneY);
+                }
+            }
+
             // check if we seem to be stuck
             if (IsStuck())
             {
@@ -313,6 +325,13 @@ namespace shootMup.Common
                 case AIActionEnum.Pickup:
                     if (ShowDiagnostics) System.Diagnostics.Debug.WriteLine("Failed to pickup");
                     break;
+                case AIActionEnum.ZoneDamage:
+                    // eek we are in the zone, indicate that we should be moving towards the center
+                    var center = (item as Tuple<float, float>);
+                    InZone = true;
+                    ZoneX = center.Item1;
+                    ZoneY = center.Item2;
+                    break;
             }
         }
 
@@ -324,6 +343,10 @@ namespace shootMup.Common
         private float PreviousX;
         private float PreviousY;
         private int SameLocationCount;
+
+        private bool InZone;
+        private float ZoneX;
+        private float ZoneY;
 
         private bool IsStuck()
         {
