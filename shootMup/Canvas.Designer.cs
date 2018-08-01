@@ -59,7 +59,7 @@ namespace shootMup
 
                 // timers
                 OnPaintTimer = new Timer();
-                OnPaintTimer.Interval = 50;
+                OnPaintTimer.Interval = Common.Constants.GlobalClock / 2;
                 OnPaintTimer.Tick += OnPaintTimer_Tick;
                 OnMoveTimer = new Timer();
                 OnMoveTimer.Interval = Common.Constants.GlobalClock / 2;
@@ -90,7 +90,7 @@ namespace shootMup
             World.Paint();
             Refresh();
             duration.Stop();
-            if (duration.ElapsedMilliseconds > 30) System.Diagnostics.Debug.WriteLine("**Paint Duration {0} ms", duration.ElapsedMilliseconds);
+            if (duration.ElapsedMilliseconds > (Common.Constants.GlobalClock / 2)-5) System.Diagnostics.Debug.WriteLine("**Paint Duration {0} ms", duration.ElapsedMilliseconds);
         }
 
         private void OnMoveTimer_Tick(object sender, EventArgs e)

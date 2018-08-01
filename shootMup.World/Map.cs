@@ -136,6 +136,8 @@ namespace shootMup
 
         public IEnumerable<Element> WithinWindow(float x, float y, float width, float height)
         {
+            // do not take Z into account, as the view should be unbostructed (top down)
+
             // return objects that are within the window
             lock (All)
             {
@@ -178,7 +180,7 @@ namespace shootMup
                 ydelta *= speed;
 
                 // check for a collision first
-                if (HasCollision(player, xdelta, ydelta))
+                if (IntersectingRectangles(player, false /* consider acquirable */, xdelta, ydelta) != null)
                 {
                     return false;
                 }
@@ -197,7 +199,7 @@ namespace shootMup
             lock (All)
             {
                 // see if we are over an item
-                Element item = IntersectingRectangles(player);
+                Element item = IntersectingRectangles(player, true /* consider acquirable */);
 
                 if (item != null)
                 {
@@ -281,45 +283,25 @@ namespace shootMup
             float x2 = (elem1.X) + (elem1.Width / 2);
             float y2 = (elem1.Y) + (elem1.Height / 2);
 
-            return IntersectingRectangles(x1, y1, x2, y2, elem2) != null;
+            float x3 = (elem2.X) - (elem2.Width / 2);
+            float y3 = (elem2.Y) - (elem2.Height / 2);
+            float x4 = (elem2.X) + (elem2.Width / 2);
+            float y4 = (elem2.Y) + (elem2.Height / 2);
+
+            return Collision.IntersectingRectangles(x1, y1, x2, y2, x3, y3, x4, y4);
         }
 
         #region private
         private int SpeedFactor = 2;
         private Dictionary<int, Element> All { get; set; }
 
-        private bool HasCollision(Player player, float xdelta, float ydelta)
+        private Element IntersectingRectangles(Player player, bool considerAquireable = false, float xdelta = 0, float ydelta = 0)
         {
-            // object 1 will be player
-            float x11 = (player.X + xdelta) - (player.Width / 2);
-            float y11 = (player.Y + ydelta) - (player.Height / 2);
-            float x12 = (player.X + xdelta) + (player.Width / 2);
-            float y12 = (player.Y + ydelta) + (player.Height / 2);
+            float x1 = (player.X + xdelta) - (player.Width / 2);
+            float y1 = (player.Y + ydelta) - (player.Height / 2);
+            float x2 = (player.X + xdelta) + (player.Width / 2);
+            float y2 = (player.Y + ydelta) + (player.Height / 2);
 
-            var elem = IntersectingRectangles(player, x11, y11, x12, y12);
-
-            if (elem != null)
-            {
-                // check if they are within the same Z plane (approximation of height)
-                if (elem.Z >= player.Z) return true;
-            }
-
-            return false;
-        }
-
-        private Element IntersectingRectangles(Player player)
-        {
-            // object 1 will be player
-            float x11 = (player.X) - (player.Width / 2);
-            float y11 = (player.Y) - (player.Height / 2);
-            float x12 = (player.X) + (player.Width / 2);
-            float y12 = (player.Y) + (player.Height / 2);
-
-            return IntersectingRectangles(player, x11, y11, x12, y12, true);
-        }
-
-        private Element IntersectingRectangles(Player player, float x11, float y11, float x12, float y12, bool considerAquireable = false)
-        {
             // check collisions
             foreach (var elem in All.Values)
             {
@@ -334,23 +316,20 @@ namespace shootMup
                     if (!elem.CanAcquire) continue;
                 }
 
-                // check if these collide
-                var item = IntersectingRectangles(x11, y11, x12, y12, elem);
-                if (item != null) return item;
+                // only consider items that are within the same plane
+                if (elem.Z >= player.Z)
+                {
+                    float x3 = elem.X - (elem.Width / 2);
+                    float y3 = elem.Y - (elem.Height / 2);
+                    float x4 = elem.X + (elem.Width / 2);
+                    float y4 = elem.Y + (elem.Height / 2);
+
+                    // check if these collide
+                    if (Collision.IntersectingRectangles(x1, y1, x2, y2, x3, y3, x4, y4)) return elem;
+                }
             }
 
             return null;
-        }
-
-        private Element IntersectingRectangles(float x11, float y11, float x12, float y12, Element elem)
-        {
-            float x21 = elem.X - (elem.Width / 2);
-            float y21 = elem.Y - (elem.Height / 2);
-            float x22 = elem.X + (elem.Width / 2);
-            float y22 = elem.Y + (elem.Height / 2);
-
-            if (Collision.IntersectingRectangles(x11, y11, x12, y12, x21, y21, x22, y22)) return elem;
-            else return null;
         }
 
         private float DistanceToObject(Element elem1, Element elem2)
@@ -359,7 +338,7 @@ namespace shootMup
                 elem2.X, elem2.Y, elem2.Width, elem2.Height);
         }
 
-        private Element IntersectingLine(Player player, float x11, float y11, float x12, float y12)
+        private Element IntersectingLine(Player player, float x1, float y1, float x2, float y2)
         {
             // must ensure to find the closest object that intersects
             Element item = null;
@@ -374,25 +353,25 @@ namespace shootMup
                 if (!elem.IsSolid || elem.CanAcquire) continue;
 
                 // check if these would collide if moved
-                float x21 = elem.X - (elem.Width / 2);
-                float y21 = elem.Y - (elem.Height / 2);
-                float x22 = elem.X + (elem.Width / 2);
-                float y22 = elem.Y + (elem.Height / 2);
+                float x3 = elem.X - (elem.Width / 2);
+                float y3 = elem.Y - (elem.Height / 2);
+                float x4 = elem.X + (elem.Width / 2);
+                float y4 = elem.Y + (elem.Height / 2);
 
                 // https://stackoverflow.com/questions/3838329/how-can-i-check-if-two-segments-intersect
 
                 // top
-                collision = IntersectingLine(x11, y11, x12, y12,
-                    x21, y21, x22, y21);
+                collision = Collision.IntersectingLine(x1, y1, x2, y2,
+                    x3, y3, x4, y3);
                 // bottom
-                collision |= IntersectingLine(x11, y11, x12, y12,
-                    x21, y22, x22, y22);
+                collision |= Collision.IntersectingLine(x1, y1, x2, y2,
+                    x3, y4, x4, y4);
                 // left
-                collision |= IntersectingLine(x11, y11, x12, y12,
-                    x21, y21, x21, y22);
+                collision |= Collision.IntersectingLine(x1, y1, x2, y2,
+                    x3, y3, x3, y4);
                 // left
-                collision |= IntersectingLine(x11, y11, x12, y12,
-                    x22, y21, x22, y22);
+                collision |= Collision.IntersectingLine(x1, y1, x2, y2,
+                    x4, y3, x4, y4);
 
                 if (collision)
                 {
@@ -415,20 +394,6 @@ namespace shootMup
             }
 
             return item;
-        }
-
-        private bool IntersectingLine(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4)
-        {
-            // https://stackoverflow.com/questions/3838329/how-can-i-check-if-two-segments-intersect
-            if (CalcCcw(x1, y1, x3, y3, x4, y4) != CalcCcw(x2, y2, x3, y3, x4, y4)
-                && CalcCcw(x1, y1, x2, y2, x3, y3) != CalcCcw(x1, y1, x2, y2, x4, y4))
-                return true;
-            return false;
-        }
-
-        private bool CalcCcw(float x1, float y1, float x2, float y2, float x3, float y3)
-        {
-            return (y3 - y1) * (x2 - x1) > (y2 - y1) * (x3 - x1);
         }
 
         private bool ApplyBulletTrajectory(Player player, Gun gun, float x, float y, float angle, out bool killShot)
@@ -489,6 +454,6 @@ namespace shootMup
 
             return elem != null;
         }
-    #endregion
+        #endregion
     }
 }

@@ -323,9 +323,17 @@ namespace shootMup
 
                 // check if the player is touching an object, if so then move
                 int count = 100;
+                float xstep = 0.01f;
+                float xmove = 10f;
+                if (Players[index].X > Map.Width / 2)
+                {
+                    // move the other way
+                    xstep *= -1;
+                    xmove *= -1;
+                }
                 do
                 {
-                    float xdelta = 1f;
+                    float xdelta = xstep;
                     float ydelta = 0;
                     if (Map.Move(Players[index], ref xdelta, ref ydelta))
                     {
@@ -333,8 +341,8 @@ namespace shootMup
                     }
 
                     // move over
-                    Players[index].X += 10f;
-                    if (Players[index].Id == Human.Id) WindowX += 10f;
+                    Players[index].X += xmove;
+                    if (Players[index].Id == Human.Id) WindowX += xmove;
                 }
                 while (count-- > 0);
 
@@ -426,16 +434,10 @@ namespace shootMup
                 // have the AI move
                 var moved = Map.Move(ai, ref xdelta, ref ydelta);
                 ai.Feedback(AIActionEnum.Move, null, moved);
-
-                // TODO HACK to avoid AI from escaping over the border walls
-                // I believe this occurs when there is a wall next to the border and
-                // collision detection thinks the move is valid since you are going 
-                //  over one wall... but it is not valid since it allows you to 
-                //  escape over the other wall
-                if (ai.X < 0) ai.X = 50;
-                if (ai.X > Map.Width) ai.X = Map.Width - 50;
-                if (ai.Y < 0) ai.Y = 50;
-                if (ai.Y > Map.Height) ai.Y = Map.Height - 50;
+               
+                // ensure the player stays within the map
+                if (ai.X < 0 || ai.X > Map.Width || ai.Y < 0 || ai.Y > Map.Height)
+                    System.Diagnostics.Debug.WriteLine("Out of bounds");
 
                 // set state back to not running
                 System.Threading.Volatile.Write(ref ai.RunningState, 0);

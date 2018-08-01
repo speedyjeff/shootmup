@@ -94,5 +94,21 @@ namespace shootMup.Common
                 Math.Pow(Math.Abs(Math.Abs(x1) - Math.Abs(x2)), 2) + Math.Pow(Math.Abs(Math.Abs(y1) - Math.Abs(y2)), 2)
                 );
         }
+
+        public static bool IntersectingLine(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4)
+        {
+            // https://stackoverflow.com/questions/3838329/how-can-i-check-if-two-segments-intersect
+            if (CalcCcw(x1, y1, x3, y3, x4, y4) != CalcCcw(x2, y2, x3, y3, x4, y4)
+                && CalcCcw(x1, y1, x2, y2, x3, y3) != CalcCcw(x1, y1, x2, y2, x4, y4))
+                return true;
+            return false;
+        }
+
+        #region private
+        private static bool CalcCcw(float x1, float y1, float x2, float y2, float x3, float y3)
+        {
+            return (y3 - y1) * (x2 - x1) > (y2 - y1) * (x3 - x1);
+        }
+        #endregion
     }
 }
