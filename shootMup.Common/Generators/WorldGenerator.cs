@@ -157,6 +157,7 @@ namespace shootMup.Common
                     return new Bandage() { X = x, Y = y };
                 case 4:
                 case 2:
+                case 5:
                     // ammo
                     return new Ammo() { X = x, Y = y };
                 case 3:

@@ -7,6 +7,7 @@ namespace shootMup.Common
     enum ItemType { Player=0, Ammo=1, Weapon=2, Health=3, Sheld=4, WeaponAK47 = 5, LENGTH=6}
     struct ItemDetails
     {
+        public int Id;
         public float Distance;
         public float Angle;
         public bool IsValid { get { return Angle > 0; } }
@@ -40,6 +41,9 @@ namespace shootMup.Common
             PreviousX = PreviousY = 0;
             SameLocationCount = 0;
 
+            // track what has attempted to be pickedup
+            PreviousPickups = new Dictionary<int, int>();
+
             // in general keep going in the previous direction, unless there is a reason to change
             PreviousAngle = -1;
 
@@ -59,6 +63,13 @@ namespace shootMup.Common
             foreach(var elem in elements)
             {
                 if (elem.Id == Id) continue; // found myself
+
+                // check if we have tried to pick this up more than the allowed max
+                int pickupCount = 0;
+                if (PreviousPickups.TryGetValue(elem.Id, out pickupCount))
+                {
+                    if (pickupCount > MaxPickupAttempts) continue;
+                }
 
                 // calculate the distance between thees
                 //var distance = Collision.DistanceToObject(X, Y, Width, Height,
@@ -86,6 +97,7 @@ namespace shootMup.Common
                     // if this item is closet, set it for later review
                     if (distance < distances[index].Distance)
                     {
+                        distances[index].Id = elem.Id;
                         distances[index].Distance = distance;
                         distances[index].Angle = elangle;
                     }
@@ -125,6 +137,7 @@ namespace shootMup.Common
                         // choose to pickup
                         action = AIActionEnum.Pickup;
                         // set direction via another decision
+                        PreviousPickupId = distances[(int)ItemType.Sheld].Id;
                     }
                     else
                     {
@@ -145,6 +158,7 @@ namespace shootMup.Common
                         // choose to pickup
                         action = AIActionEnum.Pickup;
                         // set direction via another decision
+                        PreviousPickupId = distances[(int)ItemType.Health].Id;
                     }
                     else
                     {
@@ -166,6 +180,7 @@ namespace shootMup.Common
                         // choose to pickup
                         action = AIActionEnum.Pickup;
                         // set direction via another decision
+                        PreviousPickupId = distances[(int)ItemType.Ammo].Id;
                     }
                     else
                     {
@@ -191,6 +206,7 @@ namespace shootMup.Common
                         // choose to pickup
                         action = AIActionEnum.Pickup;
                         // set direction via another decision
+                        PreviousPickupId = distances[(int)ItemType.WeaponAK47].Id;
                     }
                     else
                     {
@@ -223,6 +239,7 @@ namespace shootMup.Common
                         // choose to pickup
                         action = AIActionEnum.Pickup;
                         // set direction via another decision
+                        PreviousPickupId = weapon.Id;
                     }
                     else
                     {
@@ -249,9 +266,9 @@ namespace shootMup.Common
             }
 
             // check if we are in the Zone
-            if (InZone)
+            if (InZone > 0)
             {
-                InZone = false;
+                InZone--;
                 // we should be moving towards the center
                 if (action == AIActionEnum.Move)
                 {
@@ -311,6 +328,10 @@ namespace shootMup.Common
                     case AIActionEnum.Move:
                         CorrectiveAngle = 0;
                         break;
+                    case AIActionEnum.Pickup:
+                        // clear the previous attempts for this item (in case it is dropped later)
+                        if (PreviousPickups.ContainsKey(PreviousPickupId)) PreviousPickups[PreviousPickupId] = 0;
+                        break;
                 }
                 return;
             }
@@ -323,12 +344,16 @@ namespace shootMup.Common
                     CorrectiveAngle += 45;
                     break;
                 case AIActionEnum.Pickup:
-                    if (ShowDiagnostics) System.Diagnostics.Debug.WriteLine("Failed to pickup");
+                    // increment the attempt counter
+                    if (!PreviousPickups.ContainsKey(PreviousPickupId)) PreviousPickups.Add(PreviousPickupId, 1);
+                    else PreviousPickups[PreviousPickupId]++;
+                    if (ShowDiagnostics) System.Diagnostics.Debug.WriteLine("Failed to pickup {0} times", PreviousPickups[PreviousPickupId]);
                     break;
                 case AIActionEnum.ZoneDamage:
                     // eek we are in the zone, indicate that we should be moving towards the center
                     var center = (item as Tuple<float, float>);
-                    InZone = true;
+                    if (InZone > 0) InZone++;
+                    else InZone = 5;
                     ZoneX = center.Item1;
                     ZoneY = center.Item2;
                     break;
@@ -337,16 +362,23 @@ namespace shootMup.Common
 
         #region private
         private Random Rand;
+
+        // movement related
         private float PreviousAngle;
         private float CorrectiveAngle;
-
         private float PreviousX;
         private float PreviousY;
         private int SameLocationCount;
 
-        private bool InZone;
+        // zone check
+        private int InZone;
         private float ZoneX;
         private float ZoneY;
+
+        // pickup check
+        private int PreviousPickupId;
+        private Dictionary<int /*id*/, int/*count*/> PreviousPickups;
+        private const int MaxPickupAttempts = 5;
 
         private bool IsStuck()
         {

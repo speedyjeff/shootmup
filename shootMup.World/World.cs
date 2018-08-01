@@ -80,6 +80,33 @@ namespace shootMup
             // draw the map
             Background.Draw(Surface);
 
+            // add center indicator
+            var centerAngle = Collision.CalculateAngleFromPoint(Human.X, Human.Y, Background.X, Background.Y);
+            float x1, y1, x2, y2;
+            var distance = Math.Min(Surface.Width, Surface.Height) * 0.9f;
+            Collision.CalculateLineByAngle(Surface.Width / 2, Surface.Height / 2, centerAngle, (distance / 2), out x1, out y1, out x2, out y2);
+            Surface.DisableTranslation();
+            {
+                // draw an arrow
+                var endX = x2;
+                var endY = y2;
+                x1 = endX;
+                y1 = endY;
+                Collision.CalculateLineByAngle(x1, y1, (centerAngle + 180) % 360, 50, out x1, out y1, out x2, out y2);
+                Surface.Line(RGBA.Black, x1, y1, x2, y2, 10);
+
+                x1 = endX;
+                y1 = endY;
+                Collision.CalculateLineByAngle(x1, y1, (centerAngle + 135) % 360, 25, out x1, out y1, out x2, out y2);
+                Surface.Line(RGBA.Black, x1, y1, x2, y2, 10);
+
+                x1 = endX;
+                y1 = endY;
+                Collision.CalculateLineByAngle(x1, y1, (centerAngle + 225) % 360, 25, out x1, out y1, out x2, out y2);
+                Surface.Line(RGBA.Black, x1, y1, x2, y2, 10);
+            }
+            Surface.EnableTranslation();
+
             // draw all elements
             var hidden = new bool[Players.Length];
             foreach (var elem in Map.WithinWindow(Human.X, Human.Y, Surface.Width * (1 / ZoomFactor), Surface.Height * (1 / ZoomFactor)))

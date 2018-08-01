@@ -387,7 +387,7 @@ namespace shootMup
                 {
                     OnEphemerialEvent(new Message()
                     {
-                        Text = string.Format("Player {0} diead in the zone", elem.Name)
+                        Text = string.Format("Player {0} died in the zone", elem.Name)
                     });
                 }
             }
