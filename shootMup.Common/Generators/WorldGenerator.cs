@@ -83,23 +83,12 @@ namespace shootMup.Common
                             {
                                 ix = (x - (window / 2)) + ((float)(rand.Next() % 100) / 100f) * window;
                             }
-                            while (Math.Abs(Math.Abs(ix) - Math.Abs(obstacles[0].X)) < obstacles[0].Width * 2);
+                            while (Math.Abs(ix - obstacles[0].X) < obstacles[0].Width * 2);
                             do
                             {
                                 iy = (y - (window / 2)) + ((float)(rand.Next() % 100) / 100f) * window;
                             }
-                            while (Math.Abs(Math.Abs(iy) - Math.Abs(obstacles[0].Y)) < obstacles[0].Height * 2);
-                        }
-                    }
-                    else if (obstacles != null)
-                    { 
-                        // if this is an edge, check for a hut and not allow it
-                        if (h == 0 || w == 0 || h == (height/chunkSize)-1 || w == (width/chunkSize)-1)
-                        {
-                            var isHut = false;
-                            foreach (var o in obstacles) isHut |= o is Roof;
-                            // do not include the hut
-                            if (isHut) obstacles = null;
+                            while (Math.Abs(iy - obstacles[0].Y) < obstacles[0].Height * 2);
                         }
                     }
 

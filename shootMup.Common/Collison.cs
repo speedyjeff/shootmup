@@ -91,7 +91,7 @@ namespace shootMup.Common
             //  b = |y1 - y2|
             //  c = result
             return (float)Math.Sqrt(
-                Math.Pow(Math.Abs(Math.Abs(x1) - Math.Abs(x2)), 2) + Math.Pow(Math.Abs(Math.Abs(y1) - Math.Abs(y2)), 2)
+                Math.Pow(Math.Abs(x1-x2), 2) + Math.Pow(Math.Abs(y1-y2), 2)
                 );
         }
 

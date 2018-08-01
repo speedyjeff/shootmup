@@ -334,7 +334,7 @@ namespace shootMup.Common
             if (PreviousY == 0) PreviousY = Y;
 
             // check if basically the same place
-            if (Math.Abs(Math.Abs(PreviousX) - Math.Abs(X)) < 1f && Math.Abs(Math.Abs(PreviousY) - Math.Abs(Y)) < 1f)
+            if (Math.Abs(PreviousX - X) < 1f && Math.Abs(PreviousY - Y) < 1f)
             {
                 // about the same place
                 SameLocationCount++;
