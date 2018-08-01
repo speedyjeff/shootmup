@@ -585,6 +585,12 @@ namespace shootMup
             // check for winner/death (element may be any element that can take damage)
             if (element is Player)
             {
+                // drop the current players goodies
+                var p = element as Player;
+                Map.Drop(p);
+                p.SwitchWeapon();
+                Map.Drop(p);
+
                 // check how many players are still alive
                 int alive = 0;
                 var toplayers = new Dictionary<string, int>();
