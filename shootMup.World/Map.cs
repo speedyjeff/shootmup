@@ -16,7 +16,8 @@ namespace shootMup
         public Map(int width, int height, Player[] players, Background background, PlayerPlacement placement)
         {
             // init
-            All = new Dictionary<int, Element>();
+            Obstacles = new Dictionary<int, Element>();
+            Items = new Dictionary<int, Element>();
             Width = width;
             Height = height;
             Background = background;
@@ -24,33 +25,23 @@ namespace shootMup
             // TODO - initialize based on on disk artifact
 
             // add players
-            foreach (var o in players) All.Add(o.Id, o);
+            foreach (var o in players) Obstacles.Add(o.Id, o);
 
             // create the board
             if (false)
             {
                 // test world
-                foreach (var elem in WorldGenerator.Test(Width, Height))
-                {
-                    All.Add(elem.Id, elem);
-                }
-
+                WorldGenerator.Test(Width, Height, Obstacles, Items);
             }
             else if (true)
             {
                 // random gen
-                foreach (var elem in WorldGenerator.Randomgen(Width, Height))
-                {
-                    All.Add(elem.Id, elem);
-                }
+                WorldGenerator.Randomgen(Width, Height, Obstacles, Items);
             }
             else if (true)
             {
                 // hunger games
-                foreach (var elem in WorldGenerator.HungerGames(Width, Height))
-                {
-                    All.Add(elem.Id, elem);
-                }
+                WorldGenerator.HungerGames(Width, Height, Obstacles, Items);
             }
             else
             {
@@ -146,26 +137,30 @@ namespace shootMup
             // do not take Z into account, as the view should be unbostructed (top down)
 
             // return objects that are within the window
-            lock (All)
+            lock (this)
             {
                 var x1 = x - width / 2;
                 var y1 = y - height / 2;
                 var x2 = x + width / 2;
                 var y2 = y + height / 2;
 
-                foreach (var elem in All.Values)
+                // iterate through all objects (obstacles + items)
+                foreach (var elems in new Dictionary<int, Element>[] { Items, Obstacles })
                 {
-                    if (elem.IsDead) continue;
-
-                    var x3 = elem.X - elem.Width / 2;
-                    var y3 = elem.Y - elem.Height / 2;
-                    var x4 = elem.X + elem.Width / 2;
-                    var y4 = elem.Y + elem.Height / 2;
-
-                    if (Collision.IntersectingRectangles(x1, y1, x2, y2, 
-                        x3, y3, x4, y4))
+                    foreach (var elem in elems.Values)
                     {
-                        yield return elem;
+                        if (elem.IsDead) continue;
+
+                        var x3 = elem.X - elem.Width / 2;
+                        var y3 = elem.Y - elem.Height / 2;
+                        var x4 = elem.X + elem.Width / 2;
+                        var y4 = elem.Y + elem.Height / 2;
+
+                        if (Collision.IntersectingRectangles(x1, y1, x2, y2,
+                            x3, y3, x4, y4))
+                        {
+                            yield return elem;
+                        }
                     }
                 }
             }
@@ -176,7 +171,7 @@ namespace shootMup
             if (player.IsDead) return false;
             if (IsPaused) return false;
 
-            lock (All)
+            lock (this)
             {
                 float pace = Background.Pace(player.X, player.Y);
                 if (pace < Constants.MinSpeedMultiplier) pace = Constants.MinSpeedMultiplier;
@@ -209,7 +204,7 @@ namespace shootMup
             if (player.IsDead) return null;
             if (IsPaused) return null;
 
-            lock (All)
+            lock (this)
             {
                 // see if we are over an item
                 Element item = IntersectingRectangles(player, true /* consider acquirable */);
@@ -220,7 +215,7 @@ namespace shootMup
                     if (player.Take(item))
                     {
                         // remove the item from the playing field
-                        All.Remove(item.Id);
+                        Items.Remove(item.Id);
 
                         return item.GetType();
                     }
@@ -239,7 +234,7 @@ namespace shootMup
             var hit = new HashSet<Element>();
             var state = GunStateEnum.None;
 
-            lock (All)
+            lock (this)
             {
                 state = player.Shoot();
 
@@ -260,7 +255,7 @@ namespace shootMup
                     }
                 }
 
-            } // lock(All)
+            } // lock(this)
 
             // send notifications
             bool targetDied = false; // used to change the fired state
@@ -301,7 +296,7 @@ namespace shootMup
             if (IsPaused) return null;
             // this action is allowed for a dead player
 
-            lock (All)
+            lock (this)
             {
                 var item = player.DropPrimary();
 
@@ -309,7 +304,7 @@ namespace shootMup
                 {
                     item.X = player.X;
                     item.Y = player.Y;
-                    All.Add(item.Id, item);
+                    Items.Add(item.Id, item);
 
                     return item.GetType();
                 }
@@ -336,7 +331,9 @@ namespace shootMup
         }
 
         #region private
-        private Dictionary<int, Element> All { get; set; }
+        //private Dictionary<int, Element> All { get; set; }
+        private Dictionary<int, Element> Obstacles;
+        private Dictionary<int, Element> Items;
         private Background Background;
         private Timer BackgroundTimer;
 
@@ -344,13 +341,13 @@ namespace shootMup
         {
             if (IsPaused) return;
             var deceased = new List<Element>();
-            lock (All)
+            lock (this)
             {
                 // update the map
                 Background.Update();
 
                 // apply any necessary damage to the players
-                foreach(var elem in All.Values)
+                foreach(var elem in Obstacles.Values)
                 {
                     if (elem.IsDead) continue;
                     if (elem is Player)
@@ -375,7 +372,7 @@ namespace shootMup
                         }
                     }
                 }
-            } // lock(All)
+            } // lock(this)
 
             // notify the deceased
             foreach (var elem in deceased)
@@ -400,8 +397,12 @@ namespace shootMup
             float x2 = (player.X + xdelta) + (player.Width / 2);
             float y2 = (player.Y + ydelta) + (player.Height / 2);
 
+            // either choose to iterate through solid objects (obstacles) or items
+            Dictionary<int, Element> objects = Obstacles;
+            if (considerAquireable) objects = Items;
+
             // check collisions
-            foreach (var elem in All.Values)
+            foreach (var elem in objects.Values)
             {
                 if (elem.Id == player.Id) continue;
                 if (elem.IsDead) continue;
@@ -443,7 +444,7 @@ namespace shootMup
             float prvDistance = 0;
 
             // check collisions
-            foreach (var elem in All.Values)
+            foreach (var elem in Obstacles.Values)
             {
                 bool collision = false;
                 if (elem.Id == player.Id) continue;

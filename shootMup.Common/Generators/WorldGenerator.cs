@@ -6,18 +6,18 @@ namespace shootMup.Common
 {
     public static class WorldGenerator
     {
-        public static List<Element> Test(int width, int height)
+        public static void Test(int width, int height, Dictionary<int, Element> obstacles, Dictionary<int, Element> items)
         {
-            var elements = new List<Element>();
-
             if (width < 1000 || height < 1000) throw new Exception("Must have at least 1000 wdith & height");
 
             // borders
-            elements.AddRange( WorldHelper.MakeBorders(width, height, 20));
+            foreach (var elem in WorldHelper.MakeBorders(width, height, 20))
+                obstacles.Add(elem.Id, elem);
             // hut
-            elements.AddRange( WorldHelper.MakeHut(700, 700, (DirectionEnum.East | DirectionEnum.South | DirectionEnum.West)));
+            foreach (var elem in WorldHelper.MakeHut(700, 700, (DirectionEnum.East | DirectionEnum.South | DirectionEnum.West)))
+                obstacles.Add(elem.Id, elem);
             // items
-            elements.AddRange(new Element[] {
+            foreach (var elem in new Element[] {
                                     new Tree() { X = 125, Y = 125 },
                                     new Pistol() { X = 350, Y = 200 },
                                     new AK47() { X = 350, Y = 400 },
@@ -28,17 +28,15 @@ namespace shootMup.Common
                                     new Helmet() { X = 200, Y = 300 },
                                     new Rock() { X = 750, Y = 250 },
                                     new Bandage() { X = 350, Y = 800}
-            });
-
-            return elements;
+            })
+                items.Add(elem.Id, elem);
         }
 
-        public static List<Element> Randomgen(int width, int height)
+        public static void Randomgen(int width, int height, Dictionary<int, Element> obstacles, Dictionary<int, Element> items)
         {
             // this size is determined by the largest element (the Hut)
             int chunkSize = 400;
             Random rand = new Random();
-            var elements = new List<Element>();
 
             if (width < chunkSize || height < chunkSize) throw new Exception("Must have at least " + chunkSize + " pixels to generate a board");
 
@@ -56,15 +54,15 @@ namespace shootMup.Common
                     float iy = y;
 
                     // generate random obstacle
-                    var obstacles = RandomgenObstacle(x, y, chunkSize, rand);
+                    var solids = RandomgenObstacle(x, y, chunkSize, rand);
 
-                    if (obstacles != null && obstacles.Count == 1)
+                    if (solids != null && solids.Count == 1)
                     {
                         // adjust the item placement
-                        if (obstacles[0] is Rock) ix -= (chunkSize / 2);
-                        else if (obstacles[0] is Wall)
+                        if (solids[0] is Rock) ix -= (chunkSize / 2);
+                        else if (solids[0] is Wall)
                         {
-                            if ((obstacles[0] as Wall).Width > (obstacles[0] as Wall).Height)
+                            if ((solids[0] as Wall).Width > (solids[0] as Wall).Height)
                             {
                                 // horizontal
                                 iy += chunkSize / 2;
@@ -75,7 +73,7 @@ namespace shootMup.Common
                                 ix += chunkSize / 2;
                             }
                         }
-                        else if (obstacles[0] is Tree)
+                        else if (solids[0] is Tree)
                         {
                             // pick an x and y that is not within width and height of the tree
                             var window = chunkSize - 50;
@@ -83,12 +81,12 @@ namespace shootMup.Common
                             {
                                 ix = (x - (window / 2)) + ((float)(rand.Next() % 100) / 100f) * window;
                             }
-                            while (Math.Abs(ix - obstacles[0].X) < obstacles[0].Width * 2);
+                            while (Math.Abs(ix - solids[0].X) < solids[0].Width * 2);
                             do
                             {
                                 iy = (y - (window / 2)) + ((float)(rand.Next() % 100) / 100f) * window;
                             }
-                            while (Math.Abs(iy - obstacles[0].Y) < obstacles[0].Height * 2);
+                            while (Math.Abs(iy - solids[0].Y) < solids[0].Height * 2);
                         }
                     }
 
@@ -101,23 +99,24 @@ namespace shootMup.Common
                             item.Y < 0 || item.Y > height)
                             System.Diagnostics.Debug.WriteLine("Put an item outside of the wall");
 
-                        // add the item first (so it renders correctly)
-                        elements.Add(item);
+                        // add items
+                        items.Add(item.Id, item);
                     }
-                    if (obstacles != null) elements.AddRange(obstacles);
+                    if (solids != null)
+                    {
+                        foreach (var elem in solids)
+                            obstacles.Add(elem.Id, elem);
+                    }
                 }
             }
 
             // make borders
-            elements.AddRange( WorldHelper.MakeBorders(width, height, 20));
-            
-            return elements;
+            foreach (var elem in WorldHelper.MakeBorders(width, height, 20))
+                obstacles.Add(elem.Id, elem);
         }
 
-        public static List<Element> HungerGames(int width, int height)
+        public static void HungerGames(int width, int height, Dictionary<int, Element> obstacles, Dictionary<int, Element> items)
         {
-            var elements = new List<Element>();
-
             // put all the goodies in the middle - no health
             var rand = new Random();
             float x = width / 2;
@@ -133,15 +132,14 @@ namespace shootMup.Common
 
                 if (item != null && !(item is Bandage) && !(item is Helmet))
                 {
-                    elements.Add(item);
+                    items.Add(item.Id, item);
 
                     if (count-- <= 0) break;
                 }
             }
 
-            elements.AddRange(WorldHelper.MakeBorders(width, height, 20));
-
-            return elements;
+            foreach (var elem in WorldHelper.MakeBorders(width, height, 20))
+                obstacles.Add(elem.Id, elem);
         }
 
         #region private
