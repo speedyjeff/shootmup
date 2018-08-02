@@ -9,6 +9,7 @@ namespace shootMup.Common
         public Restriction(int width, int height) : base(width, height)
         {
             Diameter = width + width /2 ;
+            Timing = MinTimeing;
         }
 
         public RGBA DangerColor => new RGBA() { R =255, G =127, B =39, A = 255 };
@@ -26,9 +27,13 @@ namespace shootMup.Common
 
         public override void Update()
         {
-            Diameter -= 10;
+            if (Timing++ > 0)
+            {
+                Diameter -= 10;
+                if (Diameter < 10) Diameter = 10;
+            }
 
-            if (Diameter < 10) Diameter = 10;
+            if (Timing >= MaxTiming) Timing = MinTimeing;
 
             base.Update();
         }
@@ -42,5 +47,11 @@ namespace shootMup.Common
             else if (distance > (Diameter/2)) return 0.1f;
             else return 0;
         }
+
+        #region private
+        private int Timing;
+        private const int MinTimeing = -20;  // 2 seconds pause
+        private const int MaxTiming = 20; // 2 seconds move
+        #endregion
     }
 }
