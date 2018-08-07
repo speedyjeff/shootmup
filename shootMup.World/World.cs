@@ -43,7 +43,7 @@ namespace shootMup
             // create map
             Map = new Map(width, height, Players, Background, PlayerPlacement.Borders);
             Map.OnEphemerialEvent += AddEphemerialElement;
-            Map.OnElementHit += HitByShoot;
+            Map.OnElementHit += HitByAttack;
             Map.OnElementDied += PlayerDied;
 
             // start the players in the air
@@ -81,31 +81,34 @@ namespace shootMup
             Background.Draw(Surface);
 
             // add center indicator
-            var centerAngle = Collision.CalculateAngleFromPoint(Human.X, Human.Y, Background.X, Background.Y);
-            float x1, y1, x2, y2;
-            var distance = Math.Min(Surface.Width, Surface.Height) * 0.9f;
-            Collision.CalculateLineByAngle(Surface.Width / 2, Surface.Height / 2, centerAngle, (distance / 2), out x1, out y1, out x2, out y2);
-            Surface.DisableTranslation();
+            if (Human.Z == Constants.Ground)
             {
-                // draw an arrow
-                var endX = x2;
-                var endY = y2;
-                x1 = endX;
-                y1 = endY;
-                Collision.CalculateLineByAngle(x1, y1, (centerAngle + 180) % 360, 50, out x1, out y1, out x2, out y2);
-                Surface.Line(RGBA.Black, x1, y1, x2, y2, 10);
+                var centerAngle = Collision.CalculateAngleFromPoint(Human.X, Human.Y, Background.X, Background.Y);
+                float x1, y1, x2, y2;
+                var distance = Math.Min(Surface.Width, Surface.Height) * 0.9f;
+                Collision.CalculateLineByAngle(Surface.Width / 2, Surface.Height / 2, centerAngle, (distance / 2), out x1, out y1, out x2, out y2);
+                Surface.DisableTranslation();
+                {
+                    // draw an arrow
+                    var endX = x2;
+                    var endY = y2;
+                    x1 = endX;
+                    y1 = endY;
+                    Collision.CalculateLineByAngle(x1, y1, (centerAngle + 180) % 360, 50, out x1, out y1, out x2, out y2);
+                    Surface.Line(RGBA.Black, x1, y1, x2, y2, 10);
 
-                x1 = endX;
-                y1 = endY;
-                Collision.CalculateLineByAngle(x1, y1, (centerAngle + 135) % 360, 25, out x1, out y1, out x2, out y2);
-                Surface.Line(RGBA.Black, x1, y1, x2, y2, 10);
+                    x1 = endX;
+                    y1 = endY;
+                    Collision.CalculateLineByAngle(x1, y1, (centerAngle + 135) % 360, 25, out x1, out y1, out x2, out y2);
+                    Surface.Line(RGBA.Black, x1, y1, x2, y2, 10);
 
-                x1 = endX;
-                y1 = endY;
-                Collision.CalculateLineByAngle(x1, y1, (centerAngle + 225) % 360, 25, out x1, out y1, out x2, out y2);
-                Surface.Line(RGBA.Black, x1, y1, x2, y2, 10);
+                    x1 = endX;
+                    y1 = endY;
+                    Collision.CalculateLineByAngle(x1, y1, (centerAngle + 225) % 360, 25, out x1, out y1, out x2, out y2);
+                    Surface.Line(RGBA.Black, x1, y1, x2, y2, 10);
+                }
+                Surface.EnableTranslation();
             }
-            Surface.EnableTranslation();
 
             // draw all elements
             var hidden = new bool[Players.Length];
@@ -194,6 +197,8 @@ namespace shootMup
             }
 
             // handle the user input
+            ActionEnum action = ActionEnum.None;
+            bool result = false;
             float xdelta = 0;
             float ydelta = 0;
 
@@ -222,29 +227,34 @@ namespace shootMup
                     break;
 
                 case Constants.Switch:
-                    SwitchWeapon(Human);
+                    action = ActionEnum.SwitchWeapon;
+                    result = SwitchWeapon(Human);
                     break;
 
                 case Constants.Pickup:
                 case Constants.Pickup2:
-                    Pickup(Human);
+                    action = ActionEnum.Pickup;
+                    result = Pickup(Human);
                     break;
 
                 case Constants.Drop3:
                 case Constants.Drop2:
                 case Constants.Drop4:
                 case Constants.Drop:
-                    Drop(Human);
+                    action = ActionEnum.Drop;
+                    result = Drop(Human);
                     break;
 
                 case Constants.Reload:
                 case Constants.MiddleMouse:
-                    Reload(Human);
+                    action = ActionEnum.Reload;
+                    result = Reload(Human);
                     break;
 
                 case Constants.Space:
                 case Constants.LeftMouse:
-                    Shoot(Human);
+                    action = ActionEnum.Attack;
+                    result = Attack(Human);
                     break;
 
                 case Constants.RightMouse:
@@ -264,7 +274,22 @@ namespace shootMup
             }
 
             // if a move command, then move
-            if (xdelta != 0 || ydelta != 0) Move(Human, xdelta, ydelta);
+            if (xdelta != 0 || ydelta != 0)
+            {
+                action = ActionEnum.Move;
+                result = Move(Human, xdelta, ydelta);
+            }
+
+            // for training we track the human movements (as the supervised set)
+            if (true)
+            {
+                // capture the angle to the center
+
+                // capture the user angle, health, sheld, weapon status, inzone, Z
+
+                // capture what the user sees
+
+            }
         }
 
         public void Mousewheel(float delta)
@@ -433,35 +458,35 @@ namespace shootMup
                 Type item = null;
                 switch(action)
                 {
-                    case AIActionEnum.Drop:
+                    case ActionEnum.Drop:
                         item = Map.Drop(ai);
                         ai.Feedback(action, item, item != null);
                         break;
-                    case AIActionEnum.Pickup:
+                    case ActionEnum.Pickup:
                         item = Map.Pickup(ai);
                         ai.Feedback(action, item, item != null);
                         break;
-                    case AIActionEnum.Reload:
+                    case ActionEnum.Reload:
                         var reloaded = ai.Reload();
-                        ai.Feedback(action, reloaded, reloaded == GunStateEnum.Reloaded);
+                        ai.Feedback(action, reloaded, reloaded == AttackStateEnum.Reloaded);
                         break;
-                    case AIActionEnum.Shoot:
-                        var shoot = Map.Shoot(ai);
-                        ai.Feedback(action, shoot, shoot == GunStateEnum.Fired || shoot == GunStateEnum.FiredAndKilled || shoot == GunStateEnum.FiredWithContact);
+                    case ActionEnum.Attack:
+                        var shoot = Map.Attack(ai);
+                        ai.Feedback(action, shoot, shoot == AttackStateEnum.Fired || shoot == AttackStateEnum.FiredAndKilled || shoot == AttackStateEnum.FiredWithContact);
                         break;
-                    case AIActionEnum.SwitchWeapon:
+                    case ActionEnum.SwitchWeapon:
                         var swap = ai.SwitchWeapon();
                         ai.Feedback(action, null, swap);
                         break;
-                    case AIActionEnum.Move:
-                    case AIActionEnum.None:
+                    case ActionEnum.Move:
+                    case ActionEnum.None:
                         break;
                     default: throw new Exception("Unknown ai action : " + action);
                 }
             
                 // have the AI move
                 var moved = Map.Move(ai, ref xdelta, ref ydelta);
-                ai.Feedback(AIActionEnum.Move, null, moved);
+                ai.Feedback(ActionEnum.Move, null, moved);
                
                 // ensure the player stays within the map
                 if (ai.X < 0 || ai.X > Map.Width || ai.Y < 0 || ai.Y > Map.Height)
@@ -511,85 +536,104 @@ namespace shootMup
         }
 
         // human movements
-        private void SwitchWeapon(Player player)
+        private bool SwitchWeapon(Player player)
         {
-            if (player.IsDead) return;
-            player.SwitchWeapon();
+            if (player.IsDead) return false;
+            return player.SwitchWeapon();
         }
 
-        private void Pickup(Player player)
+        private bool Pickup(Player player)
         {
-            if (player.IsDead) return;
+            if (player.IsDead) return false;
             if (Map.Pickup(player) != null)
             {
                 // play sound
                 Sounds.Play(PickupSoundPath);
+                return true;
             }
+            return false;
         }
 
-        private void Drop(Player player)
+        private bool Drop(Player player)
         { 
-            if (player.IsDead) return;
-            Map.Drop(player);
+            if (player.IsDead) return false;
+            return Map.Drop(player) != null;
         }
 
-        private void Reload(Player player)
+        private bool Reload(Player player)
         {
-            if (player.IsDead) return;
+            if (player.IsDead) return false;
             var state = player.Reload();
             switch (state)
             {
-                case GunStateEnum.Reloaded:
+                case AttackStateEnum.Reloaded:
                     Sounds.Play(player.Primary.ReloadSoundPath());
                     break;
-                case GunStateEnum.None:
-                case GunStateEnum.NoRounds:
+                case AttackStateEnum.None:
+                case AttackStateEnum.NoRounds:
                     Sounds.Play(NothingSoundPath);
                     break;
-                case GunStateEnum.FullyLoaded:
+                case AttackStateEnum.FullyLoaded:
                     // no sound
                     break;
                 default: throw new Exception("Unknown GunState : " + state);
             }
+
+            return (state == AttackStateEnum.Reloaded);
         }
 
-        private void Shoot(Player player)
+        private bool Attack(Player player)
         {
-            if (player.IsDead) return;
-            var state = Map.Shoot(player);
+            if (player.IsDead) return false;
+            var state = Map.Attack(player);
 
             // play sounds
             switch (state)
             {
-                case GunStateEnum.FiredWithContact:
-                case GunStateEnum.FiredAndKilled:
-                case GunStateEnum.Fired:
+                case AttackStateEnum.Melee:
+                case AttackStateEnum.MeleeWithContact:
+                case AttackStateEnum.MeleeAndKilled:
+                    // TODO what sound?
+                    break;
+                case AttackStateEnum.FiredWithContact:
+                case AttackStateEnum.FiredAndKilled:
+                case AttackStateEnum.Fired:
                     Sounds.Play(player.Primary.FiredSoundPath());
                     break;
-                case GunStateEnum.NoRounds:
-                case GunStateEnum.NeedsReload:
+                case AttackStateEnum.NoRounds:
+                case AttackStateEnum.NeedsReload:
                     Sounds.Play(player.Primary.EmptySoundPath());
                     break;
-                case GunStateEnum.LoadingRound:
-                case GunStateEnum.None:
+                case AttackStateEnum.LoadingRound:
+                case AttackStateEnum.None:
                     Sounds.Play(NothingSoundPath);
                     break;
                 default: throw new Exception("Unknown GunState : " + state);
             }
+
+            return (state == AttackStateEnum.Melee ||
+                state == AttackStateEnum.MeleeAndKilled ||
+                state == AttackStateEnum.MeleeWithContact ||
+                state == AttackStateEnum.Fired ||
+                state == AttackStateEnum.FiredAndKilled ||
+                state == AttackStateEnum.FiredWithContact);
         }
 
-        private void Move(Player player, float xdelta, float ydelta)
+        private bool Move(Player player, float xdelta, float ydelta)
         {
-            if (player.IsDead) return;
+            if (player.IsDead) return false;
             if (Map.Move(player, ref xdelta, ref ydelta))
             {
                 // move the screen
                 WindowX += xdelta;
                 WindowY += ydelta;
+
+                return true;
             }
             else
             {
                 // TODO may want to move back a bit in the opposite direction
+                return false;
             }
         }
 
@@ -599,7 +643,8 @@ namespace shootMup
             player.Angle = angle;
         }
 
-        private void HitByShoot(Element element)
+        // callbacks
+        private void HitByAttack(Element element)
         {
             // play sound if the human is hit
             if (element is Player && element.Id == Human.Id)

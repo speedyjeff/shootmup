@@ -4,8 +4,6 @@ using System.Text;
 
 namespace shootMup.Common
 {
-    public enum AIActionEnum { None, SwitchWeapon, Pickup, Drop, Reload, Shoot, Move, ZoneDamage };
-
     public class AI : Player
     {
         public AI() : base()
@@ -19,12 +17,12 @@ namespace shootMup.Common
         public volatile int RunningState;
         public bool ShowDiagnostics { get; protected set; }
         
-        public virtual AIActionEnum Action(List<Element> elements, ref float xdelta, ref float ydelta, ref float angle)
+        public virtual ActionEnum Action(List<Element> elements, ref float xdelta, ref float ydelta, ref float angle)
         {
-            return AIActionEnum.None;
+            return ActionEnum.None;
         }
 
-        public virtual void Feedback(AIActionEnum action, object item, bool result)
+        public virtual void Feedback(ActionEnum action, object item, bool result)
         {
         }
     }

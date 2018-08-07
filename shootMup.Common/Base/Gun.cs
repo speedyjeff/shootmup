@@ -5,7 +5,7 @@ using System.Text;
 
 namespace shootMup.Common
 {
-    public enum GunStateEnum { None, NeedsReload, Fired, FiredWithContact, FiredAndKilled, NoRounds, Reloaded, FullyLoaded, LoadingRound };
+    public enum AttackStateEnum { None, NeedsReload, Fired, FiredWithContact, FiredAndKilled, NoRounds, Reloaded, FullyLoaded, LoadingRound, Melee, MeleeWithContact, MeleeAndKilled };
 
     public class Gun : Thing
     {

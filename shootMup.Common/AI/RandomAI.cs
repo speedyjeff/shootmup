@@ -11,7 +11,7 @@ namespace shootMup.Common
             Rand = new Random();
         }
 
-        public override AIActionEnum Action(List<Element> elements, ref float xdelta, ref float ydelta, ref float angle)
+        public override ActionEnum Action(List<Element> elements, ref float xdelta, ref float ydelta, ref float angle)
         {
             xdelta = ydelta = angle = 0;
 
@@ -66,18 +66,18 @@ namespace shootMup.Common
             switch(Rand.Next() % 6)
             {
                 case 0:
-                    return AIActionEnum.SwitchWeapon;
+                    return ActionEnum.SwitchWeapon;
                 case 1:
-                    return AIActionEnum.Pickup;
+                    return ActionEnum.Pickup;
                 case 2:
                     // drop
-                    return AIActionEnum.None;
+                    return ActionEnum.None;
                 case 3:
-                    return AIActionEnum.Reload;
+                    return ActionEnum.Reload;
                 case 4:
-                    return AIActionEnum.Shoot;
+                    return ActionEnum.Attack;
                 case 5:
-                    return AIActionEnum.Move;
+                    return ActionEnum.Move;
                 default:
                     throw new Exception("Unknown action");
             }

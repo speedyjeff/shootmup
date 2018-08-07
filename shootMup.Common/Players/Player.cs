@@ -4,6 +4,8 @@ using System.Text;
 
 namespace shootMup.Common
 {
+    public enum ActionEnum { None, SwitchWeapon, Pickup, Drop, Reload, Attack, Move, ZoneDamage };
+
     public class Player : Element
     {
         public Player() : base()
@@ -20,11 +22,16 @@ namespace shootMup.Common
             // hit box
             Height = 50;
             Width = 50;
+
+            // include a special melee weapon 'your fists'
+            Fists = new Melee((int)Width /* range */);
         }
 
         // weapons
         public Gun Primary { get; private set; }
         public Gun Secondary { get; private set; }
+
+        public Gun Fists { get; private set; }
 
         public bool DisplayHud { get; protected set; }
         public RGBA Color { get; protected set; }
@@ -60,6 +67,14 @@ namespace shootMup.Common
                 }
                 g.Ellipse(Color, X - (Width / 2), Y - (Height / 2), Width, Height);
                 if (Sheld > 0) g.Ellipse(new RGBA() { R = 85, G = 85, B = 85, A = 255 }, X - (Width/4), Y - (Height/4), (Width / 2), (Width / 2));
+
+                if (Primary == null)
+                {
+                    // draw a fist
+                    float x1, y1, x2, y2;
+                    Collision.CalculateLineByAngle(X, Y, Angle, Width / 2, out x1, out y1, out x2, out y2);
+                    g.Ellipse(Color, x2, y2, Width/3, Width/3);
+                }
             }
 
             // draw HUD
@@ -144,36 +159,36 @@ namespace shootMup.Common
             return false;
         }
 
-        public GunStateEnum Shoot()
+        public AttackStateEnum Attack()
         {
             // check if we have a primary weapon
-            if (Primary == null) return GunStateEnum.None;
+            if (Primary == null) return AttackStateEnum.Melee;
             // check if there is a round in the clip
             int rounds;
             Primary.RoundsInClip(out rounds);
             if (rounds <= 0)
             {
-                if (Primary.HasAmmo()) return GunStateEnum.NeedsReload;
-                else return GunStateEnum.NoRounds;
+                if (Primary.HasAmmo()) return AttackStateEnum.NeedsReload;
+                else return AttackStateEnum.NoRounds;
             }
             // check if gun ready to fire
-            if (!Primary.CanShoot()) return GunStateEnum.LoadingRound;
+            if (!Primary.CanShoot()) return AttackStateEnum.LoadingRound;
 
             bool fired = Primary.Shoot();
-            if (fired) return GunStateEnum.Fired;
+            if (fired) return AttackStateEnum.Fired;
             else throw new Exception("Failed to fire");
         }
 
-        public GunStateEnum Reload()
+        public AttackStateEnum Reload()
         {
             // check if we have a primary weapon
-            if (Primary == null) return GunStateEnum.None;
-            if (!Primary.HasAmmo()) return GunStateEnum.NoRounds;
+            if (Primary == null) return AttackStateEnum.None;
+            if (!Primary.HasAmmo()) return AttackStateEnum.NoRounds;
             // check if there are rounds
-            if (Primary.RoundsInClip(out int rounds)) return GunStateEnum.FullyLoaded;
+            if (Primary.RoundsInClip(out int rounds)) return AttackStateEnum.FullyLoaded;
 
             bool reload = Primary.Reload();
-            if (reload) return GunStateEnum.Reloaded;
+            if (reload) return AttackStateEnum.Reloaded;
             else throw new Exception("Failed to reload");
         }
 

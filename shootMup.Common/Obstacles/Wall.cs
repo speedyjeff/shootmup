@@ -6,7 +6,7 @@ namespace shootMup.Common
 {
     public enum WallDirection { Horiztonal, Vertical };
 
-    public class Wall : Thing
+    public class Wall : Obstacle
     {
         public Wall(WallDirection dir, float length, float thickness) : base()
         {

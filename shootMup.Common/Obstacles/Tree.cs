@@ -4,7 +4,7 @@ using System.Text;
 
 namespace shootMup.Common
 {
-    public class Tree : Thing
+    public class Tree : Obstacle
     {
         public Tree() : base()
         {

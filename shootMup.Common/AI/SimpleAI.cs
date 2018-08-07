@@ -4,16 +4,6 @@ using System.Text;
 
 namespace shootMup.Common
 {
-    enum ItemType { Player=0, Ammo=1, Weapon=2, Health=3, Sheld=4, WeaponAK47 = 5, LENGTH=6}
-    struct ItemDetails
-    {
-        public int Id;
-        public float Distance;
-        public float Angle;
-        public bool IsValid { get { return Angle > 0; } }
-        public bool IsTouching(float radius) { return Distance < radius; }
-    }
-
     public class SimpleAI : AI
     {
         // Simple rules
@@ -24,9 +14,11 @@ namespace shootMup.Common
         //    if in the zone, move towards the center
         //    move closer to items/players of interest
         //
-        //  0. if no weapn, go towards weapon
+        //  0. if no weapn
+        //    0.a go towards weapon
+        //    0.b if near a player, melee
         //  1. if have a weapon
-        //    1.a if no ammo, go towards ammo
+        //    1.a if less ammo than X, go towards ammo
         //    1.b if not loaded, reload
         //    1.c if primary is not an ak47, move towards and pickup
         //    1.d if a player is near and can shoot, move towards and shoot in that direction
@@ -51,61 +43,24 @@ namespace shootMup.Common
             //  for example, prefer AK47 or run away
         }
 
-        public override AIActionEnum Action(List<Element> elements, ref float xdelta, ref float ydelta, ref float angle)
+        public override ActionEnum Action(List<Element> elements, ref float xdelta, ref float ydelta, ref float angle)
         {
             var playerCount = 0;
             float playerX = 0;
             float playerY = 0;
-            var distances = new ItemDetails[(int)ItemType.LENGTH];
-            for (int i = 0; i < distances.Length; i++) { distances[i].Angle = -1; distances[i].Distance = float.MaxValue; }
+            
+            // find proximity to all types
+            var closest = AITraining.ComputeProximity(this, elements);
 
-            // find closest 
-            foreach(var elem in elements)
+            // gather details about if there is a crowd
+            foreach (var elem in elements)
             {
                 if (elem.Id == Id) continue; // found myself
+                if (!(elem is Player)) continue; // only care about players
 
-                // check if we have tried to pick this up more than the allowed max
-                int pickupCount = 0;
-                if (PreviousPickups.TryGetValue(elem.Id, out pickupCount))
-                {
-                    if (pickupCount > MaxPickupAttempts) continue;
-                }
-
-                // calculate the distance between thees
-                //var distance = Collision.DistanceToObject(X, Y, Width, Height,
-                //    elem.X, elem.Y, elem.Width, elem.Height);
-                var distance = Collision.DistanceBetweenPoints(X, Y, elem.X, elem.Y);
-                var elangle = Collision.CalculateAngleFromPoint(X, Y, elem.X, elem.Y);
-
-                var index = (int)ItemType.LENGTH;
-                if (elem is Player)
-                {
-                    index = (int)ItemType.Player;
-                    playerCount++;
-                    playerX += elem.X;
-                    playerY += elem.Y;
-                }
-                else if (elem is Bandage) index = (int)ItemType.Health;
-                else if (elem is Helmet) index = (int)ItemType.Sheld;
-                else if (elem is AK47) index = (int)ItemType.WeaponAK47;
-                else if (elem is Gun) index = (int)ItemType.Weapon;
-                else if (elem is Ammo) index = (int)ItemType.Ammo;
-
-                // this is an item we can interact with
-                if (index < distances.Length)
-                {
-                    // if this item is closet, set it for later review
-                    if (distance < distances[index].Distance)
-                    {
-                        distances[index].Id = elem.Id;
-                        distances[index].Distance = distance;
-                        distances[index].Angle = elangle;
-                    }
-                }
-                else
-                {
-                    // the item may be solid and cannot move through
-                }
+                playerCount++;
+                playerX += elem.X;
+                playerY += elem.Y;
             }
 
             // calculate the average center (if there are players near by)
@@ -114,9 +69,9 @@ namespace shootMup.Common
                 playerX /= (float)playerCount;
                 playerY /= (float)playerCount;
             }
-
+            
             // choose an action - set the rules in reverse order in order to set precedence
-            var action = AIActionEnum.None;
+            var action = ActionEnum.None;
             xdelta = ydelta = angle = 0;
 
             if (PreviousAngle < 0)
@@ -129,20 +84,21 @@ namespace shootMup.Common
             // 3) Sheld
             if (Sheld < Constants.MaxSheld)
             {
-                if (distances[(int)ItemType.Sheld].IsValid)
+                ElementProximity helmet = null;
+                if (closest.TryGetValue(typeof(Helmet), out helmet))
                 {
                     // there is health either close or touching
-                    if (distances[(int)ItemType.Sheld].IsTouching(Width/2))
+                    if (IsTouching(helmet, Width/2))
                     {
                         // choose to pickup
-                        action = AIActionEnum.Pickup;
+                        action = ActionEnum.Pickup;
                         // set direction via another decision
-                        PreviousPickupId = distances[(int)ItemType.Sheld].Id;
+                        PreviousPickupId = helmet.Id;
                     }
                     else
                     {
                         // choose action via another decision
-                        angle = distances[(int)ItemType.Sheld].Angle;
+                        angle = helmet.Angle;
                     }
                 }
             }
@@ -150,20 +106,21 @@ namespace shootMup.Common
             // 2) Health
             if (Health < Constants.MaxHealth)
             {
-                if (distances[(int)ItemType.Health].IsValid)
+                ElementProximity bandage = null;
+                if (closest.TryGetValue(typeof(Bandage), out bandage))
                 {
                     // there is health either close or touching
-                    if (distances[(int)ItemType.Health].IsTouching(Width/2))
+                    if (IsTouching(bandage, Width/2))
                     {
                         // choose to pickup
-                        action = AIActionEnum.Pickup;
+                        action = ActionEnum.Pickup;
                         // set direction via another decision
-                        PreviousPickupId = distances[(int)ItemType.Health].Id;
+                        PreviousPickupId = bandage.Id;
                     }
                     else
                     {
                         // choose action via another decision
-                        angle = distances[(int)ItemType.Health].Angle;
+                        angle = bandage.Angle;
                     }
                 }
             }
@@ -171,21 +128,22 @@ namespace shootMup.Common
             // 1) Have weapon
             if (Primary != null)
             {
+                ElementProximity ammo = null;
                 // need ammo
-                if (!Primary.HasAmmo() && distances[(int)ItemType.Ammo].IsValid)
+                if (Primary.Ammo < MinAmmo && closest.TryGetValue(typeof(Ammo), out ammo))
                 {
                     // there is ammo either close or touching
-                    if (distances[(int)ItemType.Ammo].IsTouching(Width/2))
+                    if (IsTouching(ammo, Width/2))
                     {
                         // choose to pickup
-                        action = AIActionEnum.Pickup;
+                        action = ActionEnum.Pickup;
                         // set direction via another decision
-                        PreviousPickupId = distances[(int)ItemType.Ammo].Id;
+                        PreviousPickupId = ammo.Id;
                     }
                     else
                     {
                         // choose action via another decision
-                        angle = distances[(int)ItemType.Ammo].Angle;
+                        angle = ammo.Angle;
                     }
                 }
 
@@ -193,51 +151,70 @@ namespace shootMup.Common
                 if (!Primary.RoundsInClip(out int rounds) && rounds == 0 && Primary.HasAmmo())
                 {
                     // choose to reload
-                    action = AIActionEnum.Reload;
+                    action = ActionEnum.Reload;
                     // choose direction via another decision
                 }
 
+                ElementProximity ak47 = null;
                 // pick up ak47
-                if (!(Primary is AK47) && distances[(int)ItemType.WeaponAK47].IsValid)
+                if (!(Primary is AK47) && closest.TryGetValue(typeof(AK47), out ak47))
                 {
                     // there is an AK47 either close or touching
-                    if (distances[(int)ItemType.WeaponAK47].IsTouching(Width / 2))
+                    if (IsTouching(ak47, Width / 2))
                     {
                         // choose to pickup
-                        action = AIActionEnum.Pickup;
+                        action = ActionEnum.Pickup;
                         // set direction via another decision
-                        PreviousPickupId = distances[(int)ItemType.WeaponAK47].Id;
+                        PreviousPickupId = ak47.Id;
                     }
                     else
                     {
                         // choose action via another decision
-                        angle = distances[(int)ItemType.WeaponAK47].Angle;
+                        angle = ak47.Angle;
                     }
                 }
 
+                ElementProximity player = null;
                 // shoot a player
-                if (Primary.CanShoot() && distances[(int)ItemType.Player].IsValid)
+                if (Primary.CanShoot() && closest.TryGetValue(typeof(Player), out player))
                 {
                     // choose to shoot
-                    action = AIActionEnum.Shoot;
+                    action = ActionEnum.Attack;
                     // move towards the player
-                    angle = distances[(int)ItemType.Player].Angle;
+                    angle = player.Angle;
                 }
             }
 
             // 0) No weapon
             if (Primary == null)
             {
-                var weapon = distances[(int)ItemType.WeaponAK47].IsValid ? distances[(int)ItemType.WeaponAK47] : distances[(int)ItemType.Weapon];
+                // 0.b if near a player, melee
+                ElementProximity player = null;
+                if (closest.TryGetValue(typeof(Player), out player))
+                {
+                    if (IsTouching(player, Fists.Distance))
+                    {
+                        // choose to melee
+                        action = ActionEnum.Attack;
+                        // turn towards the player
+                        angle = player.Angle;
+                    }
+                }
 
-                // is there a weapon within view
-                if (weapon.IsValid)
+                // 0.a is there a weapon within view
+                ElementProximity weapon = null;
+                if (!closest.TryGetValue(typeof(AK47), out weapon))
+                    if (!closest.TryGetValue(typeof(Pistol), out weapon))
+                        if (!closest.TryGetValue(typeof(Shotgun), out weapon))
+                        {
+                        }
+                if (weapon != null)
                 {
                     // there is a weapon either close or touching
-                    if (weapon.IsTouching(Width/2))
+                    if (IsTouching(weapon, Width/2))
                     {
                         // choose to pickup
-                        action = AIActionEnum.Pickup;
+                        action = ActionEnum.Pickup;
                         // set direction via another decision
                         PreviousPickupId = weapon.Id;
                     }
@@ -259,10 +236,10 @@ namespace shootMup.Common
             }
           
             // choose defaults
-            if (action == AIActionEnum.None)
+            if (action == ActionEnum.None)
             {
                 // default to moving
-                action = AIActionEnum.Move;
+                action = ActionEnum.Move;
             }
 
             // check if we are in the Zone
@@ -270,7 +247,7 @@ namespace shootMup.Common
             {
                 InZone--;
                 // we should be moving towards the center
-                if (action == AIActionEnum.Move)
+                if (action == ActionEnum.Move)
                 {
                     angle = Collision.CalculateAngleFromPoint(X, Y, ZoneX, ZoneY);
                 }
@@ -318,17 +295,17 @@ namespace shootMup.Common
             return action;
         }
 
-        public override void Feedback(AIActionEnum action, object item, bool result)
+        public override void Feedback(ActionEnum action, object item, bool result)
         {
             // if the result was successful, then continue
             if (result)
             {
                 switch (action)
                 {
-                    case AIActionEnum.Move:
+                    case ActionEnum.Move:
                         CorrectiveAngle = 0;
                         break;
-                    case AIActionEnum.Pickup:
+                    case ActionEnum.Pickup:
                         // clear the previous attempts for this item (in case it is dropped later)
                         if (PreviousPickups.ContainsKey(PreviousPickupId)) PreviousPickups[PreviousPickupId] = 0;
                         break;
@@ -339,17 +316,17 @@ namespace shootMup.Common
             // make corrective actions
             switch(action)
             {
-                case AIActionEnum.Move:
+                case ActionEnum.Move:
                     // do some corrective action on moving
                     CorrectiveAngle += 45;
                     break;
-                case AIActionEnum.Pickup:
+                case ActionEnum.Pickup:
                     // increment the attempt counter
                     if (!PreviousPickups.ContainsKey(PreviousPickupId)) PreviousPickups.Add(PreviousPickupId, 1);
                     else PreviousPickups[PreviousPickupId]++;
                     if (ShowDiagnostics) System.Diagnostics.Debug.WriteLine("Failed to pickup {0} times", PreviousPickups[PreviousPickupId]);
                     break;
-                case AIActionEnum.ZoneDamage:
+                case ActionEnum.ZoneDamage:
                     // eek we are in the zone, indicate that we should be moving towards the center
                     var center = (item as Tuple<float, float>);
                     if (InZone > 0) InZone++;
@@ -379,6 +356,12 @@ namespace shootMup.Common
         private int PreviousPickupId;
         private Dictionary<int /*id*/, int/*count*/> PreviousPickups;
         private const int MaxPickupAttempts = 5;
+        private const int MinAmmo = 50;
+
+        public bool IsTouching(ElementProximity element, float radius)
+        {
+            return element.Distance < radius;
+        }
 
         private bool IsStuck()
         {
@@ -389,7 +372,7 @@ namespace shootMup.Common
             if (PreviousY == 0) PreviousY = Y;
 
             // check if basically the same place
-            if (Math.Abs(PreviousX - X) < 1f && Math.Abs(PreviousY - Y) < 1f)
+            if (Math.Abs(PreviousX - X) < 10f && Math.Abs(PreviousY - Y) < 10f)
             {
                 // about the same place
                 SameLocationCount++;

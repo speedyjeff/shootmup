@@ -225,34 +225,47 @@ namespace shootMup
             }
         }
 
-        public GunStateEnum Shoot(Player player)
+        public AttackStateEnum Attack(Player player)
         {
-            if (player.Z != Constants.Ground) return GunStateEnum.None;
-            if (player.IsDead) return GunStateEnum.None;
-            if (IsPaused) return GunStateEnum.None;
+            if (player.Z != Constants.Ground) return AttackStateEnum.None;
+            if (player.IsDead) return AttackStateEnum.None;
+            if (IsPaused) return AttackStateEnum.None;
 
             var hit = new HashSet<Element>();
-            var state = GunStateEnum.None;
+            var state = AttackStateEnum.None;
+            var trajectories = new List<BulletTrajectory>();
 
             lock (this)
             {
-                state = player.Shoot();
+                state = player.Attack();
 
                 // apply state change
-                if (state == GunStateEnum.Fired)
+                if (state == AttackStateEnum.Fired)
                 {
                     Element elem = null;
 
                     // apply the bullet via the trajectory
-                    elem = ApplyBulletTrajectory(player, player.Primary, player.X, player.Y, player.Angle);
+                    elem = TrackAttackTrajectory(player, player.Primary, player.X, player.Y, player.Angle, trajectories);
                     if (elem != null) hit.Add(elem);
                     if (player.Primary.Spread != 0)
                     {
-                        elem = ApplyBulletTrajectory(player, player.Primary, player.X, player.Y, player.Angle - (player.Primary.Spread / 2));
+                        elem = TrackAttackTrajectory(player, player.Primary, player.X, player.Y, player.Angle - (player.Primary.Spread / 2), trajectories);
                         if (elem != null) hit.Add(elem);
-                        elem = ApplyBulletTrajectory(player, player.Primary, player.X, player.Y, player.Angle + (player.Primary.Spread / 2));
+                        elem = TrackAttackTrajectory(player, player.Primary, player.X, player.Y, player.Angle + (player.Primary.Spread / 2), trajectories);
                         if (elem != null) hit.Add(elem);
                     }
+                }
+                else if (state == AttackStateEnum.Melee)
+                {
+                    // project out a short range and check if there was contact
+                    Element elem = null;
+
+                    // apply the bullet via the trajectory
+                    elem = TrackAttackTrajectory(player, player.Fists, player.X, player.Y, player.Angle, trajectories);
+                    if (elem != null) hit.Add(elem);
+
+                    // disregard any trajectories
+                    trajectories.Clear();
                 }
 
             } // lock(this)
@@ -283,9 +296,28 @@ namespace shootMup
                 }
             }
 
+            // add bullet trajectories
+            foreach(var t in trajectories)
+            {
+                if (OnEphemerialEvent != null)
+                {
+                    OnEphemerialEvent(t);
+                }
+            }
+
             // adjust state accordingly
-            if (targetDied) state = GunStateEnum.FiredAndKilled;
-            else if (targetHit) state = GunStateEnum.FiredWithContact;
+            if (state == AttackStateEnum.Melee)
+            {
+                // used fists
+                if (targetDied) state = AttackStateEnum.MeleeAndKilled;
+                else if (targetHit) state = AttackStateEnum.MeleeWithContact;
+            }
+            else
+            {
+                // used a gun
+                if (targetDied) state = AttackStateEnum.FiredAndKilled;
+                else if (targetHit) state = AttackStateEnum.FiredWithContact;
+            }
 
             return state;
         }
@@ -360,7 +392,7 @@ namespace shootMup
                             {
                                 // provide feedback that they are taking damage from the zone
                                 (elem as AI).Feedback(
-                                    AIActionEnum.ZoneDamage, 
+                                    ActionEnum.ZoneDamage, 
                                     new Tuple<float,float>(Background.X, Background.Y), // center of safe area
                                     false);
                             }
@@ -495,10 +527,10 @@ namespace shootMup
             return item;
         }
 
-        private Element ApplyBulletTrajectory(Player player, Gun gun, float x, float y, float angle)
+        private Element TrackAttackTrajectory(Player player, Gun weapon, float x, float y, float angle, List<BulletTrajectory> trajectories)
         {
             float x1, y1, x2, y2;
-            Collision.CalculateLineByAngle(x, y, angle, gun.Distance, out x1, out y1, out x2, out y2);
+            Collision.CalculateLineByAngle(x, y, angle, weapon.Distance, out x1, out y1, out x2, out y2);
 
             // determine damage
             var elem = IntersectingLine(player, x1, y1, x2, y2);
@@ -508,7 +540,7 @@ namespace shootMup
                 // apply damage
                 if (elem.TakesDamage)
                 {
-                    elem.ReduceHealth(gun.Damage);
+                    elem.ReduceHealth(weapon.Damage);
                 }
 
                 // reduce the visual shot on screen based on where the bullet hit
@@ -517,18 +549,15 @@ namespace shootMup
             }
 
             // add bullet effect
-            if (OnEphemerialEvent != null)
-            {
-                OnEphemerialEvent(new BulletTrajectory()
+            trajectories.Add( new BulletTrajectory()
                 {
                     X1 = x1,
                     Y1 = y1,
                     X2 = x2,
                     Y2 = y2,
-                    Damage = gun.Damage
+                    Damage = weapon.Damage
                 });
-            }
-
+ 
             return elem;
         }
         #endregion
