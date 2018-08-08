@@ -30,21 +30,27 @@ namespace shootMup
             // sounds
             Sounds = sounds;
 
-            // setup player
-            WindowX = 50;
-            WindowY = 50;
-            Human = new Player() { X = WindowX, Y = WindowY, Name = "You" };
-
-            // add all the players
+            // create players
+            Human = new Player() { Name = "You" };
+            int playerPosition = (new Random()).Next() % numPlayers;
             Players = new Player[numPlayers];
-            Players[0] = Human;
-            for(int i=1; i<Players.Length; i++) Players[i] = new SimpleAI() { Name = string.Format("ai{0}", i) };
+            for (int i = 0; i < Players.Length; i++)
+            {
+                if (i == playerPosition)
+                    Players[i] = Human;
+                else
+                    Players[i] = new SimpleAI() { Name = string.Format("ai{0}", i) };
+            }
 
             // create map
             Map = new Map(width, height, Players, Background, PlayerPlacement.Borders);
             Map.OnEphemerialEvent += AddEphemerialElement;
             Map.OnElementHit += HitByAttack;
             Map.OnElementDied += PlayerDied;
+
+            // setup window (based on placement on the map)
+            WindowX = Human.X;
+            WindowY = Human.Y;
 
             // start the players in the air
             if (true)
@@ -196,6 +202,21 @@ namespace shootMup
                 return;
             }
 
+            // menu
+            if (key == Constants.Esc)
+            {
+                ShowMenu();
+                return;
+            }
+
+            // for training we track the human movements (as the supervised set)
+            if (Constants.CaptureAITrainingData)
+            {
+                // capture what the user sees
+                List<Element> elements = Map.WithinWindow(Human.X, Human.Y, Surface.Width, Surface.Height).ToList();
+                AITraining.CaptureBefore(Human, Background, elements);
+            }
+
             // handle the user input
             ActionEnum action = ActionEnum.None;
             bool result = false;
@@ -266,11 +287,6 @@ namespace shootMup
                     else if (Human.Angle > 180 && Human.Angle <= 270) xdelta *= -1;
                     else if (Human.Angle > 270) { ydelta *= -1; xdelta *= -1; }
                     break;
-
-                // menu
-                case Constants.Esc:
-                    ShowMenu();
-                    break;
             }
 
             // if a move command, then move
@@ -281,14 +297,10 @@ namespace shootMup
             }
 
             // for training we track the human movements (as the supervised set)
-            if (true)
+            if (Constants.CaptureAITrainingData)
             {
-                // capture the angle to the center
-
-                // capture the user angle, health, sheld, weapon status, inzone, Z
-
-                // capture what the user sees
-
+                // capture the result
+                AITraining.CaptureAfter(Human, action, xdelta, ydelta, Human.Angle, result);
             }
         }
 
@@ -448,6 +460,12 @@ namespace shootMup
                 // TODO will likely want to translate into a copy of the list with reduced details
                 List<Element> elements = Map.WithinWindow(ai.X, ai.Y, Surface.Width /** (1 / ZoomFactor)*/, Surface.Height /* (1 / ZoomFactor)*/).ToList();
 
+                if (Constants.CaptureAITrainingData)
+                {
+                    // capture what the ai sees
+                    AITraining.CaptureBefore(ai, Background, elements);
+                }
+
                 // get action from AI
                 var action = ai.Action(elements, ref xdelta, ref ydelta, ref angle);
 
@@ -455,42 +473,60 @@ namespace shootMup
                 ai.Angle = angle;
 
                 // perform action
+                bool result = false;
                 Type item = null;
                 switch(action)
                 {
                     case ActionEnum.Drop:
                         item = Map.Drop(ai);
-                        ai.Feedback(action, item, item != null);
+                        result |= (item != null);
+                        ai.Feedback(action, item, result);
                         break;
                     case ActionEnum.Pickup:
                         item = Map.Pickup(ai);
-                        ai.Feedback(action, item, item != null);
+                        result |= (item != null);
+                        ai.Feedback(action, item, result);
                         break;
                     case ActionEnum.Reload:
                         var reloaded = ai.Reload();
-                        ai.Feedback(action, reloaded, reloaded == AttackStateEnum.Reloaded);
+                        result |= (reloaded == AttackStateEnum.Reloaded);
+                        ai.Feedback(action, reloaded, result);
                         break;
                     case ActionEnum.Attack:
-                        var shoot = Map.Attack(ai);
-                        ai.Feedback(action, shoot, shoot == AttackStateEnum.Fired || shoot == AttackStateEnum.FiredAndKilled || shoot == AttackStateEnum.FiredWithContact);
+                        var attack = Map.Attack(ai);
+                        result |= attack == AttackStateEnum.Fired || attack == AttackStateEnum.FiredAndKilled || attack == AttackStateEnum.FiredWithContact ||
+                            attack == AttackStateEnum.Melee || attack == AttackStateEnum.MeleeAndKilled || attack == AttackStateEnum.MeleeWithContact;
+                        ai.Feedback(action, attack, result);
                         break;
                     case ActionEnum.SwitchWeapon:
                         var swap = ai.SwitchWeapon();
-                        ai.Feedback(action, null, swap);
+                        result |= swap;
+                        ai.Feedback(action, null, result);
                         break;
                     case ActionEnum.Move:
                     case ActionEnum.None:
                         break;
                     default: throw new Exception("Unknown ai action : " + action);
                 }
-            
+
                 // have the AI move
+                float oxdelta = xdelta;
+                float oydelta = ydelta;
                 var moved = Map.Move(ai, ref xdelta, ref ydelta);
                 ai.Feedback(ActionEnum.Move, null, moved);
                
                 // ensure the player stays within the map
                 if (ai.X < 0 || ai.X > Map.Width || ai.Y < 0 || ai.Y > Map.Height)
                     System.Diagnostics.Debug.WriteLine("Out of bounds");
+
+                if (Constants.CaptureAITrainingData)
+                {
+                    // capture what the ai sees
+                    AITraining.CaptureAfter(ai, action, oxdelta, oydelta, angle,
+                        action == ActionEnum.None || action == ActionEnum.Move
+                        ? moved
+                        : result); 
+                }
 
                 // set state back to not running
                 System.Threading.Volatile.Write(ref ai.RunningState, 0);
@@ -678,26 +714,38 @@ namespace shootMup
                     }
                 }
 
+                var winners = toplayers.OrderByDescending(kvp => kvp.Value).Select(kvp => string.Format("{0} [{1}]", kvp.Key, kvp.Value)).ToArray();
+
                 if (element.Id == Human.Id || (alive == 1 && !Human.IsDead))
                 {
+                    if (Constants.CaptureAITrainingData)
+                    {
+                        AITraining.Winners(winners);
+                    }
+
                     PlayerRank = alive;
                     Menu = new Finish()
                     {
                         Kills = Human.Kills,
                         Ranking = PlayerRank,
                         Winner = (alive ==1) ? Human.Name : "",
-                        TopPlayers = toplayers.OrderByDescending(kvp => kvp.Value).Select(kvp => string.Format("{0} [{1}]", kvp.Key, kvp.Value)).ToArray()
+                        TopPlayers = winners
                     };
                     ShowMenu();
                 }
                 else if (alive == 1)
                 {
+                    if (Constants.CaptureAITrainingData)
+                    {
+                        AITraining.Winners(winners);
+                    }
+
                     Menu = new Finish()
                     {
                         Kills = Human.Kills,
                         Ranking = PlayerRank,
                         Winner = lastAlive.Name,
-                        TopPlayers = toplayers.OrderByDescending(kvp => kvp.Value).Select(kvp => string.Format("{0} [{1}]", kvp.Key, kvp.Value)).ToArray()
+                        TopPlayers = winners
                     };
                     ShowMenu();
                 }

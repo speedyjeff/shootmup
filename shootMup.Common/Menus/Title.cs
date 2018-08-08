@@ -35,7 +35,7 @@ namespace shootMup.Common
                 top += 20;
                 g.Text(RGBA.Black, left, top, string.Format("along with {0} enemies... run quickly to acquire", Players-1));
                 top += 20;
-                g.Text(RGBA.Black, left, top, "a weapon and try to survive.");
+                g.Text(RGBA.Black, left, top, "a weapon, avoid the zone, and try to survive.");
                 top += 20;
                 g.Image(KeyboardLayoutPath, left, top, 190, 140);
                 g.Image(MouseLayoutPath, left + 250, top, 120, 170);
