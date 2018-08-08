@@ -23,5 +23,7 @@ namespace shootMup.Common
             Spread = 0;
             Delay = Constants.GlobalClock;
         }
+
+        public override string FiredSoundPath() => "media/meele.wav";
     }
 }

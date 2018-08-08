@@ -629,7 +629,7 @@ namespace shootMup
                 case AttackStateEnum.Melee:
                 case AttackStateEnum.MeleeWithContact:
                 case AttackStateEnum.MeleeAndKilled:
-                    // TODO what sound?
+                    Sounds.Play(player.Fists.FiredSoundPath());
                     break;
                 case AttackStateEnum.FiredWithContact:
                 case AttackStateEnum.FiredAndKilled:

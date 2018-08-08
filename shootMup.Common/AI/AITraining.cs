@@ -140,10 +140,13 @@ namespace shootMup.Common
         public static void Winners(string[] winners)
         {
             StreamWriter output = null;
-            if (!Output.TryGetValue(-1, out output))
+            lock (Output)
             {
-                output = File.CreateText(Path.Combine(TrainingPath, string.Format("{0:yyyy-MM-dd_hh-mm-ss}.winner", Start)));
-                Output.Add(-1, output);
+                if (!Output.TryGetValue(-1, out output))
+                {
+                    output = File.CreateText(Path.Combine(TrainingPath, string.Format("{0:yyyy-MM-dd_hh-mm-ss}.winner", Start)));
+                    Output.Add(-1, output);
+                }
             }
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(winners);
             output.WriteLine(json);
@@ -158,25 +161,31 @@ namespace shootMup.Common
 
         public static TrainingData GetData(Player player)
         {
-            TrainingData data = null;
-            if (!Data.TryGetValue(player.Id, out data))
+            lock (Data)
             {
-                data = new TrainingData();
-                Data.Add(player.Id, data);
+                TrainingData data = null;
+                if (!Data.TryGetValue(player.Id, out data))
+                {
+                    data = new TrainingData();
+                    Data.Add(player.Id, data);
+                }
+                return data;
             }
-            return data;
         }
 
         public static StreamWriter GetOutput(Player player)
         {
-            StreamWriter output = null;
-            if (!Output.TryGetValue(player.Id, out output))
+            lock (Output)
             {
-                if (!Directory.Exists(TrainingPath)) Directory.CreateDirectory(TrainingPath);
-                output = File.CreateText(Path.Combine(TrainingPath, string.Format("{0:yyyy-MM-dd_hh-mm-ss}.{1}", Start, player.Name)));
-                Output.Add(player.Id, output);
+                StreamWriter output = null;
+                if (!Output.TryGetValue(player.Id, out output))
+                {
+                    if (!Directory.Exists(TrainingPath)) Directory.CreateDirectory(TrainingPath);
+                    output = File.CreateText(Path.Combine(TrainingPath, string.Format("{0:yyyy-MM-dd_hh-mm-ss}.{1}", Start, player.Name)));
+                    Output.Add(player.Id, output);
+                }
+                return output;
             }
-            return output;
         }
 
 #if SMALL_ENCODING
