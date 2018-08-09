@@ -494,8 +494,8 @@ namespace shootMup
                         break;
                     case ActionEnum.Attack:
                         var attack = Map.Attack(ai);
-                        result |= attack == AttackStateEnum.Fired || attack == AttackStateEnum.FiredAndKilled || attack == AttackStateEnum.FiredWithContact ||
-                            attack == AttackStateEnum.Melee || attack == AttackStateEnum.MeleeAndKilled || attack == AttackStateEnum.MeleeWithContact;
+                        result |= attack == AttackStateEnum.FiredAndKilled || attack == AttackStateEnum.FiredWithContact ||
+                            attack == AttackStateEnum.MeleeAndKilled || attack == AttackStateEnum.MeleeWithContact;
                         ai.Feedback(action, attack, result);
                         break;
                     case ActionEnum.SwitchWeapon:
@@ -647,10 +647,8 @@ namespace shootMup
                 default: throw new Exception("Unknown GunState : " + state);
             }
 
-            return (state == AttackStateEnum.Melee ||
-                state == AttackStateEnum.MeleeAndKilled ||
+            return (state == AttackStateEnum.MeleeAndKilled ||
                 state == AttackStateEnum.MeleeWithContact ||
-                state == AttackStateEnum.Fired ||
                 state == AttackStateEnum.FiredAndKilled ||
                 state == AttackStateEnum.FiredWithContact);
         }
