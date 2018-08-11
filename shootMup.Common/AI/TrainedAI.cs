@@ -12,54 +12,10 @@ namespace shootMup.Common
             // never record training data for these AI
             RecordTraining = false;
 
-            var actionmodel = Path.Combine(AITraining.TrainingPath, "action.model");
-            var xymodel = Path.Combine(AITraining.TrainingPath, "xy.model");
-            var anglemodel = Path.Combine(AITraining.TrainingPath, "angle.model");
-
-            // action model
-            if (File.Exists(actionmodel))
-            {
-                ActionModel = Model.Load(actionmodel);
-            }
-            else
-            {
-                ActionModel = Model.Train(Data, ModelValue.Action);
-                ActionModel.Save(actionmodel);
-            }
-
-            // direction model
-            if (File.Exists(xymodel))
-            {
-                XYModel = Model.Load(xymodel);
-            }
-            else
-            {
-                XYModel = Model.Train(Data, ModelValue.XY);
-                XYModel.Save(xymodel);
-            }
-
-            // angle model
-            if (File.Exists(anglemodel))
-            {
-                AngleModel = Model.Load(anglemodel);
-            }
-            else
-            {
-                AngleModel = Model.Train(Data, ModelValue.Angle);
-                AngleModel.Save(anglemodel);
-            }
-        }
-
-        static TrainedAI()
-        {
-            lock (Serialize)
-            {
-                if (Data == null)
-                {
-                    Data = new List<TrainingData>();
-                    Data.AddRange(AITraining.GetTrainingData());
-                }
-            }
+            // get models
+            ActionModel = AITraining.GetActionModel();
+            XYModel = AITraining.GetXYModel();
+            AngleModel = AITraining.GetAngleModel();            
         }
 
         public override ActionEnum Action(List<Element> elements, float angleToCenter, bool inZone, ref float xdelta, ref float ydelta, ref float angle)
@@ -83,9 +39,10 @@ namespace shootMup.Common
             data.Proximity = AITraining.ComputeProximity(this, elements).Values.ToList();
 
             // use the model to predict its actions
-            int iAction = (int)ActionModel.Predict(data);
-            angle = AngleModel.Predict(data);
-            XYModel.Predict(data, out xdelta, out ydelta);
+            var modeldataset = data.ToModelDataSet();
+            int iAction = (int)ActionModel.Predict(modeldataset);
+            angle = AngleModel.Predict(modeldataset);
+            XYModel.Predict(modeldataset, out xdelta, out ydelta);
 
             // do some sanity checking...
             if (iAction < 0 || iAction >= (int)ActionEnum.ZoneDamage) throw new Exception("Unknown action : " + iAction);
@@ -99,8 +56,6 @@ namespace shootMup.Common
         private Model AngleModel;
         private Model XYModel;
         private Model ActionModel;
-        private static List<TrainingData> Data;
-        private static object Serialize = new object();
         #endregion
     }
 }

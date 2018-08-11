@@ -13,12 +13,12 @@ namespace shootMup.Common
 
     public class Model
     {
-        public static Model Train(List<TrainingData> data, ModelValue prediction)
+        public static Model Train(IEnumerable<ModelDataSet> data, ModelValue prediction)
         {
             var pipeline = new LearningPipeline();
 
             // add data
-            pipeline.Add(CollectionDataSource.Create(data.Select(d => Transform(d))) );
+            pipeline.Add( CollectionDataSource.Create(data) );
 
             // normalize text fields
             pipeline.Add(new CategoricalOneHotVectorizer("Primary", "Secondary"));
@@ -103,16 +103,15 @@ namespace shootMup.Common
             return model;
         }
 
-        public bool Predict(TrainingData data, out float xdelta, out float ydelta)
+        public bool Predict(ModelDataSet data, out float xdelta, out float ydelta)
         {
             var angle = Predict(data);
 
             // set course
-            float x1, y1, x2, y2;
-            Collision.CalculateLineByAngle(0, 0, angle, 1, out x1, out y1, out x2, out y2);
-
-            xdelta = x2 - x1;
-            ydelta = y2 - y1;
+            if (angle < 0) angle *= -1;
+            angle = angle % 360;
+            ydelta = ((float)Math.Cos(angle * Math.PI / 180) * 1) * -1;
+            xdelta = (float)Math.Sin(angle * Math.PI / 180) * 1;
 
             // normalize
             xdelta = xdelta / (Math.Abs(xdelta) + Math.Abs(ydelta));
@@ -129,95 +128,17 @@ namespace shootMup.Common
             return true;
         }
 
-        public float Predict(TrainingData data)
+        public float Predict(ModelDataSet data)
         {
-            var modelData = Transform(data);
-
             lock (TrainedModel)
             {
-                var result = TrainedModel.Predict(modelData);
+                var result = TrainedModel.Predict(data);
                 return result.Value;
             }
         }
 
         #region private
         private PredictionModel<ModelDataSet, ModelDataSetPrediction> TrainedModel;
-
-        private static ModelDataSet Transform(TrainingData data)
-        {
-            var result = new ModelDataSet()
-            {
-                // core data
-                CenterAngle = data.CenterAngle,
-                InZone = data.InZone ? 1f : 0,
-                Health = data.Health,
-                Sheld = data.Sheld,
-                Z = data.Z,
-                Primary = data.Primary,
-                PrimaryAmmo = data.PrimaryAmmo,
-                PrimaryClip = data.PrimaryClip,
-                Secondary = data.Secondary,
-                SecondaryAmmo = data.SecondaryAmmo,
-                SecondaryClip = data.SecondaryClip,
-            };
-
-            // outcome
-            result.Action = (int)data.Action;
-            result.FaceAngle = data.Angle;
-            result.MoveAngle = Collision.CalculateAngleFromPoint(0, 0, data.Xdelta, data.Ydelta);
-
-            // proximity
-            foreach (var elem in data.Proximity)
-            {
-                switch (elem.Name)
-                {
-                    case "Ammo":
-                        result.Name_1 = elem.Name;
-                        result.Angle_1 = elem.Angle;
-                        result.Distance_1 = elem.Distance;
-                        break;
-                    case "Bandage":
-                        result.Name_2 = elem.Name;
-                        result.Angle_2 = elem.Angle;
-                        result.Distance_2 = elem.Distance;
-                        break;
-                    case "Helmet":
-                        result.Name_3 = elem.Name;
-                        result.Angle_3 = elem.Angle;
-                        result.Distance_3 = elem.Distance;
-                        break;
-                    case "AK47":
-                        result.Name_4 = elem.Name;
-                        result.Angle_4 = elem.Angle;
-                        result.Distance_4 = elem.Distance;
-                        break;
-                    case "Shotgun":
-                        result.Name_5 = elem.Name;
-                        result.Angle_5 = elem.Angle;
-                        result.Distance_5 = elem.Distance;
-                        break;
-                    case "Pistol":
-                        result.Name_6 = elem.Name;
-                        result.Angle_6 = elem.Angle;
-                        result.Distance_6 = elem.Distance;
-                        break;
-                    case "Obstacle":
-                        result.Name_7 = elem.Name;
-                        result.Angle_7 = elem.Angle;
-                        result.Distance_7 = elem.Distance;
-                        break;
-                    case "Player":
-                        result.Name_8 = elem.Name;
-                        result.Angle_8 = elem.Angle;
-                        result.Distance_8 = elem.Distance;
-                        break;
-                    default:
-                        throw new Exception("Unknown proximity element type : " + elem.Name);
-                }
-            }
-
-            return result;
-        }
         #endregion
     }
 }
