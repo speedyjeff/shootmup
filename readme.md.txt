@@ -4,8 +4,8 @@ This project started as a joint coding project with my youngst son.  We wanted t
 
 The project uses C# and a Winforms shell.
 
-[(https://github.com/speedyjeff/shootmup/src/media/startscreen.png)]
+![start screen](https://github.com/speedyjeff/shootmup/src/media/startscreen.png)
 
-[(https://github.com/speedyjeff/shootmup/src/media/gameplay.png)]
+![game play](https://github.com/speedyjeff/shootmup/src/media/gameplay.png)
 
-[(https://github.com/speedyjeff/shootmup/src/media/endscreen.png)]
+![end screen](https://github.com/speedyjeff/shootmup/src/media/endscreen.png)
