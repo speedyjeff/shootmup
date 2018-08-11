@@ -11,7 +11,7 @@ namespace shootMup.Common
             Rand = new Random();
         }
 
-        public override ActionEnum Action(List<Element> elements, ref float xdelta, ref float ydelta, ref float angle)
+        public override ActionEnum Action(List<Element> elements, float angleToCenter, bool inZone, ref float xdelta, ref float ydelta, ref float angle)
         {
             xdelta = ydelta = angle = 0;
 

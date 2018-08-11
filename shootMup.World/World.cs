@@ -210,11 +210,13 @@ namespace shootMup
             }
 
             // for training we track the human movements (as the supervised set)
-            if (Constants.CaptureAITrainingData)
+            if (Human.RecordTraining)
             {
                 // capture what the user sees
                 List<Element> elements = Map.WithinWindow(Human.X, Human.Y, Surface.Width, Surface.Height).ToList();
-                AITraining.CaptureBefore(Human, Background, elements);
+                var angleToCenter = Collision.CalculateAngleFromPoint(Human.X, Human.Y, Background.X, Background.Y);
+                var inZone = Background.Damage(Human.X, Human.Y) > 0;
+                AITraining.CaptureBefore(Human, elements, angleToCenter, inZone);
             }
 
             // handle the user input
@@ -297,7 +299,7 @@ namespace shootMup
             }
 
             // for training we track the human movements (as the supervised set)
-            if (Constants.CaptureAITrainingData)
+            if (Human.RecordTraining)
             {
                 // capture the result
                 AITraining.CaptureAfter(Human, action, xdelta, ydelta, Human.Angle, result);
@@ -459,15 +461,18 @@ namespace shootMup
                 // NOTE: Do not apply the ZoomFactor (as it distorts the AI when debugging) - TODO may want to allow this while parachuting
                 // TODO will likely want to translate into a copy of the list with reduced details
                 List<Element> elements = Map.WithinWindow(ai.X, ai.Y, Surface.Width /** (1 / ZoomFactor)*/, Surface.Height /* (1 / ZoomFactor)*/).ToList();
+                var angleToCenter = Collision.CalculateAngleFromPoint(ai.X, ai.Y, Background.X, Background.Y);
+                var inZone = Background.Damage(ai.X, ai.Y) > 0;
 
                 if (Constants.CaptureAITrainingData)
                 {
                     // capture what the ai sees
-                    AITraining.CaptureBefore(ai, Background, elements);
+                    AITraining.CaptureBefore(ai, elements, angleToCenter, inZone);
                 }
 
                 // get action from AI
-                var action = ai.Action(elements, ref xdelta, ref ydelta, ref angle);
+
+                var action = ai.Action(elements, angleToCenter, inZone, ref xdelta, ref ydelta, ref angle);
 
                 // turn
                 ai.Angle = angle;
@@ -519,7 +524,7 @@ namespace shootMup
                 if (ai.X < 0 || ai.X > Map.Width || ai.Y < 0 || ai.Y > Map.Height)
                     System.Diagnostics.Debug.WriteLine("Out of bounds");
 
-                if (Constants.CaptureAITrainingData)
+                if (ai.RecordTraining)
                 {
                     // capture what the ai sees
                     AITraining.CaptureAfter(ai, action, oxdelta, oydelta, angle,
@@ -718,7 +723,7 @@ namespace shootMup
                 {
                     if (Constants.CaptureAITrainingData)
                     {
-                        AITraining.Winners(winners);
+                        AITraining.CaptureWinners(winners);
                     }
 
                     PlayerRank = alive;
@@ -735,7 +740,7 @@ namespace shootMup
                 {
                     if (Constants.CaptureAITrainingData)
                     {
-                        AITraining.Winners(winners);
+                        AITraining.CaptureWinners(winners);
                     }
 
                     Menu = new Finish()

@@ -17,7 +17,7 @@ namespace shootMup.Common
         public volatile int RunningState;
         public bool ShowDiagnostics { get; protected set; }
         
-        public virtual ActionEnum Action(List<Element> elements, ref float xdelta, ref float ydelta, ref float angle)
+        public virtual ActionEnum Action(List<Element> elements, float angleToCenter, bool inZone, ref float xdelta, ref float ydelta, ref float angle)
         {
             return ActionEnum.None;
         }

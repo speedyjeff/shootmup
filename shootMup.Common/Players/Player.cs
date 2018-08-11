@@ -18,6 +18,7 @@ namespace shootMup.Common
             DisplayHud = true;
             Color = new RGBA() { R = 255, A = 255 };
             Kills = 0;
+            RecordTraining = Constants.CaptureAITrainingData;
 
             // hit box
             Height = 50;
@@ -35,6 +36,7 @@ namespace shootMup.Common
 
         public bool DisplayHud { get; protected set; }
         public RGBA Color { get; protected set; }
+        public bool RecordTraining { get; protected set; }
 
         public int Kills { get; set; }
 

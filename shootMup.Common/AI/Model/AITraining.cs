@@ -14,6 +14,7 @@ namespace shootMup.Common
         public float Distance;
     }
 
+    // this structure is stored on disk, so changes need to be made carefully
     public class TrainingData
     {
         // environment
@@ -54,6 +55,8 @@ namespace shootMup.Common
             SHA = SHA256.Create();
 #endif
         }
+
+        public const string TrainingPath = "training";
 
         public static Dictionary<Type, ElementProximity> ComputeProximity(Player self, List<Element> elements)
         {
@@ -98,17 +101,17 @@ namespace shootMup.Common
             return closest;
         }
 
-        public static void CaptureBefore(Player player, Background background, List<Element> elements)
+        public static void CaptureBefore(Player player, List<Element> elements, float angleToCenter, bool inZone)
         {
             var data = GetData(player);
 
             // capture the angle to the center
-            data.CenterAngle = Collision.CalculateAngleFromPoint(player.X, player.Y, background.X, background.Y);
+            data.CenterAngle = angleToCenter;
 
             // capture the user health, sheld, weapon status, inzone, Z
             data.Angle = player.Angle;
             data.Health = player.Health;
-            data.InZone = background.Damage(player.X, player.Y) > 0;
+            data.InZone = inZone;
             data.Primary = player.Primary != null ? player.Primary.GetType().Name : "";
             data.PrimaryAmmo = player.Primary != null ? player.Primary.Ammo : 0;
             data.PrimaryClip = player.Primary != null ? player.Primary.Clip : 0;
@@ -137,7 +140,7 @@ namespace shootMup.Common
             output.Flush();
         }
 
-        public static void Winners(string[] winners)
+        public static void CaptureWinners(string[] winners)
         {
             StreamWriter output = null;
             lock (Output)
@@ -152,12 +155,70 @@ namespace shootMup.Common
             output.WriteLine(json);
         }
 
+        public static IEnumerable<TrainingData> GetTrainingData()
+        {
+            // enumerate the 'right' files and return them
+
+            // gather all the humans and the top winning AI
+            var map = new HashSet<string>();
+            foreach (var file in Directory.GetFiles(TrainingPath))
+            {
+                if (file.EndsWith(".winner"))
+                {
+                    var json = File.ReadAllText(file);
+                    var prefix = file.Substring(0, file.IndexOf('.'));
+                    map.Add(prefix + "." + "You");
+                    // open the file and build a map of files to consider
+                    var start = json[0] == '[' ? 1 : 0;
+                    var end = 0;
+                    while(start < json.Length)
+                    {
+                        end = json.IndexOf(',', start);
+
+                        if (end < 0) end = json.Length;
+
+                        var i1 = json.IndexOf('[', start);
+                        var i2 = json.IndexOf(']', start);
+
+                        // "name [#]"
+                        if (i1 > 0 && i2 > 0)
+                        {
+                            var name = json.Substring(start+1, i1-start-1).Trim();
+                            var number = json.Substring(i1+1, i2-i1-1);
+
+                            if (Convert.ToInt32(number) > 0)
+                            {
+                                map.Add(prefix + "." + name);
+                            }
+                        }
+
+                        // advance
+                        start = end + 1;
+                    }
+                }
+            }
+
+            // return files that were successful and for actions that made sense
+            foreach (var file in Directory.GetFiles(TrainingPath))
+            {
+                if (map.Contains(file))
+                {
+                    foreach (var json in File.ReadAllLines(file))
+                    {
+                        var data = Newtonsoft.Json.JsonConvert.DeserializeObject<TrainingData>(json);
+                        if (data.Result)
+                        {
+                            yield return data;
+                        }
+                    }
+                }
+            }
+        }
+
 #region private
         private static Dictionary<int, TrainingData> Data;
         private static Dictionary<int, StreamWriter> Output;
         private static DateTime Start;
-
-        private const string TrainingPath = "training";
 
         public static TrainingData GetData(Player player)
         {
