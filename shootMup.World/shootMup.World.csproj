@@ -45,6 +45,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\shootMup.AI\shootMup.AI.csproj">
+      <Project>{66ee2793-3766-4464-9960-09255273bce9}</Project>
+      <Name>shootMup.AI</Name>
+    </ProjectReference>
     <ProjectReference Include="..\shootMup.Common\shootMup.Common.csproj">
       <Project>{14d7490e-02ae-49d8-9860-48ca4271f8ba}</Project>
       <Name>shootMup.Common</Name>

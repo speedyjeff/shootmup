@@ -108,10 +108,8 @@ namespace shootMup.Common
             var angle = Predict(data);
 
             // set course
-            if (angle < 0) angle *= -1;
-            angle = angle % 360;
-            ydelta = ((float)Math.Cos(angle * Math.PI / 180) * 1) * -1;
-            xdelta = (float)Math.Sin(angle * Math.PI / 180) * 1;
+            float x1, y1;
+            Collision.CalculateLineByAngle(0, 0, angle, 1, out x1, out y1, out xdelta, out ydelta);
 
             // normalize
             xdelta = xdelta / (Math.Abs(xdelta) + Math.Abs(ydelta));

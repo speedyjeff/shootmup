@@ -148,9 +148,7 @@ namespace shootMup.Common
             // outcome
             result.Action = (int)data.Action;
             result.FaceAngle = data.Angle;
-            float angle = (float)(Math.Atan2(data.Xdelta, data.Ydelta) * (180 / Math.PI));
-            if (angle < 0) angle += 360;
-            result.MoveAngle = angle;
+            result.MoveAngle = Collision.CalculateAngleFromPoint(0, 0, data.Xdelta, data.Ydelta);
 
             // proximity
             foreach (var elem in data.Proximity)
