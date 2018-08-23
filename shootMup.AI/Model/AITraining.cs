@@ -116,54 +116,57 @@ namespace shootMup.Common
             output.WriteLine(json);
         }
 
-        public static Model GetActionModel()
+        public static Dictionary<string, int> GetTrainingFiles(string path)
         {
-            var actionmodel = Path.Combine(AITraining.TrainingPath, "action.model");
-            // action model
-            if (File.Exists(actionmodel))
+            // gather all the humans and the top winning AI
+            var map = new Dictionary<string, int>();
+            foreach (var file in Directory.GetFiles(path, "*.winner"))
             {
-                return Model.Load(actionmodel);
+                var json = File.ReadAllText(file);
+                var prefix = file.Substring(0, file.IndexOf('.'));
+                // open the file and build a map of files to consider
+                var start = json[0] == '[' ? 1 : 0;
+                var end = 0;
+                while (start < json.Length)
+                {
+                    end = json.IndexOf(',', start);
+
+                    if (end < 0) end = json.Length;
+
+                    var i1 = json.IndexOf('[', start);
+                    var i2 = json.IndexOf(']', start);
+
+                    // "name [#]"
+                    if (i1 > 0 && i2 > 0)
+                    {
+                        var name = json.Substring(start + 1, i1 - start - 1).Trim();
+                        var number = json.Substring(i1 + 1, i2 - i1 - 1);
+                        int value;
+                        var fullpath = Path.Combine(path, prefix + "." + name);
+
+                        // check if the file exists
+                        if (File.Exists(fullpath))
+                        {
+                            if (Int32.TryParse(number, out value))
+                            {
+                                map.Add(fullpath, value);
+                            }
+                        }
+                    }
+
+                    // advance
+                    start = end + 1;
+                }
             }
-            else
-            {
-                GetTrainingData();
-                var model = Model.Train(ModelDataSet, ModelValue.Action);
-                model.Save(actionmodel);
-                return model;
-            }
+            return map;
         }
 
-        public static Model GetXYModel()
+        public static IEnumerable<TrainingData> GetTraingingData(string file)
         {
-            var xymodel = Path.Combine(AITraining.TrainingPath, "xy.model");
-            // direction model
-            if (File.Exists(xymodel))
+            foreach (var json in File.ReadAllLines(file))
             {
-                return Model.Load(xymodel);
-            }
-            else
-            {
-                GetTrainingData();
-                var model = Model.Train(ModelDataSet, ModelValue.XY);
-                model.Save(xymodel);
-                return model;
-            }
-        }
-
-        public static Model GetAngleModel()
-        {
-            var anglemodel = Path.Combine(AITraining.TrainingPath, "angle.model");
-            // angle model
-            if (File.Exists(anglemodel))
-            {
-                return Model.Load(anglemodel);
-            }
-            else
-            {
-                GetTrainingData();
-                var model = Model.Train(ModelDataSet, ModelValue.Angle);
-                model.Save(anglemodel);
-                return model;
+                var data = Newtonsoft.Json.JsonConvert.DeserializeObject<TrainingData>(json);
+                yield return data;
             }
         }
 
@@ -171,77 +174,8 @@ namespace shootMup.Common
         private static Dictionary<int, TrainingData> Data;
         private static Dictionary<int, StreamWriter> Output;
         private static DateTime Start;
-        private static List<ModelDataSet> ModelDataSet;
 
         private const string TrainingPath = "training";
-
-        private static void GetTrainingData()
-        {
-            lock (Data)
-            {
-                if (ModelDataSet == null)
-                {
-                    ModelDataSet = new List<ModelDataSet>();
-
-                    // enumerate the 'right' files and return them
-
-                    // gather all the humans and the top winning AI
-                    var map = new HashSet<string>();
-                    foreach (var file in Directory.GetFiles(TrainingPath))
-                    {
-                        if (file.EndsWith(".winner"))
-                        {
-                            var json = File.ReadAllText(file);
-                            var prefix = file.Substring(0, file.IndexOf('.'));
-                            map.Add(prefix + "." + "You");
-                            // open the file and build a map of files to consider
-                            var start = json[0] == '[' ? 1 : 0;
-                            var end = 0;
-                            while (start < json.Length)
-                            {
-                                end = json.IndexOf(',', start);
-
-                                if (end < 0) end = json.Length;
-
-                                var i1 = json.IndexOf('[', start);
-                                var i2 = json.IndexOf(']', start);
-
-                                // "name [#]"
-                                if (i1 > 0 && i2 > 0)
-                                {
-                                    var name = json.Substring(start + 1, i1 - start - 1).Trim();
-                                    var number = json.Substring(i1 + 1, i2 - i1 - 1);
-
-                                    if (Convert.ToInt32(number) > 0)
-                                    {
-                                        map.Add(prefix + "." + name);
-                                    }
-                                }
-
-                                // advance
-                                start = end + 1;
-                            }
-                        }
-                    }
-
-                    // return files that were successful and for actions that made sense
-                    foreach (var file in Directory.GetFiles(TrainingPath))
-                    {
-                        if (map.Contains(file))
-                        {
-                            foreach (var json in File.ReadAllLines(file))
-                            {
-                                var data = Newtonsoft.Json.JsonConvert.DeserializeObject<TrainingData>(json);
-                                if (data.Result)
-                                {
-                                    ModelDataSet.Add( data.ToModelDataSet() );
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
 
         private static TrainingData GetData(Player player)
         {

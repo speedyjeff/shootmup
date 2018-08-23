@@ -127,7 +127,7 @@ namespace shootMup.Common
 
     public static class TrainingDataExtentions
     { 
-        public static ModelDataSet ToModelDataSet(this TrainingData data)
+        public static ModelDataSet AsModelDataSet(this TrainingData data)
         {
             var result = new ModelDataSet()
             {

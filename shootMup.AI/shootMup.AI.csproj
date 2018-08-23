@@ -13,4 +13,20 @@
     <ProjectReference Include="..\shootMup.Common\shootMup.Common.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Model\Prebuilt\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\trainingdata\action.model" Link="Model\Prebuilt\action.model">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\trainingdata\angle.model" Link="Model\Prebuilt\angle.model">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\trainingdata\xy.model" Link="Model\Prebuilt\xy.model">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

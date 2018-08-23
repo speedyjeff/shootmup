@@ -1,5 +1,7 @@
 ﻿using Microsoft.ML;
 using Microsoft.ML.Data;
+using Microsoft.ML.Models;
+using Microsoft.ML.Runtime;
 using Microsoft.ML.Trainers;
 using Microsoft.ML.Transforms;
 using System;
@@ -10,6 +12,12 @@ using System.Text;
 namespace shootMup.Common
 {
     public enum ModelValue { Action, XY, Angle };
+
+    public struct ModelFitness
+    {
+        public double RMS;
+        public double RSquared;
+    }
 
     public class Model
     {
@@ -79,7 +87,47 @@ namespace shootMup.Common
                 ));
 
             // add a classifier
-            pipeline.Add(new FastTreeRegressor());
+            // action 0.25, xy 84.9777, angle 71.591
+            //pipeline.Add(new FastTreeRegressor());
+
+            pipeline.Add(new FastTreeRegressor()
+            {
+                // NumTrees 
+                //  100 - default
+                //  100 - xy 79
+                // 1000 - xy 63, angle 52 (slow)
+                NumTrees = 1000,
+                // NumLeaves
+                //   50 - default
+                //  100 - xy 63, angle 71
+                // 1000 - xy 59, angle 49 (slow)
+                NumLeaves = 1000,
+                // NumThreads
+                // 5 - default
+                NumThreads = 50,
+                // EntropyCoe
+                // 0.30 - default
+                // 0.70 - xy 79, angle 66
+                // 0.99 - xy 79, angle 66
+                // 0.05 - xy 79, angle 66
+                EntropyCoefficient = 0.3
+
+            });
+
+            // action 0.26 xy 85.1606, angle 72.5194
+            //pipeline.Add(new FastTreeTweedieRegressor());
+            // took too long
+            //pipeline.Add(new GeneralizedAdditiveModelRegressor());
+            // runtime exception
+            //pipeline.Add(new LightGbmRegressor());
+            // action 0.4736, xy 105.8815, angle 91.2677
+            //pipeline.Add(new OnlineGradientDescentRegressor());
+            // runtime exception
+            //pipeline.Add(new OrdinaryLeastSquaresRegressor());
+            // action 0.4628, xy 106.0547, angle 91.0179
+            //pipeline.Add(new PoissonRegressor());
+            // action 0.4599, xy 105.8474, angle 90.4134
+            //pipeline.Add(new StochasticDualCoordinateAscentRegressor());
 
             // train the model
             var model = new Model();
@@ -101,6 +149,22 @@ namespace shootMup.Common
             model.TrainedModel = PredictionModel.ReadAsync<ModelDataSet, ModelDataSetPrediction>(path).Result;
 
             return model;
+        }
+
+        public ModelFitness Evaluate(List<ModelDataSet> data)
+        {
+            lock (TrainedModel)
+            {
+                var testData = CollectionDataSource.Create(data);
+                var evaluator = new RegressionEvaluator();
+                var metrics = evaluator.Evaluate(TrainedModel, testData);
+
+                return new ModelFitness()
+                {
+                    RMS = metrics.Rms,
+                    RSquared = metrics.RSquared
+                };
+            }
         }
 
         public bool Predict(ModelDataSet data, out float xdelta, out float ydelta)

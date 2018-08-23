@@ -10,12 +10,12 @@ namespace shootMup.Common
         public TrainedAI() : base()
         {
             // never record training data for these AI
-            RecordTraining = false;
+            RecordTraining = true;
 
             // get models
-            ActionModel = AITraining.GetActionModel();
-            XYModel = AITraining.GetXYModel();
-            AngleModel = AITraining.GetAngleModel();            
+            ActionModel = Model.Load(Path.Combine("Model", "Prebuilt", "action.model"));
+            XYModel = Model.Load(Path.Combine("Model", "Prebuilt", "xy.model"));
+            AngleModel = Model.Load(Path.Combine("Model", "Prebuilt", "angle.model"));            
         }
 
         public override ActionEnum Action(List<Element> elements, float angleToCenter, bool inZone, ref float xdelta, ref float ydelta, ref float angle)
@@ -39,14 +39,26 @@ namespace shootMup.Common
             data.Proximity = AITraining.ComputeProximity(this, elements).Values.ToList();
 
             // use the model to predict its actions
-            var modeldataset = data.ToModelDataSet();
+            var modeldataset = data.AsModelDataSet();
             int iAction = (int)ActionModel.Predict(modeldataset);
             angle = AngleModel.Predict(modeldataset);
             XYModel.Predict(modeldataset, out xdelta, out ydelta);
 
             // do some sanity checking...
             if (iAction < 0 || iAction >= (int)ActionEnum.ZoneDamage) throw new Exception("Unknown action : " + iAction);
-            if (Math.Abs(xdelta) + Math.Abs(ydelta) > 1.00001) throw new Exception("Incorrect delta");
+            while (Math.Abs(xdelta) + Math.Abs(ydelta) > 1.00001)
+            {
+                if (xdelta > ydelta)
+                {
+                    if (xdelta < 0) xdelta += 0.001f;
+                    else xdelta -= 0.001f;
+                }
+                else
+                {
+                    if (ydelta < 0) ydelta += 0.001f;
+                    else ydelta -= 0.001f;
+                }
+            }
             if (angle < 0 || angle > 360) throw new Exception("Incorrect angle : " + angle);
 
             return (ActionEnum)iAction;

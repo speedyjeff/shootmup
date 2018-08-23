@@ -9,7 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "shootMup.Common", "shootMup
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "shootMup.World", "shootMup.World\shootMup.World.csproj", "{4DEDEE14-2239-4609-8E86-5715B564609A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "shootMup.AI", "shootMup.AI\shootMup.AI.csproj", "{66EE2793-3766-4464-9960-09255273BCE9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "shootMup.AI", "shootMup.AI\shootMup.AI.csproj", "{66EE2793-3766-4464-9960-09255273BCE9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "shootMup.AI.Training", "shootMup.AI.Training\shootMup.AI.Training.csproj", "{78A1C0D9-01FF-4A16-930C-60AEB136AEAA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{66EE2793-3766-4464-9960-09255273BCE9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{66EE2793-3766-4464-9960-09255273BCE9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{66EE2793-3766-4464-9960-09255273BCE9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{78A1C0D9-01FF-4A16-930C-60AEB136AEAA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{78A1C0D9-01FF-4A16-930C-60AEB136AEAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{78A1C0D9-01FF-4A16-930C-60AEB136AEAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{78A1C0D9-01FF-4A16-930C-60AEB136AEAA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
