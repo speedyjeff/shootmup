@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace shootMup.Common
+namespace shootMup.Bots
 {
     // this structure is stored on disk, so changes need to be made carefully
     public class TrainingData

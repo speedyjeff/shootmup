@@ -1,8 +1,9 @@
-﻿using System;
+﻿using shootMup.Common;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace shootMup.Common
+namespace shootMup.Bots
 {
     public class AI : Player
     {

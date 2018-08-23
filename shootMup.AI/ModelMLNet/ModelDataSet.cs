@@ -2,8 +2,9 @@
 using Microsoft.ML;
 using Microsoft.ML.Data;
 using Microsoft.ML.Runtime.Api;
+using shootMup.Common;
 
-namespace shootMup.Common
+namespace shootMup.Bots
 {
     // all columns must have the same type (float)
     public class ModelDataSet

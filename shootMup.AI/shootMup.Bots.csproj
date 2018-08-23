@@ -14,17 +14,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Model\Prebuilt\" />
+    <Folder Include="ModelMLNet\Prebuilt\" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\trainingdata\action.model" Link="Model\Prebuilt\action.model">
+    <None Include="..\trainingdata\action.model" Link="ModelMLNet\Prebuilt\action.model">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="..\trainingdata\angle.model" Link="Model\Prebuilt\angle.model">
+    <None Include="..\trainingdata\angle.model" Link="ModelMLNet\Prebuilt\angle.model">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="..\trainingdata\xy.model" Link="Model\Prebuilt\xy.model">
+    <None Include="..\trainingdata\xy.model" Link="ModelMLNet\Prebuilt\xy.model">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

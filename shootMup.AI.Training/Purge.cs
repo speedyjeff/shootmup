@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 
-namespace shootMup.AI.Training
+using shootMup.Common;
+using shootMup.Bots;
+
+namespace shootMup.Bots.Training
 {
     public static class Purge
     {
@@ -14,7 +17,7 @@ namespace shootMup.AI.Training
             var considered = 0;
             var deleted = 0;
             var map = new HashSet<string>();
-            foreach (var kvp in shootMup.Common.AITraining.GetTrainingFiles(path))
+            foreach (var kvp in AITraining.GetTrainingFiles(path))
             {
                 considered++;
                 if (kvp.Value <= 0)

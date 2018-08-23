@@ -1,10 +1,11 @@
-﻿using shootMup.Common;
+﻿using shootMup.Bots;
+using shootMup.Common;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 
-namespace shootMup.AI.Training
+namespace shootMup.Bots.Training
 {
     public static class Model
     {
@@ -13,14 +14,14 @@ namespace shootMup.AI.Training
             // load each model and then give a few predictions and check the results
             var rand = new Random();
             var data = new List<TrainingData>();
-            foreach (var kvp in shootMup.Common.AITraining.GetTrainingFiles(path))
+            foreach (var kvp in AITraining.GetTrainingFiles(path))
             {
                 var file = kvp.Key;
                 var count = kvp.Value;
 
                 if (count > 0)
                 {
-                    foreach (var d in shootMup.Common.AITraining.GetTraingingData(file))
+                    foreach (var d in AITraining.GetTraingingData(file))
                     {
                         if (d.Result)
                         {
@@ -37,21 +38,21 @@ namespace shootMup.AI.Training
                 }
             }
 
-            foreach (var modelType in new shootMup.Common.ModelValue[]
+            foreach (var modelType in new ModelValue[]
                 {
-                    shootMup.Common.ModelValue.Action,
-                    shootMup.Common.ModelValue.XY,
-                    shootMup.Common.ModelValue.Angle
+                    ModelValue.Action,
+                    ModelValue.XY,
+                    ModelValue.Angle
                 }
             )
             {
                 var modelPath = "";
-                if (modelType == shootMup.Common.ModelValue.Action) modelPath = "action.model";
-                else if (modelType == shootMup.Common.ModelValue.XY) modelPath = "xy.model";
-                else if (modelType == shootMup.Common.ModelValue.Angle) modelPath = "angle.model";
+                if (modelType == ModelValue.Action) modelPath = "action.model";
+                else if (modelType == ModelValue.XY) modelPath = "xy.model";
+                else if (modelType == ModelValue.Angle) modelPath = "angle.model";
                 else throw new Exception("Unknown model type : " + modelType);
 
-                var model = shootMup.Common.ModelMLNet.Load(Path.Combine(path, modelPath));
+                var model = ModelMLNet.Load(Path.Combine(path, modelPath));
 
                 var delta = 0f;
                 var count = 0;
@@ -59,7 +60,7 @@ namespace shootMup.AI.Training
                 timer.Start();
                 foreach(var d in data)
                 {
-                    if (modelType == shootMup.Common.ModelValue.XY)
+                    if (modelType == ModelValue.XY)
                     {
                         float xdelta, ydelta;
                         model.Predict(d.AsModelDataSet(), out xdelta, out ydelta);
@@ -71,7 +72,7 @@ namespace shootMup.AI.Training
                     {
                         var value = model.Predict(d.AsModelDataSet());
 
-                        if (modelType == shootMup.Common.ModelValue.Action) delta += Math.Abs(value - (float)d.Action);
+                        if (modelType == ModelValue.Action) delta += Math.Abs(value - (float)d.Action);
                         else delta += Math.Abs(value - d.Angle);
                         count++;
                     }
@@ -91,14 +92,14 @@ namespace shootMup.AI.Training
             var rand = new Random();
             var data = new List<ModelDataSet>();
             var testData = new List<ModelDataSet>();
-            foreach(var kvp in shootMup.Common.AITraining.GetTrainingFiles(path))
+            foreach(var kvp in AITraining.GetTrainingFiles(path))
             {
                 var file = kvp.Key;
                 var count = kvp.Value;
 
                 if (count > 0)
                 {
-                    foreach (var d in shootMup.Common.AITraining.GetTraingingData(file))
+                    foreach (var d in AITraining.GetTraingingData(file))
                     {
                         if (d.Result)
                         {
@@ -121,21 +122,21 @@ namespace shootMup.AI.Training
             Console.WriteLine("Training data set ({0} items) and test data set ({1} items)", data.Count, testData.Count);
 
             // train
-            var actions = shootMup.Common.ModelMLNet.Train(data, ModelValue.Action);
+            var actions = ModelMLNet.Train(data, ModelValue.Action);
             actions.Save(Path.Combine(path, "action.model"));
             // evaluate
             var eval = actions.Evaluate(testData);
             Console.WriteLine("Actions RMS={0} R^2={1}", eval.RMS, eval.RSquared);
 
             // train
-            var xy = shootMup.Common.ModelMLNet.Train(data, ModelValue.XY);
+            var xy = ModelMLNet.Train(data, ModelValue.XY);
             xy.Save(Path.Combine(path, "xy.model"));
             // evaluate
             eval = xy.Evaluate(testData);
             Console.WriteLine("XY RMS={0} R^2={1}", eval.RMS, eval.RSquared);
 
             // train
-            var angle = shootMup.Common.ModelMLNet.Train(data, ModelValue.Angle);
+            var angle = ModelMLNet.Train(data, ModelValue.Angle);
             angle.Save(Path.Combine(path, "angle.model"));
             // evaluate
             eval = angle.Evaluate(testData);

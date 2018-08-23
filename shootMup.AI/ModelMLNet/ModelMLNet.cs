@@ -4,12 +4,13 @@ using Microsoft.ML.Models;
 using Microsoft.ML.Runtime;
 using Microsoft.ML.Trainers;
 using Microsoft.ML.Transforms;
+using shootMup.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace shootMup.Common
+namespace shootMup.Bots
 {
     public enum ModelValue { Action, XY, Angle };
 

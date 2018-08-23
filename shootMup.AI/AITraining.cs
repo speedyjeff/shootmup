@@ -1,10 +1,11 @@
-﻿using System;
+﻿using shootMup.Common;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 
-namespace shootMup.Common
+namespace shootMup.Bots
 {
     public static class AITraining
     {

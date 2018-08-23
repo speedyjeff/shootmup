@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 // Train
 // Purge
 
-namespace shootMup.AI.Training
+namespace shootMup.Bots.Training
 {
     class Program
     {
