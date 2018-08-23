@@ -16,9 +16,9 @@ namespace shootMup.Common
         static TrainedAI()
         { 
             // get models
-            ActionModel = Model.Load(Path.Combine("Model", "Prebuilt", "action.model"));
-            XYModel = Model.Load(Path.Combine("Model", "Prebuilt", "xy.model"));
-            AngleModel = Model.Load(Path.Combine("Model", "Prebuilt", "angle.model"));            
+            ActionModel = ModelMLNet.Load(Path.Combine("Model", "Prebuilt", "action.model"));
+            XYModel = ModelMLNet.Load(Path.Combine("Model", "Prebuilt", "xy.model"));
+            AngleModel = ModelMLNet.Load(Path.Combine("Model", "Prebuilt", "angle.model"));            
         }
 
         public override ActionEnum Action(List<Element> elements, float angleToCenter, bool inZone, ref float xdelta, ref float ydelta, ref float angle)
@@ -72,9 +72,9 @@ namespace shootMup.Common
         }
 
         #region private
-        private static Model AngleModel;
-        private static Model XYModel;
-        private static Model ActionModel;
+        private static ModelMLNet AngleModel;
+        private static ModelMLNet XYModel;
+        private static ModelMLNet ActionModel;
         #endregion
     }
 }

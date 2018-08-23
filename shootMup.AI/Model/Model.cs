@@ -19,9 +19,9 @@ namespace shootMup.Common
         public double RSquared;
     }
 
-    public class Model
+    public class ModelMLNet
     {
-        public static Model Train(IEnumerable<ModelDataSet> data, ModelValue prediction)
+        public static ModelMLNet Train(IEnumerable<ModelDataSet> data, ModelValue prediction)
         {
             var pipeline = new LearningPipeline();
 
@@ -130,7 +130,7 @@ namespace shootMup.Common
             //pipeline.Add(new StochasticDualCoordinateAscentRegressor());
 
             // train the model
-            var model = new Model();
+            var model = new ModelMLNet();
             model.TrainedModel = pipeline.Train<ModelDataSet, ModelDataSetPrediction>();
             return model;
         }
@@ -143,9 +143,9 @@ namespace shootMup.Common
             }
         }
 
-        public static Model Load(string path)
+        public static ModelMLNet Load(string path)
         {
-            var model = new Model();
+            var model = new ModelMLNet();
             model.TrainedModel = PredictionModel.ReadAsync<ModelDataSet, ModelDataSetPrediction>(path).Result;
 
             return model;
