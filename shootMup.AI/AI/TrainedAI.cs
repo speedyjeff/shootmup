@@ -10,8 +10,11 @@ namespace shootMup.Common
         public TrainedAI() : base()
         {
             // never record training data for these AI
-            RecordTraining = true;
+            RecordTraining = false;
+        }
 
+        static TrainedAI()
+        { 
             // get models
             ActionModel = Model.Load(Path.Combine("Model", "Prebuilt", "action.model"));
             XYModel = Model.Load(Path.Combine("Model", "Prebuilt", "xy.model"));
@@ -40,9 +43,13 @@ namespace shootMup.Common
 
             // use the model to predict its actions
             var modeldataset = data.AsModelDataSet();
-            int iAction = (int)ActionModel.Predict(modeldataset);
-            angle = AngleModel.Predict(modeldataset);
-            XYModel.Predict(modeldataset, out xdelta, out ydelta);
+            int iAction = 0;
+            lock (ActionModel)
+            {
+                iAction = (int)ActionModel.Predict(modeldataset);
+                angle = AngleModel.Predict(modeldataset);
+                XYModel.Predict(modeldataset, out xdelta, out ydelta);
+            }
 
             // do some sanity checking...
             if (iAction < 0 || iAction >= (int)ActionEnum.ZoneDamage) throw new Exception("Unknown action : " + iAction);
@@ -59,15 +66,16 @@ namespace shootMup.Common
                     else ydelta -= 0.001f;
                 }
             }
-            if (angle < 0 || angle > 360) throw new Exception("Incorrect angle : " + angle);
+            if (angle < 0) angle *= -1;
+            angle = angle % 360;
 
             return (ActionEnum)iAction;
         }
 
         #region private
-        private Model AngleModel;
-        private Model XYModel;
-        private Model ActionModel;
+        private static Model AngleModel;
+        private static Model XYModel;
+        private static Model ActionModel;
         #endregion
     }
 }

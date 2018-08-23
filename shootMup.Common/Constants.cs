@@ -50,6 +50,7 @@ namespace shootMup.Common
         public const int MaxHealth = 100;
         public const int GlobalClock = 100; // ms
         public const bool CaptureAITrainingData = true;
+        public const int MaxTrainedAICount = 0;
 
         // world options
         public const float MaxZoomIn = 10f;
