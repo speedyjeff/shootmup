@@ -1,6 +1,7 @@
 ﻿using shootMup.Common;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 
 namespace shootMup.AI.Training
@@ -54,13 +55,14 @@ namespace shootMup.AI.Training
 
                 var delta = 0f;
                 var count = 0;
+                var timer = new Stopwatch();
+                timer.Start();
                 foreach(var d in data)
                 {
                     if (modelType == shootMup.Common.ModelValue.XY)
                     {
                         float xdelta, ydelta;
                         model.Predict(d.AsModelDataSet(), out xdelta, out ydelta);
-//Console.WriteLine("{0},{1} v {2},{3}", d.Xdelta, d.Ydelta, xdelta, ydelta);
                         delta += Math.Abs(xdelta - d.Xdelta);
                         delta += Math.Abs(ydelta - d.Ydelta);
                         count += 2;
@@ -74,8 +76,9 @@ namespace shootMup.AI.Training
                         count++;
                     }
                 }
+                timer.Stop();
 
-                Console.WriteLine("{0} has an average delta of {1:f2}", modelType, delta / (float)count);
+                Console.WriteLine("{0} has an average delta of {1:f2}.  This ran in {2}ms or {3:f2}ms per prediction", modelType, delta / (float)count, timer.ElapsedMilliseconds,  (float)timer.ElapsedMilliseconds/(float)data.Count);
             }
 
             return 0;

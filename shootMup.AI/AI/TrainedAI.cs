@@ -44,7 +44,6 @@ namespace shootMup.Common
             // use the model to predict its actions
             var modeldataset = data.AsModelDataSet();
             int iAction = 0;
-            lock (ActionModel)
             {
                 iAction = (int)ActionModel.Predict(modeldataset);
                 angle = AngleModel.Predict(modeldataset);
