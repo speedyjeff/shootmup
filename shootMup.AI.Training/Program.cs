@@ -14,7 +14,7 @@ namespace shootMup.Bots.Training
         public static int Usage()
         {
             Console.WriteLine("Usage: [verb] [parameters]");
-            Console.WriteLine("  train [directory to input/output] - trains the model");
+            Console.WriteLine("  train [ml|cv] [directory to input/output] - trains the model");
             Console.WriteLine("  purge [directory to input]        - removes unnecessary training data");
             Console.WriteLine("  check [directory to model]        - loads a trained model and gives it a try");
             return -1;
@@ -27,14 +27,16 @@ namespace shootMup.Bots.Training
                 if (string.Equals(args[i], "train", StringComparison.OrdinalIgnoreCase))
                 {
                     // train the model
-                    var directory = i + 1 < args.Length ? args[i + 1] : "";
-                    return Model.TrainAndEvaulate(directory);
+                    var type = i + 1 < args.Length ? args[i + 1] : "";
+                    var directory = i + 2 < args.Length ? args[i + 2] : "";
+                    return ModelBuilding.TrainAndEvaulate(type, directory);
                 }
                 else if (string.Equals(args[i], "check", StringComparison.OrdinalIgnoreCase))
                 {
                     // purge the input
-                    var directory = i + 1 < args.Length ? args[i + 1] : "";
-                    return Model.Check(directory);
+                    var type = i + 1 < args.Length ? args[i + 1] : "";
+                    var directory = i + 2 < args.Length ? args[i + 2] : "";
+                    return ModelBuilding.Check(type, directory);
                 }
                 else if (string.Equals(args[i], "purge", StringComparison.OrdinalIgnoreCase))
                 {
@@ -43,6 +45,46 @@ namespace shootMup.Bots.Training
                     var deleted = Purge.Execute(directory);
 
                     if (deleted >= 0) return 0;
+                }
+                else if (string.Equals(args[i], "run", StringComparison.OrdinalIgnoreCase))
+                {
+                    // do a trial run
+                    return Executor.Run();
+                }
+                else if (string.Equals(args[i], "test", StringComparison.OrdinalIgnoreCase))
+                {
+                    float x1, y1;
+                    float xdelta, ydelta;
+                    foreach(var angle in new float[] { 0, 45, 90, 135, 180, 225, 270, 315, 359})
+                    {
+                        Common.Collision.CalculateLineByAngle(0, 0, angle, 1, out x1, out y1, out xdelta, out ydelta);
+
+                        var sum = (float)(Math.Abs(xdelta) + Math.Abs(ydelta));
+                        xdelta = xdelta / sum;
+                        ydelta = ydelta / sum;
+ 
+                        Console.WriteLine("0: {0} {1},{2}", angle, xdelta, ydelta);
+                    }
+
+                    foreach (var pair in new float[][]
+                    {
+                        new float[] { 1, 0 },
+                        new float[] { 0, 1 },
+                        new float[] { -1, 0 },
+                        new float[] { 0, -1 },
+                        new float[] {0.5f, 0.5f },
+                        new float[] { -0.5f, 0.5f },
+                        new float[] { 0.5f, -0.5f },
+                        new float[] { -0.5f, -0.5f }
+                        }
+                        )
+                    {
+                        var angle = Common.Collision.CalculateAngleFromPoint(0, 0, pair[0], pair[1]);
+
+                        Console.WriteLine("1: {0} {1},{2}", angle, pair[0], pair[1]);
+                    }
+
+                        return 0;
                 }
             }
 

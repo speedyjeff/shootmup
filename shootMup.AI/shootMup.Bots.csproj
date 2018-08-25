@@ -7,6 +7,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.ML" Version="0.4.0" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="OpenCvSharp3-AnyCPU" Version="3.4.1.20180319" />
   </ItemGroup>
 
   <ItemGroup>
@@ -14,18 +15,23 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Models\MLNet\Prebuilt\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="..\trainingdata\action.model" Link="Models\MLNet\Prebuilt\action.model">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    <None Update="Models\Prebuilt\action.cv.model">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="..\trainingdata\angle.model" Link="Models\MLNet\Prebuilt\angle.model">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    <None Update="Models\Prebuilt\action.ml.model">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="..\trainingdata\xy.model" Link="Models\MLNet\Prebuilt\xy.model">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    <None Update="Models\Prebuilt\angle.cv.model">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Models\Prebuilt\angle.ml.model">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Models\Prebuilt\xy.cv.model">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Models\Prebuilt\xy.ml.model">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 

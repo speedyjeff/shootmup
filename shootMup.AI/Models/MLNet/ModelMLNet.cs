@@ -12,17 +12,10 @@ using System.Text;
 
 namespace shootMup.Bots
 {
-    public enum ModelValue { Action, XY, Angle };
-
-    public struct ModelFitness
+    public class ModelMLNet : Model
     {
-        public double RMS;
-        public double RSquared;
-    }
-
-    public class ModelMLNet
-    {
-        public static ModelMLNet Train(IEnumerable<ModelDataSet> data, ModelValue prediction)
+        // train
+        public ModelMLNet(IEnumerable<ModelDataSet> data, ModelValue prediction)
         {
             var pipeline = new LearningPipeline();
 
@@ -131,29 +124,29 @@ namespace shootMup.Bots
             //pipeline.Add(new StochasticDualCoordinateAscentRegressor());
 
             // train the model
-            var model = new ModelMLNet();
-            model.TrainedModel = pipeline.Train<ModelDataSet, ModelDataSetPrediction>();
-            return model;
+            TrainedModel = pipeline.Train<ModelDataSet, ModelDataSetPrediction>();
         }
 
-        public void Save(string path)
+        // load
+        public ModelMLNet(string path)
         {
+            TrainedModel = PredictionModel.ReadAsync<ModelDataSet, ModelDataSetPrediction>(path).Result;
+        }
+
+        public override void Save(string path)
+        {
+            if (TrainedModel == null) throw new Exception("Must initialize the model before calling");
+
             lock (TrainedModel)
             {
                 TrainedModel.WriteAsync(path).Wait();
             }
         }
 
-        public static ModelMLNet Load(string path)
+        public override ModelFitness Evaluate(List<ModelDataSet> data, ModelValue prediction)
         {
-            var model = new ModelMLNet();
-            model.TrainedModel = PredictionModel.ReadAsync<ModelDataSet, ModelDataSetPrediction>(path).Result;
+            if (TrainedModel == null) throw new Exception("Must initialize the model before calling");
 
-            return model;
-        }
-
-        public ModelFitness Evaluate(List<ModelDataSet> data)
-        {
             lock (TrainedModel)
             {
                 var testData = CollectionDataSource.Create(data);
@@ -168,31 +161,10 @@ namespace shootMup.Bots
             }
         }
 
-        public bool Predict(ModelDataSet data, out float xdelta, out float ydelta)
+        public override float Predict(ModelDataSet data)
         {
-            var angle = Predict(data);
+            if (TrainedModel == null) throw new Exception("Must initialize the model before calling");
 
-            // set course
-            float x1, y1;
-            Collision.CalculateLineByAngle(0, 0, angle, 1, out x1, out y1, out xdelta, out ydelta);
-
-            // normalize
-            xdelta = xdelta / (Math.Abs(xdelta) + Math.Abs(ydelta));
-            ydelta = ydelta / (Math.Abs(xdelta) + Math.Abs(ydelta));
-            if (Math.Abs(xdelta) + Math.Abs(ydelta) > 1)
-            {
-                var delta = (Math.Abs(xdelta) + Math.Abs(ydelta)) - 1;
-                if (xdelta > ydelta) xdelta -= delta;
-                else ydelta -= delta;
-            }
-            xdelta = (float)Math.Round(xdelta, 4);
-            ydelta = (float)Math.Round(ydelta, 4);
-
-            return true;
-        }
-
-        public float Predict(ModelDataSet data)
-        {
             lock (TrainedModel)
             {
                 var result = TrainedModel.Predict(data);

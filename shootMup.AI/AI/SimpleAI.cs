@@ -280,16 +280,11 @@ namespace shootMup.Bots
             ydelta = y2 - y1;
 
             // normalize
-            xdelta = xdelta / (Math.Abs(xdelta) + Math.Abs(ydelta));
-            ydelta = ydelta / (Math.Abs(xdelta) + Math.Abs(ydelta));
-            if (Math.Abs(xdelta) + Math.Abs(ydelta) > 1)
-            {
-                var delta = (Math.Abs(xdelta) + Math.Abs(ydelta)) - 1;
-                if (xdelta > ydelta) xdelta -= delta;
-                else ydelta -= delta;
-            }
-            xdelta = (float)Math.Round(xdelta, 4);
-            ydelta = (float)Math.Round(ydelta, 4);
+            var sum = (float)(Math.Abs(xdelta) + Math.Abs(ydelta));
+            xdelta = xdelta / sum;
+            ydelta = ydelta / sum;
+
+            if (Math.Abs(xdelta) + Math.Abs(ydelta) > 1.0001) throw new Exception("Invalid xdelta,ydelta : " + xdelta + "," + ydelta);
 
             if (ShowDiagnostics) System.Diagnostics.Debug.WriteLine("AI {0} {1} {2} {3}", action, angle, xdelta, ydelta);
 

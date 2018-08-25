@@ -115,48 +115,59 @@ namespace shootMup.Bots
             }
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(winners);
             output.WriteLine(json);
+            output.Flush();
         }
 
         public static Dictionary<string, int> GetTrainingFiles(string path)
         {
+            path = Path.GetFullPath(path);
+
             // gather all the humans and the top winning AI
             var map = new Dictionary<string, int>();
-            foreach (var file in Directory.GetFiles(path, "*.winner"))
+            foreach (var file in Directory.GetFiles(path))
             {
-                var json = File.ReadAllText(file);
-                var prefix = file.Substring(0, file.IndexOf('.'));
-                // open the file and build a map of files to consider
-                var start = json[0] == '[' ? 1 : 0;
-                var end = 0;
-                while (start < json.Length)
+                if (file.EndsWith(".winner"))
                 {
-                    end = json.IndexOf(',', start);
-
-                    if (end < 0) end = json.Length;
-
-                    var i1 = json.IndexOf('[', start);
-                    var i2 = json.IndexOf(']', start);
-
-                    // "name [#]"
-                    if (i1 > 0 && i2 > 0)
+                    var json = File.ReadAllText(file);
+                    var prefix = file.Substring(0, file.LastIndexOf('.'));
+                    // open the file and build a map of files to consider
+                    var start = json[0] == '[' ? 1 : 0;
+                    var end = 0;
+                    while (start < json.Length)
                     {
-                        var name = json.Substring(start + 1, i1 - start - 1).Trim();
-                        var number = json.Substring(i1 + 1, i2 - i1 - 1);
-                        int value;
-                        var fullpath = Path.Combine(path, prefix + "." + name);
+                        end = json.IndexOf(',', start);
 
-                        // check if the file exists
-                        if (File.Exists(fullpath))
+                        if (end < 0) end = json.Length;
+
+                        var i1 = json.IndexOf('[', start);
+                        var i2 = json.IndexOf(']', start);
+
+                        // "name [#]"
+                        if (i1 > 0 && i2 > 0)
                         {
-                            if (Int32.TryParse(number, out value))
+                            var name = json.Substring(start + 1, i1 - start - 1).Trim();
+                            var number = json.Substring(i1 + 1, i2 - i1 - 1);
+                            int value;
+                            var fullpath = Path.Combine(path, prefix + "." + name);
+
+                            // check if the file exists
+                            if (File.Exists(fullpath))
                             {
-                                map.Add(fullpath, value);
+                                if (Int32.TryParse(number, out value))
+                                {
+                                    if (!map.ContainsKey(fullpath)) map.Add(fullpath, value);
+                                    else map[fullpath] = value;
+                                }
                             }
                         }
-                    }
 
-                    // advance
-                    start = end + 1;
+                        // advance
+                        start = end + 1;
+                    }
+                }
+                else if (!file.EndsWith(".model"))
+                {
+                    if (!map.ContainsKey(file)) map.Add(file, 0);
                 }
             }
             return map;

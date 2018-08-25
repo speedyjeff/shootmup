@@ -60,7 +60,7 @@ namespace shootMup.Common
         public static float CalculateAngleFromPoint(float x1, float y1, float x2, float y2)
         {
             // normalize x,y to 0,0
-            float y = y1 != 0 ? (y1 - y2) / (y1) : y2;
+            float y = y1 != 0 ? (y1 - y2) / (y1) : -1*y2;
             float x = x1 != 0 ? (x2 - x1) / (x1) : x2;
             float angle = (float)(Math.Atan2(x, y) * (180 / Math.PI));
 

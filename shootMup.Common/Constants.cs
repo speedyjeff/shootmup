@@ -48,7 +48,7 @@ namespace shootMup.Common
         public const float MinSpeedMultiplier = 0.1f;
         public const int MaxSheld = 100;
         public const int MaxHealth = 100;
-        public const int GlobalClock = 100; // ms
+        public const int GlobalClock = 100; // ms - cannot be below 30ms
         public const bool CaptureAITrainingData = true;
         public const int MaxTrainedAICount = 0;
 
@@ -57,6 +57,8 @@ namespace shootMup.Common
         public const float ZoomStep = 0.1f;
         public const float Ground = 0f;
         public const float Sky = 1f;
+        public const float ProximityViewHeight = 888;
+        public const float ProximityViewWidth = 1384;
 
         // diagnstics
         public const bool Debug_ShowHitBoxes = false;

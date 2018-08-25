@@ -22,8 +22,6 @@ namespace shootMup.Common
             var width = 500;
             var height = 300;
 
-            if (g.Width < width || g.Height < height) throw new Exception("The title menu assumes at least " + width + "x" + height);
-
             g.DisableTranslation();
             {
                 g.Rectangle(new RGBA() { R = 255, G = 255, B = 255, A = 200 }, top, left, width, height);
