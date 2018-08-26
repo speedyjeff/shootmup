@@ -93,9 +93,12 @@ namespace shootMup.Bots
                                 // are case-insensitive.
                                 if (destinationPath.StartsWith(extractPath, StringComparison.Ordinal))
                                 {
-                                    Directory.CreateDirectory(extractPath);
                                     path = destinationPath;
-                                    entry.ExtractToFile(destinationPath);
+                                    if (!File.Exists(destinationPath))
+                                    {
+                                        Directory.CreateDirectory(extractPath);
+                                        entry.ExtractToFile(destinationPath);
+                                    }
                                 }
                                 break;
                             }

@@ -78,14 +78,14 @@ namespace shootMup.Bots.Training
                 if (type.Equals("ml", StringComparison.OrdinalIgnoreCase)) model = new ModelMLNet(Path.Combine(path, modelPath));
                 else model = new ModelOpenCV(Path.Combine(path, modelPath));
 
-                var delta = 0f;
+                var delta = 0d;
                 var count = 0;
                 var timer = new Stopwatch();
                 timer.Start();
                 foreach(var d in data)
                 {
                     var key = "";
-                    if (modelType == ModelValue.XY)
+                    if (false && modelType == ModelValue.XY)
                     {
                         float xdelta, ydelta;
                         model.Predict(d.AsModelDataSet(), out xdelta, out ydelta);
@@ -99,21 +99,30 @@ namespace shootMup.Bots.Training
                     {
                         var value = model.Predict(d.AsModelDataSet());
 
-                        if (modelType == ModelValue.Action) delta += Math.Abs(value - (float)d.Action);
-                        else delta += Math.Abs(value - d.Angle);
-                        count++;
-
                         if (modelType == ModelValue.Action)
+                        {
+                            delta += Math.Abs(value - (float)d.Action);
                             key = string.Format("{0},{1}", d.Action, Math.Round(value));
-                        else
+                        }
+                        else if (modelType == ModelValue.Angle)
+                        {
+                            delta += Math.Abs(value - d.Angle);
                             key = string.Format("{0},{1}", Math.Round(d.Angle), Math.Round(value));
+                        }
+                        else if (modelType == ModelValue.XY)
+                        {
+                            var moveAngle = Collision.CalculateAngleFromPoint(0, 0, d.Xdelta, d.Ydelta);
+
+                            delta += Math.Abs(value - moveAngle);
+                            key = string.Format("{0},{1}", Math.Round(moveAngle), Math.Round(value));
+                        }
                     }
                     if (!map.ContainsKey(key)) map.Add(key, 0);
                     map[key]++;
                 }
                 timer.Stop();
 
-                Console.WriteLine("{0} has an average delta of {1:f2}.  This ran in {2}ms or {3:f2}ms per prediction", modelType, delta / (float)count, timer.ElapsedMilliseconds,  (float)timer.ElapsedMilliseconds/(float)data.Count);
+                Console.WriteLine("{0} has an average delta of {1:f2}.  This ran in {2}ms or {3:f2}ms per prediction", modelType, delta / (double)count, timer.ElapsedMilliseconds,  (float)timer.ElapsedMilliseconds/(float)data.Count);
 
                 foreach(var kvp in map.OrderByDescending(k => k.Value))
                 {

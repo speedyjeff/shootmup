@@ -67,8 +67,7 @@ namespace shootMup.Bots
             // do some sanity checking...
             if (iAction < 0 || iAction >= (int)ActionEnum.COUNT) iAction = (int)ActionEnum.Move;
             if (Math.Abs(xdelta) + Math.Abs(ydelta) > 1.00001) throw new Exception("xdelta and ydelta are invalid");
-            if (angle < 0) angle *= -1;
-            angle = angle % 360;
+            if (angle < 0 || angle > 360) throw new Exception("Invalid angle: " + angle);
 
             return (ActionEnum)iAction;
         }
