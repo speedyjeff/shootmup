@@ -15,22 +15,26 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Models\Prebuilt\action.cv.model">
+    <Folder Include="Models\Prebuilt\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\trainingdata\action.cv.model" Link="Models\Prebuilt\action.cv.model">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Models\Prebuilt\action.ml.model">
+    <None Include="..\trainingdata\action.ml.model" Link="Models\Prebuilt\action.ml.model">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Models\Prebuilt\angle.cv.model">
+    <None Include="..\trainingdata\angle.cv.model" Link="Models\Prebuilt\angle.cv.model">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Models\Prebuilt\angle.ml.model">
+    <None Include="..\trainingdata\angle.ml.model" Link="Models\Prebuilt\angle.ml.model">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Models\Prebuilt\xy.cv.model">
+    <None Include="..\trainingdata\xy.cv.model" Link="Models\Prebuilt\xy.cv.model">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Models\Prebuilt\xy.ml.model">
+    <None Include="..\trainingdata\xy.ml.model" Link="Models\Prebuilt\xy.ml.model">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

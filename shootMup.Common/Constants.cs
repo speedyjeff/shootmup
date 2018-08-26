@@ -51,6 +51,7 @@ namespace shootMup.Common
         public const int GlobalClock = 100; // ms - cannot be below 30ms
         public const bool CaptureAITrainingData = true;
         public const int MaxTrainedAICount = 0;
+        public const int MaxAmmo = 500; // it is infinite, but any more than this is considered full
 
         // world options
         public const float MaxZoomIn = 10f;

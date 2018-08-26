@@ -65,7 +65,7 @@ namespace shootMup.Bots
             }
 
             // do some sanity checking...
-            if (iAction < 0 || iAction >= (int)ActionEnum.ZoneDamage) throw new Exception("Unknown action : " + iAction);
+            if (iAction < 0 || iAction >= (int)ActionEnum.COUNT) iAction = (int)ActionEnum.Move;
             if (Math.Abs(xdelta) + Math.Abs(ydelta) > 1.00001) throw new Exception("xdelta and ydelta are invalid");
             if (angle < 0) angle *= -1;
             angle = angle % 360;
@@ -84,7 +84,7 @@ namespace shootMup.Bots
                 var sum = (float)(Math.Abs(Xdelta) + Math.Abs(Ydelta));
                 Xdelta = Xdelta / sum;
                 Ydelta = Ydelta / sum;
-                LastActionFailed = 10;
+                //LastActionFailed = 10;
             }
         }
 

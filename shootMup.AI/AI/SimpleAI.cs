@@ -244,13 +244,13 @@ namespace shootMup.Bots
             }
 
             // check if we are in the Zone
-            if (InZone > 0)
+            if (inZone)
             {
-                InZone--;
                 // we should be moving towards the center
                 if (action == ActionEnum.Move)
                 {
-                    angle = Collision.CalculateAngleFromPoint(X, Y, ZoneX, ZoneY);
+                    // eek we are in the zone, indicate that we should be moving towards the center
+                    angle = angleToCenter;
                 }
             }
 
@@ -322,14 +322,6 @@ namespace shootMup.Bots
                     else PreviousPickups[PreviousPickupId]++;
                     if (ShowDiagnostics) System.Diagnostics.Debug.WriteLine("Failed to pickup {0} times", PreviousPickups[PreviousPickupId]);
                     break;
-                case ActionEnum.ZoneDamage:
-                    // eek we are in the zone, indicate that we should be moving towards the center
-                    var center = (item as Tuple<float, float>);
-                    if (InZone > 0) InZone++;
-                    else InZone = 5;
-                    ZoneX = center.Item1;
-                    ZoneY = center.Item2;
-                    break;
             }
         }
 
@@ -342,11 +334,6 @@ namespace shootMup.Bots
         private float PreviousX;
         private float PreviousY;
         private int SameLocationCount;
-
-        // zone check
-        private int InZone;
-        private float ZoneX;
-        private float ZoneY;
 
         // pickup check
         private int PreviousPickupId;

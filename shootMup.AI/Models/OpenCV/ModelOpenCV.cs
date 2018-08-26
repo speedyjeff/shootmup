@@ -1,5 +1,6 @@
 ﻿using OpenCvSharp;
 using OpenCvSharp.ML;
+using shootMup.Common;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -36,20 +37,35 @@ namespace shootMup.Bots
             var dataInput = InputArray.Create<float>(features);
 
             TrainedModel = RTrees.Create();
+            TrainedModel.RegressionAccuracy = 0.00001f;
             // RTrees.MaxDepath (r^2)
             //  default - action 0.3424, xy 0.1735, angle 0.2208
             //    5     - 
             //   20     - action 0.6482, xy 0.5912, angle 0.6414 (new default)
             //  100     - action 0.6408, xy 0.5914, angle 0.6419
-            TrainedModel.MaxDepth = 5;
+            TrainedModel.MaxDepth = 20;
             // RTress.MinSampleCount
             //  default(10) - see 20 above
             //     1        - actions 0.6625, xy 0.5077, angle 0.6376
             //    50        - actions 0.6464, xy 0.5627, angle 0.6217
             //TrainedModel.MinSampleCount = 1;
 
-            // never finished
+            // fails
             //TrainedModel = LogisticRegression.Create();
+            
+            //  fails
+            // TrainedModel = DTrees.Create();
+
+            // failed
+            //TrainedModel = SVM.Create();
+            //TrainedModel.KernelType = SVM.KernelTypes.Linear;
+            //TrainedModel.Type = SVM.Types.NuSvr;
+            //TrainedModel.C = 1;
+            //TrainedModel.P = 0.01;
+            //TrainedModel.Gamma = 10f;
+            //TrainedModel.Degree = 0.1;
+            //TrainedModel.Coef0 = 0;
+            //TrainedModel.Nu = 0.1;
 
             TrainedModel.Train(dataInput, SampleTypes.RowSample, labelInput);
         }
@@ -81,7 +97,7 @@ namespace shootMup.Bots
                predictions[i] = Predict(data[i]);
                 switch (prediction)
                 {
-                    case ModelValue.Action: labels[i] = data[i].Action; ; break;
+                    case ModelValue.Action: labels[i] = (float)data[i].Action; break;
                     case ModelValue.Angle: labels[i] = data[i].FaceAngle; break;
                     case ModelValue.XY: labels[i] = data[i].MoveAngle; break;
                     default: throw new Exception("Unknown prediction type : " + prediction);

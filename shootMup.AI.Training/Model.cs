@@ -8,6 +8,20 @@ using System.Linq;
 
 namespace shootMup.Bots.Training
 {
+    class DataSet
+    {
+        public List<ModelDataSet> Test;
+        public List<ModelDataSet> Training;
+        public int TrainingCountMax;
+
+        public DataSet()
+        {
+            Test = new List<ModelDataSet>();
+            Training = new List<ModelDataSet>();
+            TrainingCountMax = 100000;
+        }
+    }
+
     public static class ModelBuilding
     {
         public static int Check(string type, string path)
@@ -15,8 +29,11 @@ namespace shootMup.Bots.Training
             // load each model and then give a few predictions and check the results
             var rand = new Random();
             var data = new List<TrainingData>();
+            var done = false;
             foreach (var kvp in AITraining.GetTrainingFiles(path))
             {
+                if (done) break;
+
                 var file = kvp.Key;
                 var count = kvp.Value;
 
@@ -24,6 +41,8 @@ namespace shootMup.Bots.Training
                 {
                     foreach (var d in AITraining.GetTraingingData(file))
                     {
+                        if (done) break;
+
                         if (d.Result)
                         {
                             // sample ~15%
@@ -33,7 +52,7 @@ namespace shootMup.Bots.Training
                                 data.Add(d);
                             }
 
-                            if (data.Count > 1000) break;
+                            if (data.Count > 1000) done = true;
                         }
                     }
                 }
@@ -109,9 +128,13 @@ namespace shootMup.Bots.Training
         {
             if (string.IsNullOrWhiteSpace(path)) return -1;
 
+            // 1 in x of these will be picked up (the smaller the number the more of them
+            var takeOnly = 0;
             var rand = new Random();
-            var data = new List<ModelDataSet>();
-            var testData = new List<ModelDataSet>();
+            var actionData = new DataSet();
+            var xyData = new DataSet();
+            var angleData = new DataSet();
+            int trainingCount = 0, testCount = 0;
             foreach(var kvp in AITraining.GetTrainingFiles(path))
             {
                 var file = kvp.Key;
@@ -119,53 +142,104 @@ namespace shootMup.Bots.Training
 
                 if (count > 0)
                 {
+                    // for debugging
+                    if (takeOnly > 0 && --takeOnly == 0) break;
+
+                    // once enough data has been gathered, break
+                    if (actionData.TrainingCountMax + xyData.TrainingCountMax + angleData.TrainingCountMax == 0) break;
+
                     foreach (var d in AITraining.GetTraingingData(file))
                     {
                         if (d.Result)
                         {
-                            // sample ~15%
+                            var dm = d.AsModelDataSet();
+
+                            // sample ~15% for test
                             if (rand.Next() % 6 == 0)
                             {
                                 // test data set
-                                testData.Add(d.AsModelDataSet());
+                                testCount++;
+                                if (actionData.TrainingCountMax > 0)
+                                {
+                                    actionData.Test.Add(dm);
+                                }
+                                switch ((ActionEnum)d.Action)
+                                {
+                                    case ActionEnum.Attack:
+                                        if (angleData.TrainingCountMax > 0)
+                                        {
+                                            angleData.Test.Add(dm);
+                                        }
+                                        break;
+                                    case ActionEnum.Move:
+                                        if (xyData.TrainingCountMax > 0)
+                                        {
+                                            xyData.Test.Add(dm);
+                                        }
+                                        break;
+                                }
                             }
                             else
                             {
                                 // training data set
-                                data.Add(d.AsModelDataSet());
+                                trainingCount++;
+                                if (actionData.TrainingCountMax > 0)
+                                {
+                                    actionData.Training.Add(dm);
+                                    actionData.TrainingCountMax--;
+                                }
+                                switch ((ActionEnum)d.Action)
+                                {
+                                    case ActionEnum.Attack:
+                                        if (angleData.TrainingCountMax > 0)
+                                        {
+                                            angleData.Training.Add(dm);
+                                            angleData.TrainingCountMax--;
+                                        }
+                                        break;
+                                    case ActionEnum.Move:
+                                        if (xyData.TrainingCountMax > 0)
+                                        {
+                                            xyData.Training.Add(dm);
+                                            xyData.TrainingCountMax--;
+                                        }
+                                        break;
+                                }
                             }
-                        }
-                    }
-                }
-            }
+                        } // is result
+                    } // foreach TrainingData
+                } // if count > 0
+            } // foreach file
 
-            Console.WriteLine("Training data set ({0} items) and test data set ({1} items)", data.Count, testData.Count);
+            Console.WriteLine("Training data set ({0} items) and test data set ({1} items)", trainingCount, testCount);
+            Console.WriteLine("  Training: Action({0}) XY({1}) Angle({2})", actionData.Training.Count, xyData.Training.Count, angleData.Training.Count);
+            Console.WriteLine("      Test: Action({0}) XY({1}) Angle({2})", actionData.Test.Count, xyData.Test.Count, angleData.Test.Count);
 
             // train
             shootMup.Bots.Model actions = null;
-            if (type.Equals("ml", StringComparison.OrdinalIgnoreCase)) actions = new ModelMLNet(data, ModelValue.Action);
-            else actions = new ModelOpenCV(data, ModelValue.Action);
+            if (type.Equals("ml", StringComparison.OrdinalIgnoreCase)) actions = new ModelMLNet(actionData.Training, ModelValue.Action);
+            else actions = new ModelOpenCV(actionData.Training, ModelValue.Action);
             actions.Save(Path.Combine(path, string.Format("action.{0}.model", type)));
             // evaluate
-            var eval = actions.Evaluate(testData, ModelValue.Action);
+            var eval = actions.Evaluate(actionData.Test, ModelValue.Action);
             Console.WriteLine("Actions RMS={0} R^2={1}", eval.RMS, eval.RSquared);
 
             // train
             shootMup.Bots.Model xy = null;
-            if (type.Equals("ml", StringComparison.OrdinalIgnoreCase)) xy = new ModelMLNet(data, ModelValue.XY);
-            else xy = new ModelOpenCV(data, ModelValue.XY);
+            if (type.Equals("ml", StringComparison.OrdinalIgnoreCase)) xy = new ModelMLNet(xyData.Training, ModelValue.XY);
+            else xy = new ModelOpenCV(xyData.Training, ModelValue.XY);
             xy.Save(Path.Combine(path, string.Format("xy.{0}.model", type)));
             // evaluate
-            eval = xy.Evaluate(testData, ModelValue.XY);
+            eval = xy.Evaluate(xyData.Test, ModelValue.XY);
             Console.WriteLine("XY RMS={0} R^2={1}", eval.RMS, eval.RSquared);
 
             // train
             shootMup.Bots.Model angle = null;
-            if (type.Equals("ml", StringComparison.OrdinalIgnoreCase)) angle = new ModelMLNet(data, ModelValue.Angle);
-            else angle = new ModelOpenCV(data, ModelValue.Angle);
+            if (type.Equals("ml", StringComparison.OrdinalIgnoreCase)) angle = new ModelMLNet(angleData.Training, ModelValue.Angle);
+            else angle = new ModelOpenCV(angleData.Training, ModelValue.Angle);
             angle.Save(Path.Combine(path, string.Format("angle.{0}.model", type)));
             // evaluate
-            eval = angle.Evaluate(testData, ModelValue.Angle);
+            eval = angle.Evaluate(angleData.Test, ModelValue.Angle);
             Console.WriteLine("Angle RMS={0} R^2={1}", eval.RMS, eval.RSquared);
 
             return 0;

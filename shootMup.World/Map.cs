@@ -388,14 +388,6 @@ namespace shootMup
                         if (damage > 0)
                         {
                             elem.ReduceHealth(damage);
-                            if (elem is AI)
-                            {
-                                // provide feedback that they are taking damage from the zone
-                                (elem as AI).Feedback(
-                                    ActionEnum.ZoneDamage, 
-                                    new Tuple<float,float>(Background.X, Background.Y), // center of safe area
-                                    false);
-                            }
 
                             if (elem.IsDead)
                             {

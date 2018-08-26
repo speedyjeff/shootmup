@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 
 namespace shootMup.Bots
 {
@@ -25,23 +26,11 @@ namespace shootMup.Bots
 
         public static Model Load(string path)
         {
-            // read the first two bytes of the model and determine what type
-            var header = new byte[2];
-            using (var reader = File.OpenRead(path))
-            {
-                reader.Read(header, 0, header.Length);
-            }
+            var type = GetFileType(ref path);
 
-            if (header[0] == 'P' && header[1] == 'K')
-            {
-                // ml.net
-                return new ModelMLNet(path);
-            }
-            else if (header[0] == '%')
-            {
-                return new ModelOpenCV(path);
-            }
-            else throw new Exception("Unknown file format header : " + header[0] + " " + header[1]);
+            if (type == FileType.ML) return new ModelMLNet(path);
+            else if (type == FileType.CV) return new ModelOpenCV(path);
+            else throw new Exception("Unknown file format header : " + type);
         }
 
         public virtual void Save(string path) { }
@@ -73,5 +62,58 @@ namespace shootMup.Bots
         {
             return 0;
         }
+
+        #region private
+        enum FileType { Zip, CV, ML };
+        private static FileType GetFileType(ref string path)
+        {
+            var loops = 0;
+            do
+            {
+                var header = new byte[2];
+                using (var reader = File.OpenRead(path))
+                {
+                    reader.Read(header, 0, header.Length);
+                }
+
+                if (header[0] == 'P' && header[1] == 'K')
+                {
+                    // this is a zip file, open it to check
+                    using (var zip = ZipFile.OpenRead(path))
+                    {
+                        foreach (var entry in zip.Entries)
+                        {
+                            if (entry.FullName.EndsWith(".model"))
+                            {
+                                // this is likely a CV file, but we need to extract and check
+                                var extractPath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(path), "fromzip"));
+                                var destinationPath = Path.GetFullPath(Path.Combine(extractPath, entry.FullName));
+
+                                // Ordinal match is safest, case-sensitive volumes can be mounted within volumes that
+                                // are case-insensitive.
+                                if (destinationPath.StartsWith(extractPath, StringComparison.Ordinal))
+                                {
+                                    Directory.CreateDirectory(extractPath);
+                                    path = destinationPath;
+                                    entry.ExtractToFile(destinationPath);
+                                }
+                                break;
+                            }
+                            else
+                                return FileType.ML;
+
+                        }
+                    }
+                }
+                else if (header[0] == '%')
+                {
+                    return FileType.CV;
+                }
+            }
+            while (loops++ < 1);
+
+            throw new Exception("Unknown file type");
+        }
+        #endregion
     }
 }

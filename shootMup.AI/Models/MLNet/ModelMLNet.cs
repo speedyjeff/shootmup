@@ -22,9 +22,6 @@ namespace shootMup.Bots
             // add data
             pipeline.Add( CollectionDataSource.Create(data) );
 
-            // normalize text fields
-            pipeline.Add(new CategoricalOneHotVectorizer("Primary", "Secondary"));
-
             // choose what to predict
             switch (prediction)
             {
@@ -90,12 +87,12 @@ namespace shootMup.Bots
                 //  100 - default
                 //  100 - xy 79
                 // 1000 - xy 63, angle 52 (slow)
-                NumTrees = 1000,
+                NumTrees = 100,
                 // NumLeaves
                 //   50 - default
                 //  100 - xy 63, angle 71
                 // 1000 - xy 59, angle 49 (slow)
-                NumLeaves = 1000,
+                NumLeaves = 50,
                 // NumThreads
                 // 5 - default
                 NumThreads = 50,

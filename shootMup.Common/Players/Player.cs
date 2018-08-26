@@ -4,7 +4,7 @@ using System.Text;
 
 namespace shootMup.Common
 {
-    public enum ActionEnum { None, SwitchWeapon, Pickup, Drop, Reload, Attack, Move, ZoneDamage };
+    public enum ActionEnum { None, SwitchWeapon, Pickup, Drop, Reload, Attack, Move, COUNT };
 
     public class Player : Element
     {
