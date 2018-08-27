@@ -145,6 +145,17 @@ namespace shootMup.Bots
                 default: throw new Exception("Unknown column : " + column);
             }
         }
+
+        public static string ToJson(this ModelDataSet data)
+        {
+            return Newtonsoft.Json.JsonConvert.SerializeObject(data);
+        }
+
+        public static int ComputeHash(this ModelDataSet data)
+        {
+            var json = data.ToJson();
+            return json.GetHashCode();
+        }
     }
 
     public static class TrainingDataExtentions
@@ -156,16 +167,16 @@ namespace shootMup.Bots
             var result = new ModelDataSet()
             {
                 // core data
-                CenterAngle = data.CenterAngle / 360f,
+                CenterAngle = Normalize(data.CenterAngle, 360f),
                 InZone = data.InZone ? 1f : 0,
-                Health = data.Health / (float)Constants.MaxHealth,
-                Sheld = data.Sheld / (float)Constants.MaxSheld,
-                Z = data.Z / Constants.Sky,
+                Health = Normalize(data.Health, (float)Constants.MaxHealth),
+                Sheld = Normalize(data.Sheld, (float)Constants.MaxSheld),
+                Z = Normalize(data.Z, Constants.Sky),
                 Primary = Normalize(data.Primary),
-                PrimaryAmmo = data.PrimaryAmmo >= Constants.MaxAmmo ? 1 : (float)data.PrimaryAmmo / (float)Constants.MaxAmmo,
+                PrimaryAmmo = data.PrimaryAmmo >= Constants.MaxAmmo ? 1 : Normalize((float)data.PrimaryAmmo, (float)Constants.MaxAmmo),
                 PrimaryClip = Normalize(data.Primary, data.PrimaryClip),
                 Secondary = Normalize(data.Secondary),
-                SecondaryAmmo = data.SecondaryAmmo >= Constants.MaxAmmo ? 1 : (float)data.SecondaryAmmo / (float)Constants.MaxAmmo,
+                SecondaryAmmo = data.SecondaryAmmo >= Constants.MaxAmmo ? 1 : Normalize((float)data.SecondaryAmmo, (float)Constants.MaxAmmo),
                 SecondaryClip = Normalize(data.Secondary, data.SecondaryClip),
             };
 
@@ -180,36 +191,36 @@ namespace shootMup.Bots
                 switch (elem.Name)
                 {
                     case "Ammo":
-                        result.Angle_1 = elem.Angle / 360f;
-                        result.Distance_1 = elem.Distance / (float)Constants.ProximityViewWidth;
+                        result.Angle_1 = Normalize(elem.Angle, 360f);
+                        result.Distance_1 = Normalize(elem.Distance, (float)Constants.ProximityViewWidth);
                         break;
                     case "Bandage":
-                        result.Angle_2 = elem.Angle / 360f;
-                        result.Distance_2 = elem.Distance / (float)Constants.ProximityViewWidth;
+                        result.Angle_2 = Normalize(elem.Angle, 360f);
+                        result.Distance_2 = Normalize(elem.Distance, (float)Constants.ProximityViewWidth);
                         break;
                     case "Helmet":
-                        result.Angle_3 = elem.Angle / 360f;
-                        result.Distance_3 = elem.Distance / (float)Constants.ProximityViewWidth;
+                        result.Angle_3 = Normalize(elem.Angle, 360f);
+                        result.Distance_3 = Normalize(elem.Distance, (float)Constants.ProximityViewWidth);
                         break;
                     case "AK47":
-                        result.Angle_4 = elem.Angle / 360f;
-                        result.Distance_4 = elem.Distance / (float)Constants.ProximityViewWidth;
+                        result.Angle_4 = Normalize(elem.Angle, 360f);
+                        result.Distance_4 = Normalize(elem.Distance, (float)Constants.ProximityViewWidth);
                         break;
                     case "Shotgun":
-                        result.Angle_5 = elem.Angle / 360f;
-                        result.Distance_5 = elem.Distance / (float)Constants.ProximityViewWidth;
+                        result.Angle_5 = Normalize(elem.Angle, 360f);
+                        result.Distance_5 = Normalize(elem.Distance, (float)Constants.ProximityViewWidth);
                         break;
                     case "Pistol":
-                        result.Angle_6 = elem.Angle / 360f;
-                        result.Distance_6 = elem.Distance / (float)Constants.ProximityViewWidth;
+                        result.Angle_6 = Normalize(elem.Angle, 360f);
+                        result.Distance_6 = Normalize(elem.Distance, (float)Constants.ProximityViewWidth);
                         break;
                     case "Obstacle":
-                        result.Angle_7 = elem.Angle / 360f;
-                        result.Distance_7 = elem.Distance / (float)Constants.ProximityViewWidth;
+                        result.Angle_7 = Normalize(elem.Angle, 360f);
+                        result.Distance_7 = Normalize(elem.Distance, (float)Constants.ProximityViewWidth);
                         break;
                     case "Player":
-                        result.Angle_8 = elem.Angle / 360f;
-                        result.Distance_8 = elem.Distance / (float)Constants.ProximityViewWidth;
+                        result.Angle_8 = Normalize(elem.Angle, 360f);
+                        result.Distance_8 = Normalize(elem.Distance, (float)Constants.ProximityViewWidth);
                         break;
                     default:
                         throw new Exception("Unknown proximity element type : " + elem.Name);
@@ -238,9 +249,9 @@ namespace shootMup.Bots
 
             switch (input.ToLower())
             {
-                case "ak47": return 1f / count;
-                case "shotgun": return 2f / count;
-                case "pistol": return 3f / count;
+                case "ak47": return Normalize(1f, (float)count);
+                case "shotgun": return Normalize(2f, (float)count);
+                case "pistol": return Normalize(3f, (float)count);
                 default: throw new Exception("Unknown input : " + input);
             }
         }
@@ -254,11 +265,17 @@ namespace shootMup.Bots
             //   these values come from the ClipCapcity for each gun
             switch (input.ToLower())
             {
-                case "ak47": return clip / 20f;
-                case "shotgun": return clip / 2f;
-                case "pistol": return clip / 6f;
+                case "ak47": return Normalize((float)clip, 20f);
+                case "shotgun": return Normalize((float)clip, 2f);
+                case "pistol": return Normalize((float)clip, 6f);
                 default: throw new Exception("Unknown input : " + input);
             }
+        }
+
+        private static float Normalize(float value, float max)
+        {
+            return value / max;
+            //return (float)Math.Round(value / max, 1);
         }
         #endregion
     }

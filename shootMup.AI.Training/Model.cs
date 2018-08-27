@@ -18,7 +18,6 @@ namespace shootMup.Bots.Training
         {
             Test = new List<ModelDataSet>();
             Training = new List<ModelDataSet>();
-            TrainingCountMax = 100000;
         }
     }
 
@@ -140,14 +139,17 @@ namespace shootMup.Bots.Training
             // 1 in x of these will be picked up (the smaller the number the more of them
             var takeOnly = 0;
             var rand = new Random();
-            var actionData = new DataSet();
-            var xyData = new DataSet();
-            var angleData = new DataSet();
+            var actionData = new DataSet() { TrainingCountMax = 150000 };
+            var xyData = new DataSet() { TrainingCountMax = 10000 };
+            var angleData = new DataSet() { TrainingCountMax = 150000 };
             int trainingCount = 0, testCount = 0;
+            var lastFile = "";
+            var duplicates = new HashSet<int>();
             foreach(var kvp in AITraining.GetTrainingFiles(path))
             {
                 var file = kvp.Key;
                 var count = kvp.Value;
+                lastFile = file;
 
                 if (count > 0)
                 {
@@ -162,6 +164,10 @@ namespace shootMup.Bots.Training
                         if (d.Result)
                         {
                             var dm = d.AsModelDataSet();
+                            var hash = dm.ComputeHash();
+
+                            // void duplicates
+                            if (duplicates.Contains(hash)) continue;
 
                             // sample ~15% for test
                             if (rand.Next() % 6 == 0)
@@ -207,7 +213,7 @@ namespace shootMup.Bots.Training
                                         }
                                         break;
                                     case ActionEnum.Move:
-                                        if (xyData.TrainingCountMax > 0)
+                                        if (xyData.TrainingCountMax > 0 && !duplicates.Contains(hash))
                                         {
                                             xyData.Training.Add(dm);
                                             xyData.TrainingCountMax--;
@@ -215,10 +221,15 @@ namespace shootMup.Bots.Training
                                         break;
                                 }
                             }
+
+                            // add as a potential collision
+                            duplicates.Add(hash);
                         } // is result
                     } // foreach TrainingData
                 } // if count > 0
             } // foreach file
+
+            Console.WriteLine("Last file considered {0}", lastFile);
 
             Console.WriteLine("Training data set ({0} items) and test data set ({1} items)", trainingCount, testCount);
             Console.WriteLine("  Training: Action({0}) XY({1}) Angle({2})", actionData.Training.Count, xyData.Training.Count, angleData.Training.Count);
@@ -253,6 +264,5 @@ namespace shootMup.Bots.Training
 
             return 0;
         }
-
     }
 }
