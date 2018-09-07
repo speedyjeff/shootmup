@@ -25,68 +25,66 @@ namespace shootMup.Bots
         [Column("3")]
         public float Sheld;
         [Column("4")]
-        public float Z;
-        [Column("5")]
         public float Primary;
-        [Column("6")]
+        [Column("5")]
         public float PrimaryAmmo;
-        [Column("7")]
+        [Column("6")]
         public float PrimaryClip;
-        [Column("8")]
+        [Column("7")]
         public float Secondary;
-        [Column("9")]
+        [Column("8")]
         public float SecondaryAmmo;
-        [Column("10")]
+        [Column("9")]
         public float SecondaryClip;
 
         // proximity
 
         // ammo
-        [Column("11")]
+        [Column("10")]
         public float Angle_1;
-        [Column("12")]
+        [Column("11")]
         public float Distance_1;
 
         // Bandage
-        [Column("13")]
+        [Column("12")]
         public float Angle_2;
-        [Column("14")]
+        [Column("13")]
         public float Distance_2;
 
         // Helmet
-        [Column("15")]
+        [Column("14")]
         public float Angle_3;
-        [Column("16")]
+        [Column("15")]
         public float Distance_3;
 
         // Ak47
-        [Column("17")]
+        [Column("16")]
         public float Angle_4;
-        [Column("18")]
+        [Column("17")]
         public float Distance_4;
 
         // Shotgun
-        [Column("19")]
+        [Column("18")]
         public float Angle_5;
-        [Column("20")]
+        [Column("19")]
         public float Distance_5;
 
         // Pistol
-        [Column("21")]
+        [Column("20")]
         public float Angle_6;
-        [Column("22")]
+        [Column("21")]
         public float Distance_6;
 
         // Obstacle
-        [Column("23")]
+        [Column("22")]
         public float Angle_7;
-        [Column("24")]
+        [Column("23")]
         public float Distance_7;
 
         // Player
-        [Column("25")]
+        [Column("24")]
         public float Angle_8;
-        [Column("26")]
+        [Column("25")]
         public float Distance_8;
 
         // outcomes
@@ -99,7 +97,7 @@ namespace shootMup.Bots
     {
         public static int Features(this ModelDataSet data)
         {
-            return 27;
+            return 26;
         }
 
         public static float Feature(this ModelDataSet data, int column)
@@ -110,37 +108,36 @@ namespace shootMup.Bots
                 case 1: return data.InZone;
                 case 2: return data.Health;
                 case 3: return data.Sheld;
-                case 4: return data.Z;
-                case 5: return data.Primary;
-                case 6: return data.PrimaryAmmo;
-                case 7: return data.PrimaryClip;
-                case 8: return data.Secondary;
-                case 9: return data.SecondaryAmmo;
-                case 10: return data.SecondaryClip;
+                case 4: return data.Primary;
+                case 5: return data.PrimaryAmmo;
+                case 6: return data.PrimaryClip;
+                case 7: return data.Secondary;
+                case 8: return data.SecondaryAmmo;
+                case 9: return data.SecondaryClip;
                 // ammo
-                case 11: return data.Angle_1;
-                case 12: return data.Distance_1;
+                case 10: return data.Angle_1;
+                case 11: return data.Distance_1;
                 // bandage
-                case 13: return data.Angle_2;
-                case 14: return data.Distance_2;
+                case 12: return data.Angle_2;
+                case 13: return data.Distance_2;
                 // helmet
-                case 15: return data.Angle_3;
-                case 16: return data.Distance_3;
+                case 14: return data.Angle_3;
+                case 15: return data.Distance_3;
                 // ak47
-                case 17: return data.Angle_4;
-                case 18: return data.Distance_4;
+                case 16: return data.Angle_4;
+                case 17: return data.Distance_4;
                 // shotgun
-                case 19: return data.Angle_5;
-                case 20: return data.Distance_5;
+                case 18: return data.Angle_5;
+                case 19: return data.Distance_5;
                 // pistol
-                case 21: return data.Angle_6;
-                case 22: return data.Distance_6;
+                case 20: return data.Angle_6;
+                case 21: return data.Distance_6;
                 // ostabcle
-                case 23: return data.Angle_7;
-                case 24: return data.Distance_7;
+                case 22: return data.Angle_7;
+                case 23: return data.Distance_7;
                 // player
-                case 25: return data.Angle_8;
-                case 26: return data.Distance_8;
+                case 24: return data.Angle_8;
+                case 25: return data.Distance_8;
                 // default
                 default: throw new Exception("Unknown column : " + column);
             }
@@ -171,7 +168,6 @@ namespace shootMup.Bots
                 InZone = data.InZone ? 1f : 0,
                 Health = Normalize(data.Health, (float)Constants.MaxHealth),
                 Sheld = Normalize(data.Sheld, (float)Constants.MaxSheld),
-                Z = Normalize(data.Z, Constants.Sky),
                 Primary = Normalize(data.Primary),
                 PrimaryAmmo = data.PrimaryAmmo >= Constants.MaxAmmo ? 1 : Normalize((float)data.PrimaryAmmo, (float)Constants.MaxAmmo),
                 PrimaryClip = Normalize(data.Primary, data.PrimaryClip),

@@ -42,7 +42,7 @@ namespace shootMup.Bots.Training
                     {
                         if (done) break;
 
-                        if (d.Result)
+                        if (d.Result && d.Z == 0)
                         {
                             // sample ~15%
                             if (rand.Next() % 6 == 0)

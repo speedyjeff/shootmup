@@ -44,7 +44,6 @@ namespace shootMup.Bots
                 "InZone",
                 "Health",
                 "Sheld",
-                "Z",
                 "Primary",
                 "PrimaryAmmo",
                 "PrimaryClip",
