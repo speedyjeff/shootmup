@@ -17,6 +17,8 @@ namespace shootMup.Bots.Training
             Console.WriteLine("  train [ml|cv] [directory to input/output] - trains the model");
             Console.WriteLine("  purge [directory to input]        - removes unnecessary training data");
             Console.WriteLine("  check [directory to model]        - loads a trained model and gives it a try");
+            Console.WriteLine("  serialize [count] [action|angle|xy] [directory to input]");
+            Console.WriteLine("                                    - dump the data into a csv file");
             return -1;
         }
 
@@ -62,7 +64,7 @@ namespace shootMup.Bots.Training
                         var sum = (float)(Math.Abs(xdelta) + Math.Abs(ydelta));
                         xdelta = xdelta / sum;
                         ydelta = ydelta / sum;
- 
+
                         Console.WriteLine("0: {0} {1},{2}", angle, xdelta, ydelta);
                     }
 
@@ -84,8 +86,16 @@ namespace shootMup.Bots.Training
                         Console.WriteLine("1: {0} {1},{2}", angle, pair[0], pair[1]);
                     }
 
-                        return 0;
+                    return 0;
                 }
+                else if (string.Equals(args[i], "serialize", StringComparison.OrdinalIgnoreCase))
+                {
+                    var count = Convert.ToInt32(i + 1 < args.Length ? args[i + 1] : "0");
+                    var type = i + 2 < args.Length ? args[i + 2] : "";
+                    var directory = i + 3 < args.Length ? args[i + 3] : "";
+                    return ModelBuilding.Serialize(directory, type, count);
+                }
+
             }
 
             // the verb was not understood

@@ -264,5 +264,69 @@ namespace shootMup.Bots.Training
 
             return 0;
         }
+
+        public static int Serialize(string path, string type, int remaining)
+        {
+            // validate type
+            var action = ActionEnum.None;
+            switch(type.ToLower())
+            {
+                case "angle": action = ActionEnum.Attack; break;
+                case "xy": action = ActionEnum.Move; break;
+            }
+            if (remaining < 0) remaining = Int32.MaxValue;
+
+            // load each model and then give a few predictions and check the results
+            var duplicates = new HashSet<int>();
+            using (var writer = File.CreateText(Path.Combine(path, "data.csv")))
+            {
+                foreach (var kvp in AITraining.GetTrainingFiles(path))
+                {
+                    var file = kvp.Key;
+                    var count = kvp.Value;
+
+                    if (remaining <= 0) break;
+
+                    if (count > 0)
+                    {
+                        foreach (var d in AITraining.GetTraingingData(file))
+                        {
+                            if (remaining <= 0) break;
+
+                            if (d.Result && d.Z == 0)
+                            {
+                                var dm = d.AsModelDataSet();
+                                var hash = dm.ComputeHash();
+
+                                // check type
+                                if (action != ActionEnum.None && action != (ActionEnum)d.Action) continue;
+
+                                // void duplicates
+                                if (duplicates.Contains(hash)) continue;
+
+                                // write to disk
+                                for(int i=0; i<dm.Features(); i++)
+                                {
+                                    writer.Write("{0},", dm.Feature(i));
+                                }
+                                var outcome = dm.Action;
+                                switch (action)
+                                {
+                                    case ActionEnum.Move: outcome = dm.MoveAngle; break;
+                                    case ActionEnum.Attack: outcome = dm.FaceAngle; break;
+                                }
+                                writer.WriteLine("{0}", outcome);   
+
+                                // update
+                                remaining--;
+                                duplicates.Add(hash);
+                            }
+                        }
+                    }
+                }
+            } // using writer
+
+            return 0;
+        }
     }
 }
