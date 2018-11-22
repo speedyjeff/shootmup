@@ -1,12 +1,22 @@
 ﻿using Microsoft.ML;
+
+#if ML_LEGACY
+using Microsoft.ML.Legacy;
+using Microsoft.ML.Legacy.Data;
+using Microsoft.ML.Legacy.Trainers;
+using Microsoft.ML.Legacy.Transforms;
+#else
 using Microsoft.ML.Data;
-using Microsoft.ML.Models;
-using Microsoft.ML.Runtime;
+using Microsoft.ML.Runtime.Data;
+using Microsoft.ML.Core.Data;
 using Microsoft.ML.Trainers;
 using Microsoft.ML.Transforms;
+#endif
+
 using shootMup.Common;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -17,6 +27,7 @@ namespace shootMup.Bots
         // train
         public ModelMLNet(IEnumerable<ModelDataSet> data, ModelValue prediction)
         {
+#if ML_LEGACY
             var pipeline = new LearningPipeline();
 
             // add data
@@ -121,12 +132,65 @@ namespace shootMup.Bots
 
             // train the model
             TrainedModel = pipeline.Train<ModelDataSet, ModelDataSetPrediction>();
+#else
+            Context = new MLContext();
+
+            // add data
+            var textLoader = GetTextLoader(Context, prediction);
+
+            // spill to disk !?!?! since there is no way to load from a collection
+            var pathToData = "";
+            try
+            {
+                // write data to disk
+                pathToData = WriteToDisk(data, prediction);
+
+                // read in data
+                IDataView dataView = textLoader.Read(pathToData);
+
+                // configurations
+                var label = "";
+                switch (prediction)
+                {
+                    case ModelValue.Action: label = "Action"; break;
+                    case ModelValue.Angle: label = "FaceAngle"; break;
+                    case ModelValue.XY: label = "MoveAngle"; break;
+                    default: throw new Exception("Unknown value for prediction : " + prediction);
+                }
+                var dataPipeline = Context.Transforms.CopyColumns(label, "Label")
+                    .Append(Context.Transforms.Concatenate("Features", ColumnNames(false /* do not include the label */, prediction)));
+
+                // set the training algorithm
+                var trainer = Context.Regression.Trainers.FastTree(label: "Label", features: "Features");
+                var trainingPipeline = dataPipeline.Append(trainer);
+
+                TrainedModel = trainingPipeline.Fit(dataView);
+            }
+            finally
+            {
+                // cleanup
+                if (!string.IsNullOrWhiteSpace(pathToData) && File.Exists(pathToData)) File.Delete(pathToData);
+            }
+#endif
         }
 
         // load
         public ModelMLNet(string path)
         {
+#if ML_LEGACY
             TrainedModel = PredictionModel.ReadAsync<ModelDataSet, ModelDataSetPrediction>(path).Result;
+#else
+            Context = new MLContext();
+
+            // load
+            using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                TrainedModel = Context.Model.Load(stream);
+            }
+
+            // create the prediction function
+            PredictFunc = TrainedModel.MakePredictionFunction<ModelDataSet, ModelDataSetPrediction>(Context);
+#endif
         }
 
         public override void Save(string path)
@@ -135,7 +199,15 @@ namespace shootMup.Bots
 
             lock (TrainedModel)
             {
+#if ML_LEGACY
                 TrainedModel.WriteAsync(path).Wait();
+#else
+                // save
+                using (var stream = File.Create(path))
+                {
+                    TrainedModel.SaveTo(Context, stream);
+                }
+#endif
             }
         }
 
@@ -145,6 +217,7 @@ namespace shootMup.Bots
 
             lock (TrainedModel)
             {
+#if ML_LEGACY
                 var testData = CollectionDataSource.Create(data);
                 var evaluator = new RegressionEvaluator();
                 var metrics = evaluator.Evaluate(TrainedModel, testData);
@@ -154,6 +227,31 @@ namespace shootMup.Bots
                     RMS = metrics.Rms,
                     RSquared = metrics.RSquared
                 };
+#else
+                var textLoader = GetTextLoader(Context, prediction);
+
+                var pathToData = "";
+                try
+                {
+                    // ugh have to spill data to disk for it to work!
+                    pathToData = WriteToDisk(data, prediction);
+
+                    IDataView dataView = textLoader.Read(pathToData);
+                    var predictions = TrainedModel.Transform(dataView);
+                    var metrics = Context.Regression.Evaluate(predictions, label: "Label", score: "Score");
+
+                    return new ModelFitness()
+                    {
+                        RMS = metrics.Rms,
+                        RSquared = metrics.RSquared
+                    };
+                }
+                finally
+                {
+                    // cleanup
+                    if (!string.IsNullOrWhiteSpace(pathToData) && File.Exists(pathToData)) File.Delete(pathToData);
+                }
+#endif
             }
         }
 
@@ -163,13 +261,85 @@ namespace shootMup.Bots
 
             lock (TrainedModel)
             {
+#if ML_LEGACY
                 var result = TrainedModel.Predict(data);
-                return result.Value;
+                return result.Score;
+#else
+                var result = PredictFunc.Predict(data);
+                return result.Score;
+#endif
             }
         }
 
-        #region private
+#region private
+
+#if ML_LEGACY
         private PredictionModel<ModelDataSet, ModelDataSetPrediction> TrainedModel;
-        #endregion
+#else
+        private MLContext Context;
+        private ITransformer TrainedModel;
+        private PredictionFunction<ModelDataSet, ModelDataSetPrediction> PredictFunc;
+
+        private static string WriteToDisk(IEnumerable<ModelDataSet> data, ModelValue prediction)
+        {
+            // geneate a random path
+            var path = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+
+            using (var writer = File.CreateText(path))
+            {
+                foreach (var d in data)
+                {
+                    for (int i = 0; i < d.Features(); i++)
+                    {
+                        writer.Write(d.Feature(i));
+                        writer.Write(',');
+                    }
+                    switch(prediction)
+                    {
+                        case ModelValue.Action: writer.WriteLine(d.Action); break;
+                        case ModelValue.Angle: writer.WriteLine(d.FaceAngle); break;
+                        case ModelValue.XY: writer.WriteLine(d.MoveAngle); break;
+                        default: throw new Exception("Unknown value for prediction : " + prediction);
+                    }
+                }
+            }
+
+            return path;
+        }
+
+        private static string[] ColumnNames(bool withLabel, ModelValue prediction)
+        {
+            var columns = new List<string>();
+            var data = new ModelDataSet();
+            for (int i = 0; i < data.Features(); i++) columns.Add(data.Name(i));
+
+            if (withLabel)
+            {
+                switch (prediction)
+                {
+                    case ModelValue.Action: columns.Add("Action"); break;
+                    case ModelValue.Angle: columns.Add("FaceAngle"); break;
+                    case ModelValue.XY: columns.Add("MoveAngle"); break;
+                    default: throw new Exception("Unknown value for prediction : " + prediction);
+                }
+            }
+
+            return columns.ToArray();
+        }
+
+        private static TextLoader GetTextLoader(MLContext context, ModelValue prediction)
+        {
+            var index = 0;
+            return context.Data.TextReader(
+                new TextLoader.Arguments()
+                {
+                    Separator = ",",
+                    HasHeader = false,
+                    Column = ColumnNames(true /*with label*/, prediction).Select(c => new TextLoader.Column(c, DataKind.R4, index++)).ToArray()
+                });
+        }
+#endif
+
+#endregion
     }
 }

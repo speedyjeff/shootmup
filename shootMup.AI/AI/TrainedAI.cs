@@ -21,9 +21,9 @@ namespace shootMup.Bots
         static TrainedAI()
         { 
             // get models
-            ActionModel = Model.Load(Path.Combine("Models", "Prebuilt", "action.cv.model"));
-            XYModel = Model.Load(Path.Combine("Models", "Prebuilt", "xy.cv.model"));
-            AngleModel = Model.Load(Path.Combine("Models", "Prebuilt", "angle.cv.model"));            
+            ActionModel = Model.Load(Path.Combine("Models", "Prebuilt", "action.ml.model"));
+            XYModel = Model.Load(Path.Combine("Models", "Prebuilt", "xy.ml.model"));
+            AngleModel = Model.Load(Path.Combine("Models", "Prebuilt", "angle.ml.model"));            
         }
 
         public override ActionEnum Action(List<Element> elements, float angleToCenter, bool inZone, ref float xdelta, ref float ydelta, ref float angle)

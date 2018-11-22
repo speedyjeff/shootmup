@@ -143,6 +143,49 @@ namespace shootMup.Bots
             }
         }
 
+        public static string Name(this ModelDataSet data, int column)
+        {
+            switch (column)
+            {
+                case 0: return "CenterAngle";
+                case 1: return "InZone";
+                case 2: return "Health";
+                case 3: return "Sheld";
+                case 4: return "Primary";
+                case 5: return "PrimaryAmmo";
+                case 6: return "PrimaryClip";
+                case 7: return "Secondary";
+                case 8: return "SecondaryAmmo";
+                case 9: return "SecondaryClip";
+                // ammo
+                case 10: return "Angle_1";
+                case 11: return "Distance_1";
+                // bandage
+                case 12: return "Angle_2";
+                case 13: return "Distance_2";
+                // helmet
+                case 14: return "Angle_3";
+                case 15: return "Distance_3";
+                // ak47
+                case 16: return "Angle_4";
+                case 17: return "Distance_4";
+                // shotgun
+                case 18: return "Angle_5";
+                case 19: return "Distance_5";
+                // pistol
+                case 20: return "Angle_6";
+                case 21: return "Distance_6";
+                // ostabcle
+                case 22: return "Angle_7";
+                case 23: return "Distance_7";
+                // player
+                case 24: return "Angle_8";
+                case 25: return "Distance_8";
+                // default
+                default: throw new Exception("Unknown column : " + column);
+            }
+        }
+
         public static string ToJson(this ModelDataSet data)
         {
             return Newtonsoft.Json.JsonConvert.SerializeObject(data);
@@ -279,6 +322,6 @@ namespace shootMup.Bots
     public class ModelDataSetPrediction
     {
         [ColumnName("Score")]
-        public float Value;
+        public float Score;
     }
 }
