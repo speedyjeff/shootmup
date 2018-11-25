@@ -11,11 +11,13 @@ namespace shootMup
 {
     public class WritableGraphics : IGraphics
     {
-        public WritableGraphics(BufferedGraphicsContext context)
+        public WritableGraphics(BufferedGraphicsContext context, Graphics g, int height, int width)
         {
             Context = context;
             DoTranslation = true;
             ImageCache = new Dictionary<string, Image>();
+
+            RawResize(g, height, width);
         }
 
         // access to the Graphics implementation

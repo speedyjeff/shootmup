@@ -50,12 +50,10 @@ namespace shootMup
                 ClientSize = new System.Drawing.Size(1484, 1075);
                 Name = "shootMup";
                 Text = "shootMup";
-                Resize += OnResize;
                 DoubleBuffered = true;
 
                 // double buffer
-                Surface = new WritableGraphics( BufferedGraphicsManager.Current );
-                Surface.RawResize(CreateGraphics(), Height, Width);
+                Surface = new WritableGraphics( BufferedGraphicsManager.Current, CreateGraphics(), Height, Width);
 
                 // timers
                 OnPaintTimer = new Timer();
@@ -74,6 +72,7 @@ namespace shootMup
                 MouseDown += OnMouseDown;
                 MouseMove += OnMouseMove;
                 MouseWheel += OnMouseWheel;
+                Resize += OnResize;
 
                 OnPaintTimer.Start();
          }
