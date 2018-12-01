@@ -49,6 +49,7 @@ namespace shootMup.Bots
             var playerCount = 0;
             float playerX = 0;
             float playerY = 0;
+            bool shouldMelee = false;
             
             // find proximity to all types
             var closest = AITraining.ComputeProximity(this, elements);
@@ -189,6 +190,9 @@ namespace shootMup.Bots
             // 0) No weapon
             if (Primary == null)
             {
+                // AI does not have a weapon, so go ahead and melee (if no other action)
+                shouldMelee = true;
+
                 // 0.b if near a player, melee
                 ElementProximity player = null;
                 if (closest.TryGetValue(typeof(Player), out player))
@@ -239,7 +243,7 @@ namespace shootMup.Bots
             // choose defaults
             if (action == ActionEnum.None)
             {
-                // default to moving
+                // default to move
                 action = ActionEnum.Move;
             }
 
@@ -288,7 +292,9 @@ namespace shootMup.Bots
 
             if (ShowDiagnostics) System.Diagnostics.Debug.WriteLine("AI {0} {1} {2} {3}", action, angle, xdelta, ydelta);
 
-            return action;
+            // if our action is to move... do a melee while moving
+            if (action == ActionEnum.Move && shouldMelee) return ActionEnum.Attack;
+            else return action;
         }
 
         public override void Feedback(ActionEnum action, object item, bool result)

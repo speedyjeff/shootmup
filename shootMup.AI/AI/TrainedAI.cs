@@ -11,7 +11,7 @@ namespace shootMup.Bots
         public TrainedAI() : base()
         {
             // never record training data for these AI
-            RecordTraining = true;
+            RecordTraining = false;
 
             // in case it gest stuck
             Rand = new Random();
@@ -21,9 +21,9 @@ namespace shootMup.Bots
         static TrainedAI()
         { 
             // get models
-            ActionModel = Model.Load(Path.Combine("Models", "Prebuilt", "action.ml.model"));
-            XYModel = Model.Load(Path.Combine("Models", "Prebuilt", "xy.ml.model"));
-            AngleModel = Model.Load(Path.Combine("Models", "Prebuilt", "angle.ml.model"));            
+            ActionModel = Model.Load(Path.Combine("Models", "Prebuilt", "action.cv.model"));
+            XYModel = Model.Load(Path.Combine("Models", "Prebuilt", "xy.cv.model"));
+            AngleModel = Model.Load(Path.Combine("Models", "Prebuilt", "angle.cv.model"));            
         }
 
         public override ActionEnum Action(List<Element> elements, float angleToCenter, bool inZone, ref float xdelta, ref float ydelta, ref float angle)
@@ -67,6 +67,8 @@ namespace shootMup.Bots
             // do some sanity checking...
             if (iAction < 0 || iAction >= (int)ActionEnum.COUNT) iAction = (int)ActionEnum.Move;
             if (Math.Abs(xdelta) + Math.Abs(ydelta) > 1.00001) throw new Exception("xdelta and ydelta are invalid");
+            if (angle < 0) angle += 360;
+            if (angle > 360) angle -= 360;
             if (angle < 0 || angle > 360) throw new Exception("Invalid angle: " + angle);
 
             return (ActionEnum)iAction;

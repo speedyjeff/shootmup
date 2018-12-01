@@ -4,12 +4,25 @@ using System.Text;
 
 namespace shootMup.Common
 {
+    // x,y coordinates have y inversed
+    //                (-y, 0)
+    //                   |
+    // (-x,0) ----------------------- (+x, 0)
+    //                   |
+    //                (+y, 0)
+
     public static class Collision
     {
         public static bool IntersectingRectangles(
             float x1, float y1, float x2, float y2,
             float x3, float y3, float x4, float y4)
         {
+            // validate input
+            if (x1 > x2
+                || y1 > y2
+                || x3 > x4
+                || y3 > y4) throw new Exception("Invalid input to compare rectangles");
+
             if (x3 > x1 && x3 < x2)
             {
                 if (y3 > y1 && y3 < y2) return true;
@@ -60,15 +73,17 @@ namespace shootMup.Common
         public static float CalculateAngleFromPoint(float x1, float y1, float x2, float y2)
         {
             // normalize x,y to 0,0
-            float y = y1 != 0 ? (y1 - y2) / (y1) : -1*y2;
-            float x = x1 != 0 ? (x2 - x1) / (x1) : x2;
+            float y = -1 * (y2 - y1); // inverting Y to make Atan correct
+            float x = (x2 - x1);
             float angle = (float)(Math.Atan2(x, y) * (180 / Math.PI));
 
             if (angle < 0) angle += 360;
+            if (angle < 0) throw new Exception("Invalid negative angle : " + angle);
+            if (angle > 360) throw new Exception("Invalid angle larger than 360 : " + angle);
 
             return angle;
         }
-        
+
         public static bool CalculateLineByAngle(float x, float y, float angle, float distance, out float x1, out float y1, out float x2, out float y2)
         {
             if (angle < 0) angle *= -1;
@@ -91,8 +106,39 @@ namespace shootMup.Common
             //  b = |y1 - y2|
             //  c = result
             return (float)Math.Sqrt(
-                Math.Pow(Math.Abs(x1-x2), 2) + Math.Pow(Math.Abs(y1-y2), 2)
+                Math.Pow(Math.Abs(x1 - x2), 2) + Math.Pow(Math.Abs(y1 - y2), 2)
                 );
+        }
+
+        public static bool LineIntersectingRectangle(
+            float x1, float y1, float x2, float y2, // line
+            float x, float y, float width, float height // rectangle
+            )
+        {
+            bool collision = false;
+
+            // check if these would collide
+            float x3 = x - (width / 2);
+            float y3 = y - (height / 2);
+            float x4 = x + (width / 2);
+            float y4 = y + (height / 2);
+
+            // https://stackoverflow.com/questions/3838329/how-can-i-check-if-two-segments-intersect
+
+            // top
+            collision = Collision.IntersectingLine(x1, y1, x2, y2,
+                x3, y3, x4, y3);
+            // bottom
+            collision |= Collision.IntersectingLine(x1, y1, x2, y2,
+                x3, y4, x4, y4);
+            // left
+            collision |= Collision.IntersectingLine(x1, y1, x2, y2,
+                x3, y3, x3, y4);
+            // left
+            collision |= Collision.IntersectingLine(x1, y1, x2, y2,
+                x4, y3, x4, y4);
+
+            return collision;
         }
 
         public static bool IntersectingLine(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4)
