@@ -9,3 +9,5 @@ The project uses C# and a WinForms shell.
 ![game play](https://github.com/speedyjeff/shootmup/blob/master/media/gameplay.png)
 
 ![end screen](https://github.com/speedyjeff/shootmup/blob/master/media/endscreen.png)
+
+![game play](https://github.com/speedyjeff/shootmup/blob/master/media/gameplay.gif)
