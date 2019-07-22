@@ -14,7 +14,7 @@ namespace shootMup.Common
             TakesDamage = true;
             IsSolid = true;
             Health = 50;
-            Sheld = 0;
+            Shield = 0;
             DisplayHud = true;
             Color = new RGBA() { R = 255, A = 255 };
             Kills = 0;
@@ -68,7 +68,7 @@ namespace shootMup.Common
                     g.Line(RGBA.Black, x1, y1, x2, y2, 10);
                 }
                 g.Ellipse(Color, X - (Width / 2), Y - (Height / 2), Width, Height);
-                if (Sheld > 0) g.Ellipse(new RGBA() { R = 85, G = 85, B = 85, A = 255 }, X - (Width/4), Y - (Height/4), (Width / 2), (Width / 2));
+                if (Shield > 0) g.Ellipse(new RGBA() { R = 85, G = 85, B = 85, A = 255 }, X - (Width/4), Y - (Height/4), (Width / 2), (Width / 2));
 
                 if (Primary == null)
                 {
@@ -89,8 +89,8 @@ namespace shootMup.Common
                     g.Rectangle(new RGBA() { G = 255, A = 255 }, (g.Width / 4), g.Height - 80, (Health / Constants.MaxHealth) * (g.Width / 2), 20, true);
                     g.Rectangle(RGBA.Black, g.Width / 4, g.Height - 80, g.Width / 2, 20, false);
 
-                    // sheld
-                    g.Rectangle(new RGBA() { R = 255, G = 255, A = 255 }, g.Width / 4, g.Height - 90, (Sheld / Constants.MaxSheld) * (g.Width / 4), 10, true);
+                    // shield
+                    g.Rectangle(new RGBA() { R = 255, G = 255, A = 255 }, g.Width / 4, g.Height - 90, (Shield / Constants.MaxShield) * (g.Width / 4), 10, true);
                     g.Rectangle(RGBA.Black, g.Width / 4, g.Height - 90, g.Width / 4, 10, false);
 
                     // primary weapon
@@ -140,10 +140,10 @@ namespace shootMup.Common
             }
             else if (item is Helmet)
             {
-                if (Sheld < Constants.MaxSheld)
+                if (Shield < Constants.MaxShield)
                 {
-                    Sheld += item.Sheld;
-                    if (Sheld > Constants.MaxSheld) Sheld = Constants.MaxSheld;
+                    Shield += item.Shield;
+                    if (Shield > Constants.MaxShield) Shield = Constants.MaxShield;
                     return true;
                 }
             }

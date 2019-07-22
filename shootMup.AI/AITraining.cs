@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Text;
+using System.Threading;
 
 namespace shootMup.Bots
 {
@@ -14,6 +16,10 @@ namespace shootMup.Bots
             Data = new Dictionary<int, TrainingData>();
             Output = new Dictionary<int, StreamWriter>();
             Start = DateTime.Now;
+            DataLock = new ReaderWriterLockSlim();
+            OutputLock = new ReaderWriterLockSlim();
+
+            AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
 
 #if SMALL_ENCODING
             SHA = SHA256.Create();
@@ -70,7 +76,7 @@ namespace shootMup.Bots
             // capture the angle to the center
             data.CenterAngle = angleToCenter;
 
-            // capture the user health, sheld, weapon status, inzone, Z
+            // capture the user health, shield, weapon status, inzone, Z
             data.Angle = player.Angle;
             data.Health = player.Health;
             data.InZone = inZone;
@@ -80,7 +86,7 @@ namespace shootMup.Bots
             data.Secondary = player.Secondary != null ? player.Secondary.GetType().Name : "";
             data.SecondaryAmmo = player.Secondary != null ? player.Secondary.Ammo : 0;
             data.SecondaryClip = player.Secondary != null ? player.Secondary.Clip : 0;
-            data.Sheld = player.Sheld;
+            data.Shield = player.Shield;
             data.Z = player.Z;
 
             // capture what the user sees
@@ -97,9 +103,8 @@ namespace shootMup.Bots
             data.Ydelta = ydelta;
 
             var output = GetOutput(player);
-            var json = Newtonsoft.Json.JsonConvert.SerializeObject(data);
+            var json = data.ToJson();
             output.WriteLine(json);
-            output.Flush();
         }
 
         public static void CaptureWinners(string[] winners)
@@ -113,9 +118,16 @@ namespace shootMup.Bots
                     Output.Add(-1, output);
                 }
             }
-            var json = Newtonsoft.Json.JsonConvert.SerializeObject(winners);
+            var sb = new StringBuilder();
+            sb.Append('[');
+            for(int i=0; i<winners.Length; i++)
+            {
+                sb.AppendFormat("\"{0}\"", winners[i]);
+                if (i < winners.Length - 1) sb.Append(',');
+            }
+            sb.Append(']');
+            var json = sb.ToString();
             output.WriteLine(json);
-            output.Flush();
         }
 
         public static Dictionary<string, int> GetTrainingFiles(string path)
@@ -186,36 +198,69 @@ namespace shootMup.Bots
         private static Dictionary<int, TrainingData> Data;
         private static Dictionary<int, StreamWriter> Output;
         private static DateTime Start;
+        private static ReaderWriterLockSlim OutputLock;
+        private static ReaderWriterLockSlim DataLock;
 
         private const string TrainingPath = "training";
 
         private static TrainingData GetData(Player player)
         {
-            lock (Data)
+            DataLock.EnterUpgradeableReadLock();
+            try
             {
                 TrainingData data = null;
                 if (!Data.TryGetValue(player.Id, out data))
                 {
-                    data = new TrainingData();
-                    Data.Add(player.Id, data);
+                    DataLock.EnterWriteLock();
+                    try
+                    {
+                        data = new TrainingData();
+                        Data.Add(player.Id, data);
+                    }
+                    finally
+                    {
+                        DataLock.ExitWriteLock();
+                    }
                 }
                 return data;
+            }
+            finally
+            {
+                DataLock.ExitUpgradeableReadLock();
             }
         }
 
         private static StreamWriter GetOutput(Player player)
         {
-            lock (Output)
+            OutputLock.EnterUpgradeableReadLock();
+            try
             {
                 StreamWriter output = null;
                 if (!Output.TryGetValue(player.Id, out output))
                 {
-                    if (!Directory.Exists(TrainingPath)) Directory.CreateDirectory(TrainingPath);
-                    output = File.CreateText(Path.Combine(TrainingPath, string.Format("{0:yyyy-MM-dd_hh-mm-ss}.{1}", Start, player.Name)));
-                    Output.Add(player.Id, output);
+                    OutputLock.EnterWriteLock();
+                    try
+                    {
+                        if (!Directory.Exists(TrainingPath)) Directory.CreateDirectory(TrainingPath);
+                        output = File.CreateText(Path.Combine(TrainingPath, string.Format("{0:yyyy-MM-dd_HH-mm-ss}.{1}", Start, player.Name)));
+                        Output.Add(player.Id, output);
+                    }
+                    finally
+                    {
+                        OutputLock.ExitWriteLock();
+                    }
                 }
                 return output;
             }
+            finally
+            {
+                OutputLock.ExitUpgradeableReadLock();
+            }
+        }
+
+        private static void CurrentDomain_ProcessExit(object sender, EventArgs e)
+        {
+            foreach (var file in Output.Values) file.Flush();
         }
 
 #if SMALL_ENCODING

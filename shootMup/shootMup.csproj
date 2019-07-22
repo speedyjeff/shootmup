@@ -137,6 +137,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BitmapImage.cs" />
     <Compile Include="Canvas.cs">
       <SubType>Form</SubType>
     </Compile>

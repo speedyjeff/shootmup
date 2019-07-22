@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace shootMup.Common
@@ -151,6 +152,7 @@ namespace shootMup.Common
         }
 
         #region private
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool CalcCcw(float x1, float y1, float x2, float y2, float x3, float y3)
         {
             return (y3 - y1) * (x2 - x1) > (y2 - y1) * (x3 - x1);

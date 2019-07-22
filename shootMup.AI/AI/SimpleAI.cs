@@ -24,7 +24,7 @@ namespace shootMup.Bots
         //    1.c if primary is not an ak47, move towards and pickup
         //    1.d if a player is near and can shoot, move towards and shoot in that direction
         //  2. if low on health, go towards health
-        //  3. if low on sheld, go towards sheald
+        //  3. if low on shield, go towards sheald
 
         //  else move in a single direction
 
@@ -83,8 +83,8 @@ namespace shootMup.Bots
             }
             angle = PreviousAngle;
 
-            // 3) Sheld
-            if (Sheld < Constants.MaxSheld)
+            // 3) Shield
+            if (Shield < Constants.MaxShield)
             {
                 ElementProximity helmet = null;
                 if (closest.TryGetValue(typeof(Helmet), out helmet))

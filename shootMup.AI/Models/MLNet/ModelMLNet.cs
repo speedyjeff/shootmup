@@ -54,7 +54,7 @@ namespace shootMup.Bots
                 "CenterAngle",
                 "InZone",
                 "Health",
-                "Sheld",
+                "Shield",
                 "Primary",
                 "PrimaryAmmo",
                 "PrimaryClip",

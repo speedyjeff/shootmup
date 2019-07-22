@@ -23,7 +23,7 @@ namespace shootMup.Bots
         [Column("2")]
         public float Health;
         [Column("3")]
-        public float Sheld;
+        public float Shield;
         [Column("4")]
         public float Primary;
         [Column("5")]
@@ -107,7 +107,7 @@ namespace shootMup.Bots
                 case 0: return data.CenterAngle;
                 case 1: return data.InZone;
                 case 2: return data.Health;
-                case 3: return data.Sheld;
+                case 3: return data.Shield;
                 case 4: return data.Primary;
                 case 5: return data.PrimaryAmmo;
                 case 6: return data.PrimaryClip;
@@ -150,7 +150,7 @@ namespace shootMup.Bots
                 case 0: return "CenterAngle";
                 case 1: return "InZone";
                 case 2: return "Health";
-                case 3: return "Sheld";
+                case 3: return "Shield";
                 case 4: return "Primary";
                 case 5: return "PrimaryAmmo";
                 case 6: return "PrimaryClip";
@@ -210,7 +210,7 @@ namespace shootMup.Bots
                 CenterAngle = Normalize(data.CenterAngle, 360f),
                 InZone = data.InZone ? 1f : 0,
                 Health = Normalize(data.Health, (float)Constants.MaxHealth),
-                Sheld = Normalize(data.Sheld, (float)Constants.MaxSheld),
+                Shield = Normalize(data.Shield, (float)Constants.MaxShield),
                 Primary = Normalize(data.Primary),
                 PrimaryAmmo = data.PrimaryAmmo >= Constants.MaxAmmo ? 1 : Normalize((float)data.PrimaryAmmo, (float)Constants.MaxAmmo),
                 PrimaryClip = Normalize(data.Primary, data.PrimaryClip),

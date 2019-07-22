@@ -44,7 +44,7 @@ namespace shootMup.Bots
                 CenterAngle = angleToCenter,
                 InZone = inZone,
                 Health = Health,
-                Sheld = Sheld,
+                Shield = Shield,
                 Z = Z,
                 Primary = Primary != null ? Primary.GetType().Name : "",
                 PrimaryAmmo = Primary != null ? Primary.Ammo : 0,

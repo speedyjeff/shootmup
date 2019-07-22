@@ -13,6 +13,14 @@ namespace shootMup.Common
 
         public static RGBA Black = new RGBA() { R = 0, G = 0, B = 0, A = 255 };
         public static RGBA White = new RGBA() { R = 255, G = 255, B = 255, A = 255 };
+
+        public override int GetHashCode()
+        {
+            return (int)A
+                | ((int)B << 8)
+                | ((int)G << 16)
+                | ((int)R << 24);
+        }
     }
 
     public delegate bool TranslateCoordinatesDelegate(bool autoScale, float x, float y, float width, float height, float other, out float tx, out float ty, out float twidth, out float theight, out float tother);

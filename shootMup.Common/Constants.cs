@@ -46,7 +46,7 @@ namespace shootMup.Common
         public const int Speed = 10;
         public const float MaxSpeedMultiplier = 4;
         public const float MinSpeedMultiplier = 0.1f;
-        public const int MaxSheld = 100;
+        public const int MaxShield = 100;
         public const int MaxHealth = 100;
         public const int GlobalClock = 100; // ms - cannot be below 30ms
         public const bool CaptureAITrainingData = true;

@@ -8,7 +8,7 @@ namespace shootMup.Common
     {
         public Helmet() : base()
         {
-            Sheld = 20;
+            Shield = 20;
             CanAcquire = true;
             Name = "Helmet";
             Height = 25;

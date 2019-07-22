@@ -16,6 +16,7 @@ namespace shootMup
         public Map(int width, int height, Player[] players, Background background, PlayerPlacement placement)
         {
             // init
+            ElementLock = new ReaderWriterLockSlim();
             Obstacles = new Dictionary<int, Element>();
             Items = new Dictionary<int, Element>();
             Width = width;
@@ -137,7 +138,8 @@ namespace shootMup
             // do not take Z into account, as the view should be unbostructed (top down)
 
             // return objects that are within the window
-            lock (this)
+            ElementLock.EnterReadLock();
+            try
             {
                 var x1 = x - width / 2;
                 var y1 = y - height / 2;
@@ -164,6 +166,10 @@ namespace shootMup
                     }
                 }
             }
+            finally
+            {
+                ElementLock.ExitReadLock();
+            }
         }
 
         public bool Move(Player player, ref float xdelta, ref float ydelta)
@@ -171,7 +177,8 @@ namespace shootMup
             if (player.IsDead) return false;
             if (IsPaused) return false;
 
-            lock (this)
+            ElementLock.EnterReadLock();
+            try
             {
                 float pace = Background.Pace(player.X, player.Y);
                 if (pace < Constants.MinSpeedMultiplier) pace = Constants.MinSpeedMultiplier;
@@ -196,6 +203,10 @@ namespace shootMup
 
                 return true;
             }
+            finally
+            {
+                ElementLock.ExitReadLock();
+            }
         }
 
         public Type Pickup(Player player)
@@ -204,24 +215,37 @@ namespace shootMup
             if (player.IsDead) return null;
             if (IsPaused) return null;
 
-            lock (this)
+            ElementLock.EnterUpgradeableReadLock();
+            try
             {
                 // see if we are over an item
                 Element item = IntersectingRectangles(player, true /* consider acquirable */);
 
                 if (item != null)
                 {
-                    // pickup the item
-                    if (player.Take(item))
+                    ElementLock.EnterWriteLock();
+                    try
                     {
-                        // remove the item from the playing field
-                        Items.Remove(item.Id);
+                        // pickup the item
+                        if (player.Take(item))
+                        {
+                            // remove the item from the playing field
+                            Items.Remove(item.Id);
 
-                        return item.GetType();
+                            return item.GetType();
+                        }
+                    }
+                    finally
+                    {
+                        ElementLock.ExitWriteLock();
                     }
                 }
 
                 return null;
+            }
+            finally
+            {
+                ElementLock.ExitUpgradeableReadLock();
             }
         }
 
@@ -235,7 +259,8 @@ namespace shootMup
             var state = AttackStateEnum.None;
             var trajectories = new List<BulletTrajectory>();
 
-            lock (this)
+            ElementLock.EnterReadLock();
+            try
             {
                 state = player.Attack();
 
@@ -268,7 +293,11 @@ namespace shootMup
                     trajectories.Clear();
                 }
 
-            } // lock(this)
+            }
+            finally
+            {
+                ElementLock.ExitReadLock();
+            }
 
             // send notifications
             bool targetDied = false; // used to change the fired state
@@ -328,7 +357,8 @@ namespace shootMup
             if (IsPaused) return null;
             // this action is allowed for a dead player
 
-            lock (this)
+            ElementLock.EnterWriteLock();
+            try
             {
                 var item = player.DropPrimary();
 
@@ -342,6 +372,10 @@ namespace shootMup
                 }
 
                 return null;
+            }
+            finally
+            {
+                ElementLock.ExitWriteLock();
             }
         }
 
@@ -368,18 +402,21 @@ namespace shootMup
         private Dictionary<int, Element> Items;
         private Background Background;
         private Timer BackgroundTimer;
+        private ReaderWriterLockSlim ElementLock;
 
         private void BackgroundUpdate(object state)
         {
             if (IsPaused) return;
             var deceased = new List<Element>();
-            lock (this)
-            {
-                // update the map
-                Background.Update();
 
+            // update the map
+            Background.Update();
+
+            ElementLock.EnterReadLock();
+            try
+            {
                 // apply any necessary damage to the players
-                foreach(var elem in Obstacles.Values)
+                foreach (var elem in Obstacles.Values)
                 {
                     if (elem.IsDead) continue;
                     if (elem is Player)
@@ -396,7 +433,11 @@ namespace shootMup
                         }
                     }
                 }
-            } // lock(this)
+            }
+            finally
+            {
+                ElementLock.ExitReadLock();
+            }
 
             // notify the deceased
             foreach (var elem in deceased)
@@ -416,6 +457,9 @@ namespace shootMup
 
         private Element IntersectingRectangles(Player player, bool considerAquireable = false, float xdelta = 0, float ydelta = 0)
         {
+            // must take lock to enter this method
+            if (!ElementLock.IsReadLockHeld && !ElementLock.IsUpgradeableReadLockHeld) throw new Exception("Must hold the reader lock to enter this method");
+
             float x1 = (player.X + xdelta) - (player.Width / 2);
             float y1 = (player.Y + ydelta) - (player.Height / 2);
             float x2 = (player.X + xdelta) + (player.Width / 2);
@@ -463,6 +507,8 @@ namespace shootMup
 
         private Element IntersectingLine(Player player, float x1, float y1, float x2, float y2)
         {
+            if (!ElementLock.IsReadLockHeld && !ElementLock.IsUpgradeableReadLockHeld) throw new Exception("Must hold the reader lock before accessing this method");
+
             // must ensure to find the closest object that intersects
             Element item = null;
             float prvDistance = 0;

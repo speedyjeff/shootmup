@@ -90,6 +90,7 @@ namespace shootMup
             Refresh();
             duration.Stop();
             if (duration.ElapsedMilliseconds > (Common.Constants.GlobalClock / 2)-5) System.Diagnostics.Debug.WriteLine("**Paint Duration {0} ms", duration.ElapsedMilliseconds);
+            //System.IO.File.AppendAllText("timing.tsv", duration.ElapsedMilliseconds.ToString() + System.Environment.NewLine);
         }
 
         private void OnMoveTimer_Tick(object sender, EventArgs e)
