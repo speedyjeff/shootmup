@@ -20,12 +20,15 @@ namespace shootMup.Common
         public override void Draw(IGraphics g)
         {
             // draw three circles
-            RGBA green = new RGBA() { R = 32, G = 125, B = 44, A = 255 };
-            g.Ellipse(green, X+ (Width / 4), Y - (Height / 4), 3*Width / 4, 3*Height / 4);
-            g.Ellipse(green, X, Y + (Height / 4), 3*Width / 4, 3*Height / 4);
-            g.Ellipse(green, X - (Width / 2), Y - (Height / 4), 3 * Width / 4, 3 * Height / 4);
+            g.Ellipse(Green, X+ (Width / 4), Y - (Height / 4), 3*Width / 4, 3*Height / 4);
+            g.Ellipse(Green, X, Y + (Height / 4), 3*Width / 4, 3*Height / 4);
+            g.Ellipse(Green, X - (Width / 2), Y - (Height / 4), 3 * Width / 4, 3 * Height / 4);
 
             base.Draw(g);
         }
+
+        #region private
+        private static RGBA Green = new RGBA() { R = 32, G = 125, B = 44, A = 255 };
+        #endregion
     }
 }

@@ -41,6 +41,7 @@ namespace shootMup
                 else
                     Players[i] = new SimpleAI() { Name = string.Format("ai{0}", i) };
             }
+            Alive = Players.Length;
 
             // create map
             Map = new Map(width, height, Players, Background, PlayerPlacement.Borders);
@@ -82,13 +83,7 @@ namespace shootMup
         }
 
         public event Action OnEnd;
-        public int Alive
-        {
-            get
-            {
-                return Players.Where(p => p != null && !p.IsDead).Count();
-            }
-        }
+        public int Alive { get; private set; }
 
         public void Paint()
         {
@@ -126,11 +121,16 @@ namespace shootMup
             }
 
             // draw all elements
-            var hidden = new bool[Players.Length];
+            var hidden = new HashSet<int>();
+            var visiblePlayers = new List<Player>();
             foreach (var elem in Map.WithinWindow(Human.X, Human.Y, Surface.Width * (1 / ZoomFactor), Surface.Height * (1 / ZoomFactor)))
             {
-                if (elem is Player) continue;
                 if (elem.IsDead) continue;
+                if (elem is Player)
+                {
+                    visiblePlayers.Add(elem as Player);
+                    continue;
+                }
                 if (elem.IsTransparent)
                 {
                     // if the player is intersecting with this item, then do not display it
@@ -140,20 +140,20 @@ namespace shootMup
                     for (int i=0; i<Players.Length; i++)
                     {
                         if (Players[i].Id == Human.Id) continue;
-                        hidden[i] |= Map.IsTouching(Players[i], elem);
+                        if (Map.IsTouching(Players[i], elem))
+                        {
+                            hidden.Add(Players[i].Id);
+                        }
                     }
                 }
                 elem.Draw(Surface);
             }
 
             // draw the players
-            int alive = 0;
-            for(int i=0; i<Players.Length; i++)
+            foreach(var player in visiblePlayers)
             {
-                if (Players[i].IsDead) continue;
-                alive++;
-                if (hidden[i]) continue;
-                Players[i].Draw(Surface);
+                if (hidden.Contains(player.Id)) continue;
+                player.Draw(Surface);
             }
 
             // add any ephemerial elements
@@ -182,7 +182,7 @@ namespace shootMup
             // display the player counts
             Surface.DisableTranslation();
             {
-                Surface.Text(RGBA.Black, Surface.Width - 200, 10, string.Format("Alive {0} of {1}", alive, Players.Length));
+                Surface.Text(RGBA.Black, Surface.Width - 200, 10, string.Format("Alive {0} of {1}", Alive, Players.Length));
                 Surface.Text(RGBA.Black, Surface.Width - 200, 30, string.Format("Kills {0}", Human.Kills));
             }
             Surface.EnableTranslation();
@@ -416,9 +416,11 @@ namespace shootMup
                         break;
                     }
 
-                    // move over
+                    // move over (eg. teleport)
+                    Map.RemoveItem(Players[index]);
                     Players[index].X += xmove;
                     if (Players[index].Id == Human.Id) WindowX += xmove;
+                    Map.AddItem(Players[index]);
                 }
                 while (count-- > 0);
 
@@ -462,6 +464,11 @@ namespace shootMup
 
                 if (ai.IsDead)
                 {
+                    // drop the current players goodies
+                    Map.Drop(ai);
+                    ai.SwitchWeapon();
+                    Map.Drop(ai);
+
                     // stop the timer
                     AITimers[index].Dispose();
                     return;
@@ -706,12 +713,6 @@ namespace shootMup
             // check for winner/death (element may be any element that can take damage)
             if (element is Player)
             {
-                // drop the current players goodies
-                var p = element as Player;
-                Map.Drop(p);
-                p.SwitchWeapon();
-                Map.Drop(p);
-
                 // check how many players are still alive
                 int alive = 0;
                 var toplayers = new Dictionary<string, int>();
@@ -725,6 +726,7 @@ namespace shootMup
                         lastAlive = player;
                     }
                 }
+                Alive = alive;
 
                 var winners = toplayers.OrderByDescending(kvp => kvp.Value).Select(kvp => string.Format("{0} [{1}]", kvp.Key, kvp.Value)).ToArray();
 

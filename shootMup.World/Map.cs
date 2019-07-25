@@ -16,33 +16,29 @@ namespace shootMup
         public Map(int width, int height, Player[] players, Background background, PlayerPlacement placement)
         {
             // init
-            ElementLock = new ReaderWriterLockSlim();
-            Obstacles = new Dictionary<int, Element>();
-            Items = new Dictionary<int, Element>();
+            var obstacles = new Dictionary<int, Element>();
+            var items = new Dictionary<int, Element>();
             Width = width;
             Height = height;
             Background = background;
 
             // TODO - initialize based on on disk artifact
 
-            // add players
-            foreach (var o in players) Obstacles.Add(o.Id, o);
-
             // create the board
             if (false)
             {
                 // test world
-                WorldGenerator.Test(Width, Height, Obstacles, Items);
+                WorldGenerator.Test(Width, Height, obstacles, items);
             }
             else if (true)
             {
                 // random gen
-                WorldGenerator.Randomgen(Width, Height, Obstacles, Items);
+                WorldGenerator.Randomgen(Width, Height, obstacles, items);
             }
             else if (true)
             {
                 // hunger games
-                WorldGenerator.HungerGames(Width, Height, Obstacles, Items);
+                WorldGenerator.HungerGames(Width, Height, obstacles, items);
             }
             else
             {
@@ -120,6 +116,13 @@ namespace shootMup
                 throw new Exception("Unknown placement strategy : " + placement);
             }
 
+            // add players
+            foreach (var o in players) obstacles.Add(o.Id, o);
+
+            // put items into the collections
+            Obstacles = new RegionCollection(obstacles.Values, width, height);
+            Items = new RegionCollection(items.Values, width, height);
+
             // setup the background update timer
             BackgroundTimer = new Timer(BackgroundUpdate, null, 0, Constants.GlobalClock);
         }
@@ -138,37 +141,29 @@ namespace shootMup
             // do not take Z into account, as the view should be unbostructed (top down)
 
             // return objects that are within the window
-            ElementLock.EnterReadLock();
-            try
+            var x1 = x - width / 2;
+            var y1 = y - height / 2;
+            var x2 = x + width / 2;
+            var y2 = y + height / 2;
+
+            // iterate through all objects (obstacles + items)
+            foreach (var elems in new RegionCollection[] { Items, Obstacles })
             {
-                var x1 = x - width / 2;
-                var y1 = y - height / 2;
-                var x2 = x + width / 2;
-                var y2 = y + height / 2;
-
-                // iterate through all objects (obstacles + items)
-                foreach (var elems in new Dictionary<int, Element>[] { Items, Obstacles })
+                foreach (var elem in elems.Values(x1, y1, x2, y2))
                 {
-                    foreach (var elem in elems.Values)
+                    if (elem.IsDead) continue;
+
+                    var x3 = elem.X - elem.Width / 2;
+                    var y3 = elem.Y - elem.Height / 2;
+                    var x4 = elem.X + elem.Width / 2;
+                    var y4 = elem.Y + elem.Height / 2;
+
+                    if (Collision.IntersectingRectangles(x1, y1, x2, y2,
+                        x3, y3, x4, y4))
                     {
-                        if (elem.IsDead) continue;
-
-                        var x3 = elem.X - elem.Width / 2;
-                        var y3 = elem.Y - elem.Height / 2;
-                        var x4 = elem.X + elem.Width / 2;
-                        var y4 = elem.Y + elem.Height / 2;
-
-                        if (Collision.IntersectingRectangles(x1, y1, x2, y2,
-                            x3, y3, x4, y4))
-                        {
-                            yield return elem;
-                        }
+                        yield return elem;
                     }
                 }
-            }
-            finally
-            {
-                ElementLock.ExitReadLock();
             }
         }
 
@@ -177,36 +172,38 @@ namespace shootMup
             if (player.IsDead) return false;
             if (IsPaused) return false;
 
-            ElementLock.EnterReadLock();
-            try
+            float pace = Background.Pace(player.X, player.Y);
+            if (pace < Constants.MinSpeedMultiplier) pace = Constants.MinSpeedMultiplier;
+            if (pace > Constants.MaxSpeedMultiplier) pace = Constants.MaxSpeedMultiplier;
+            float speed = Constants.Speed * pace;
+
+            // check if the delta is legal
+            if (Math.Abs(xdelta) + Math.Abs(ydelta) > 1.00001) return false;
+
+            // adjust for speed
+            xdelta *= speed;
+            ydelta *= speed;
+
+            // check for a collision first
+            if (IntersectingRectangles(player, false /* consider acquirable */, xdelta, ydelta) != null)
             {
-                float pace = Background.Pace(player.X, player.Y);
-                if (pace < Constants.MinSpeedMultiplier) pace = Constants.MinSpeedMultiplier;
-                if (pace > Constants.MaxSpeedMultiplier) pace = Constants.MaxSpeedMultiplier;
-                float speed = Constants.Speed * pace;
-
-                // check if the delta is legal
-                if (Math.Abs(xdelta) + Math.Abs(ydelta) > 1.00001) return false;
-
-                // adjust for speed
-                xdelta *= speed;
-                ydelta *= speed;
-
-                // check for a collision first
-                if (IntersectingRectangles(player, false /* consider acquirable */, xdelta, ydelta) != null)
-                {
-                    return false;
-                }
-
-                // move the player
-                player.Move(xdelta, ydelta);
-
-                return true;
+                return false;
             }
-            finally
+
+            // get region before move
+            var beforeRegion = Obstacles.GetRegion(player);
+
+            // move the player
+            player.Move(xdelta, ydelta);
+
+            // get region after move
+            var afterRegion = Obstacles.GetRegion(player);
+            if (!beforeRegion.Equals(afterRegion))
             {
-                ElementLock.ExitReadLock();
+                Obstacles.Move(player.Id, beforeRegion, afterRegion);
             }
+
+            return true;
         }
 
         public Type Pickup(Player player)
@@ -215,38 +212,23 @@ namespace shootMup
             if (player.IsDead) return null;
             if (IsPaused) return null;
 
-            ElementLock.EnterUpgradeableReadLock();
-            try
+            // see if we are over an item
+            Element item = IntersectingRectangles(player, true /* consider acquirable */);
+
+            if (item != null)
             {
-                // see if we are over an item
-                Element item = IntersectingRectangles(player, true /* consider acquirable */);
-
-                if (item != null)
+                // remove as an atomic operation
+                if (Items.Remove(item.Id, item))
                 {
-                    ElementLock.EnterWriteLock();
-                    try
+                    // pickup the item
+                    if (player.Take(item))
                     {
-                        // pickup the item
-                        if (player.Take(item))
-                        {
-                            // remove the item from the playing field
-                            Items.Remove(item.Id);
-
-                            return item.GetType();
-                        }
-                    }
-                    finally
-                    {
-                        ElementLock.ExitWriteLock();
+                        return item.GetType();
                     }
                 }
+            }
 
-                return null;
-            }
-            finally
-            {
-                ElementLock.ExitUpgradeableReadLock();
-            }
+            return null;
         }
 
         public AttackStateEnum Attack(Player player)
@@ -259,44 +241,35 @@ namespace shootMup
             var state = AttackStateEnum.None;
             var trajectories = new List<BulletTrajectory>();
 
-            ElementLock.EnterReadLock();
-            try
+            state = player.Attack();
+
+            // apply state change
+            if (state == AttackStateEnum.Fired)
             {
-                state = player.Attack();
+                Element elem = null;
 
-                // apply state change
-                if (state == AttackStateEnum.Fired)
+                // apply the bullet via the trajectory
+                elem = TrackAttackTrajectory(player, player.Primary, player.X, player.Y, player.Angle, trajectories);
+                if (elem != null) hit.Add(elem);
+                if (player.Primary.Spread != 0)
                 {
-                    Element elem = null;
-
-                    // apply the bullet via the trajectory
-                    elem = TrackAttackTrajectory(player, player.Primary, player.X, player.Y, player.Angle, trajectories);
+                    elem = TrackAttackTrajectory(player, player.Primary, player.X, player.Y, player.Angle - (player.Primary.Spread / 2), trajectories);
                     if (elem != null) hit.Add(elem);
-                    if (player.Primary.Spread != 0)
-                    {
-                        elem = TrackAttackTrajectory(player, player.Primary, player.X, player.Y, player.Angle - (player.Primary.Spread / 2), trajectories);
-                        if (elem != null) hit.Add(elem);
-                        elem = TrackAttackTrajectory(player, player.Primary, player.X, player.Y, player.Angle + (player.Primary.Spread / 2), trajectories);
-                        if (elem != null) hit.Add(elem);
-                    }
-                }
-                else if (state == AttackStateEnum.Melee)
-                {
-                    // project out a short range and check if there was contact
-                    Element elem = null;
-
-                    // apply the bullet via the trajectory
-                    elem = TrackAttackTrajectory(player, player.Fists, player.X, player.Y, player.Angle, trajectories);
+                    elem = TrackAttackTrajectory(player, player.Primary, player.X, player.Y, player.Angle + (player.Primary.Spread / 2), trajectories);
                     if (elem != null) hit.Add(elem);
-
-                    // disregard any trajectories
-                    trajectories.Clear();
                 }
-
             }
-            finally
+            else if (state == AttackStateEnum.Melee)
             {
-                ElementLock.ExitReadLock();
+                // project out a short range and check if there was contact
+                Element elem = null;
+
+                // apply the bullet via the trajectory
+                elem = TrackAttackTrajectory(player, player.Fists, player.X, player.Y, player.Angle, trajectories);
+                if (elem != null) hit.Add(elem);
+
+                // disregard any trajectories
+                trajectories.Clear();
             }
 
             // send notifications
@@ -357,26 +330,18 @@ namespace shootMup
             if (IsPaused) return null;
             // this action is allowed for a dead player
 
-            ElementLock.EnterWriteLock();
-            try
+            var item = player.DropPrimary();
+
+            if (item != null)
             {
-                var item = player.DropPrimary();
+                item.X = player.X;
+                item.Y = player.Y;
+                Items.Add(item.Id, item);
 
-                if (item != null)
-                {
-                    item.X = player.X;
-                    item.Y = player.Y;
-                    Items.Add(item.Id, item);
-
-                    return item.GetType();
-                }
-
-                return null;
+                return item.GetType();
             }
-            finally
-            {
-                ElementLock.ExitWriteLock();
-            }
+
+            return null;
         }
 
         public bool IsTouching(Element elem1, Element elem2)
@@ -396,13 +361,53 @@ namespace shootMup
             return Collision.IntersectingRectangles(x1, y1, x2, y2, x3, y3, x4, y4);
         }
 
+        public bool AddItem(Element item)
+        {
+            if (IsPaused) return false;
+
+            if (item != null)
+            {
+                if (item.CanAcquire)
+                {
+                    Items.Add(item.Id, item);
+                }
+                else
+                {
+                    Obstacles.Add(item.Id, item);
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool RemoveItem(Element item)
+        {
+            if (IsPaused) return false;
+
+            if (item != null)
+            {
+                if (item.CanAcquire)
+                {
+                    Items.Remove(item.Id, item);
+                }
+                else
+                {
+                    Obstacles.Remove(item.Id, item);
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
         #region private
-        //private Dictionary<int, Element> All { get; set; }
-        private Dictionary<int, Element> Obstacles;
-        private Dictionary<int, Element> Items;
+        private RegionCollection Obstacles;
+        private RegionCollection Items;
         private Background Background;
         private Timer BackgroundTimer;
-        private ReaderWriterLockSlim ElementLock;
 
         private void BackgroundUpdate(object state)
         {
@@ -412,31 +417,23 @@ namespace shootMup
             // update the map
             Background.Update();
 
-            ElementLock.EnterReadLock();
-            try
+            // apply any necessary damage to the players
+            foreach (var elem in Obstacles.AllValues())
             {
-                // apply any necessary damage to the players
-                foreach (var elem in Obstacles.Values)
+                if (elem.IsDead) continue;
+                if (elem is Player)
                 {
-                    if (elem.IsDead) continue;
-                    if (elem is Player)
+                    var damage = Background.Damage(elem.X, elem.Y);
+                    if (damage > 0)
                     {
-                        var damage = Background.Damage(elem.X, elem.Y);
-                        if (damage > 0)
-                        {
-                            elem.ReduceHealth(damage);
+                        elem.ReduceHealth(damage);
 
-                            if (elem.IsDead)
-                            {
-                                deceased.Add(elem);
-                            }
+                        if (elem.IsDead)
+                        {
+                            deceased.Add(elem);
                         }
                     }
                 }
-            }
-            finally
-            {
-                ElementLock.ExitReadLock();
             }
 
             // notify the deceased
@@ -457,20 +454,17 @@ namespace shootMup
 
         private Element IntersectingRectangles(Player player, bool considerAquireable = false, float xdelta = 0, float ydelta = 0)
         {
-            // must take lock to enter this method
-            if (!ElementLock.IsReadLockHeld && !ElementLock.IsUpgradeableReadLockHeld) throw new Exception("Must hold the reader lock to enter this method");
-
             float x1 = (player.X + xdelta) - (player.Width / 2);
             float y1 = (player.Y + ydelta) - (player.Height / 2);
             float x2 = (player.X + xdelta) + (player.Width / 2);
             float y2 = (player.Y + ydelta) + (player.Height / 2);
 
             // either choose to iterate through solid objects (obstacles) or items
-            Dictionary<int, Element> objects = Obstacles;
+            var objects = Obstacles;
             if (considerAquireable) objects = Items;
 
             // check collisions
-            foreach (var elem in objects.Values)
+            foreach (var elem in objects.Values(x1, y1, x2, y2))
             {
                 if (elem.Id == player.Id) continue;
                 if (elem.IsDead) continue;
@@ -507,14 +501,12 @@ namespace shootMup
 
         private Element IntersectingLine(Player player, float x1, float y1, float x2, float y2)
         {
-            if (!ElementLock.IsReadLockHeld && !ElementLock.IsUpgradeableReadLockHeld) throw new Exception("Must hold the reader lock before accessing this method");
-
             // must ensure to find the closest object that intersects
             Element item = null;
             float prvDistance = 0;
 
             // check collisions
-            foreach (var elem in Obstacles.Values)
+            foreach (var elem in Obstacles.Values(x1, y1, x2, y2))
             {
                 bool collision = false;
                 if (elem.Id == player.Id) continue;
