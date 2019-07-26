@@ -27,8 +27,6 @@ namespace shootMup.Common
     {
         public RegionCollection(IEnumerable<Element> elements, int width, int height)
         {
-            // Assume that the map starts at 0,0 and grows down and right
-
             // gather all the element sizes
             var sizes = new List<float>();
             foreach (var o in elements) sizes.Add(o.Width > o.Height ? o.Width : o.Height);
@@ -63,8 +61,24 @@ namespace shootMup.Common
                 }
             }
 
+            // iterate through to get lower bound of x and y (as means of rebasing the regions)
+            var minx = Single.MaxValue;
+            var miny = Single.MaxValue;
+            foreach (var elem in elements)
+            {
+                if (elem.X < minx) minx = elem.X;
+                if (elem.Y < miny) miny = elem.Y;
+            }
+            // convert these into offsets to adjust the regions to a 0,0 based matrix
+            if (minx < 0) XOffset = (int)Math.Floor(minx);
+            else XOffset = (int)Math.Ceiling(minx);
+            XOffset *= -1;
+            if (miny < 0) YOffset = (int)Math.Floor(miny);
+            else YOffset = (int)Math.Ceiling(miny);
+            YOffset *= -1;
+
             // add all the elements
-            foreach (var elem in elements) Add(elem.Id, elem);
+            foreach(var elem in elements) Add(elem.Id, elem);
         }
 
         public void Add(int key, Element elem)
@@ -74,15 +88,15 @@ namespace shootMup.Common
             RegionLock.EnterWriteLock();
             try
             {
+                // get region to insert into
+                GetRegion(elem.X, elem.Y, out int row, out int column);
+
                 // check if this is an item that would span multiple regions
-                if (IsOversized(elem))
+                if (IsOversized(elem) || IsOutofRange(row, column))
                 {
                     Oversized.Add(key, elem);
                     return;
                 }
-
-                // get region to insert into
-                GetRegion(elem.X, elem.Y, out int row, out int column);
 
                 // add to the region specified (or span multiple regions)
                 Regions[row][column].Add(key, elem);
@@ -100,14 +114,14 @@ namespace shootMup.Common
             RegionLock.EnterWriteLock();
             try
             {
+                // get region to remove from
+                GetRegion(elem.X, elem.Y, out int row, out int column);
+
                 // check if this is an item that would span multiple regions
-                if (IsOversized(elem))
+                if (IsOversized(elem) || IsOutofRange(row, column))
                 {
                     return Oversized.Remove(key);
                 }
-
-                // get region to remove from
-                GetRegion(elem.X, elem.Y, out int row, out int column);
 
                 // add to the region specified (or span multiple regions)
                 return Regions[row][column].Remove(key);
@@ -123,35 +137,37 @@ namespace shootMup.Common
             RegionLock.EnterWriteLock();
             try
             {
-                // validate
-                if (src.Row < 0 || src.Row >= Rows || src.Col < 0 || src.Col >= Columns) throw new Exception("Invalid src region location");
-                if (dst.Row < 0 || dst.Row >= Rows || dst.Col < 0 || dst.Col >= Columns) throw new Exception("Invalid dst region location");
-
-                // get element
+                // get element (either in oversized or a Region)
                 Element elem;
                 if (Oversized.TryGetValue(key, out elem))
                 {
-                    // this item is oversized and no work is necessary
-                    return;
+                    // if elment is Oversized or the dst is out of range, keep it here
+                    if (IsOversized(elem)) return;
+
+                    // assert that this element is currently out of range
+                    if (!IsOutofRange(src)) throw new Exception("Invalid state in internal datastructures");
+
+                    // if it remains out of range, keep it here
+                    if (IsOutofRange(dst)) return;
+
+                    // remove it from the oversized, as it is moving to a region
+                    if (!Oversized.Remove(key)) throw new Exception("Failed to remove this element");
                 }
-                if (!Regions[src.Row][src.Col].TryGetValue(key, out elem)) throw new Exception("Failed to location the element to move");
+                else
+                {
+                    // find it and remove it
+                    if (!Regions[src.Row][src.Col].TryGetValue(key, out elem)) throw new Exception("Failed to location the element to move");
+                    if (!Regions[src.Row][src.Col].Remove(key)) throw new Exception("Failed to remove this element");
+                }
 
-                // remove
-                if (!Regions[src.Row][src.Col].Remove(key)) throw new Exception("Failed to remove this element");
-
-                // add
-                Regions[dst.Row][dst.Col].Add(key, elem);
+                // add element (either oversized or a Region)
+                if (IsOutofRange(dst)) Oversized.Add(key, elem);
+                else Regions[dst.Row][dst.Col].Add(key, elem);
             }
             finally
             {
                 RegionLock.ExitWriteLock();
             }
-        }
-
-        public IEnumerable<Element> AllValues()
-        {
-            // return all the values
-            return Values(0, 0, Width, Height);
         }
 
         public IEnumerable<Element> Values(float x1, float y1, float x2, float y2)
@@ -180,16 +196,13 @@ namespace shootMup.Common
                 }
 
                 // expand the region
-                r1 -= 1; c1 -= 1;
-                r2 += 1; c2 += 1;
+                r1-=1; c1-=1;
+                r2+=1; c2+=1;
 
                 // hold the lock for the duration of this call
                 for (int r = (r1 >= 0 ? r1 : 0); r <= r2 && r < Regions.Length; r++)
                     for (int c = (c1 >= 0 ? c1 : 0); c <= c2 && c < Regions[r].Length; c++)
-                    {
-                        if (Regions[r][c].Count == 0) continue;
                         foreach (var elem in Regions[r][c].Values) yield return elem;
-                    }
 
                 // always return the oversized items
                 foreach (var elem in Oversized.Values) yield return elem;
@@ -230,6 +243,8 @@ namespace shootMup.Common
         private int Height;
         private int Columns;
         private int Rows;
+        private int XOffset;
+        private int YOffset;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool IsOversized(Element elem)
@@ -240,9 +255,20 @@ namespace shootMup.Common
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void GetRegion(float x, float y, out int row, out int column, bool validate = true)
         {
-            row = (int)Math.Floor(y / RegionSize);
-            column = (int)Math.Floor(x / RegionSize);
-            if (validate && (row < 0 || row >= Rows || column < 0 || column >= Columns)) throw new Exception("Region out of range");
+            row = (int)Math.Floor((y + YOffset) / RegionSize);
+            column = (int)Math.Floor((x + XOffset) / RegionSize);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal bool IsOutofRange(float row, float col)
+        {
+            return row < 0 || row >= Rows || col < 0 || col >= Columns;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal bool IsOutofRange(Region region)
+        {
+            return region.Row < 0 || region.Row >= Rows || region.Col < 0 || region.Col >= Columns;
         }
         #endregion
     }

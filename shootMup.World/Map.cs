@@ -18,6 +18,7 @@ namespace shootMup
             // init
             var obstacles = new Dictionary<int, Element>();
             var items = new Dictionary<int, Element>();
+            Players = players;
             Width = width;
             Height = height;
             Background = background;
@@ -116,7 +117,7 @@ namespace shootMup
                 throw new Exception("Unknown placement strategy : " + placement);
             }
 
-            // add players
+            // add players - after deciding on placement
             foreach (var o in players) obstacles.Add(o.Id, o);
 
             // put items into the collections
@@ -406,6 +407,7 @@ namespace shootMup
         #region private
         private RegionCollection Obstacles;
         private RegionCollection Items;
+        private Player[] Players;
         private Background Background;
         private Timer BackgroundTimer;
 
@@ -418,20 +420,18 @@ namespace shootMup
             Background.Update();
 
             // apply any necessary damage to the players
-            foreach (var elem in Obstacles.AllValues())
+            for (int i = 0; i < Players.Length; i++)
             {
-                if (elem.IsDead) continue;
-                if (elem is Player)
-                {
-                    var damage = Background.Damage(elem.X, elem.Y);
-                    if (damage > 0)
-                    {
-                        elem.ReduceHealth(damage);
+                if (Players[i] == null || Players[i].IsDead) continue;
 
-                        if (elem.IsDead)
-                        {
-                            deceased.Add(elem);
-                        }
+                var damage = Background.Damage(Players[i].X, Players[i].Y);
+                if (damage > 0)
+                {
+                    Players[i].ReduceHealth(damage);
+
+                    if (Players[i].IsDead)
+                    {
+                        deceased.Add(Players[i]);
                     }
                 }
             }
