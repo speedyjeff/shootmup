@@ -201,8 +201,13 @@ namespace shootMup.Common
 
                 // hold the lock for the duration of this call
                 for (int r = (r1 >= 0 ? r1 : 0); r <= r2 && r < Regions.Length; r++)
+                {
                     for (int c = (c1 >= 0 ? c1 : 0); c <= c2 && c < Regions[r].Length; c++)
+                    {
+                        if (Regions[r][c].Count == 0) continue;
                         foreach (var elem in Regions[r][c].Values) yield return elem;
+                    }
+                }
 
                 // always return the oversized items
                 foreach (var elem in Oversized.Values) yield return elem;
