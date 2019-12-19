@@ -1,7 +1,6 @@
 ﻿using System;
 using Microsoft.ML;
 using Microsoft.ML.Data;
-using Microsoft.ML.Runtime.Api;
 using shootMup.Common;
 
 namespace shootMup.Bots
@@ -13,78 +12,78 @@ namespace shootMup.Bots
     {
         // environment
 
-        [Column("0")]
+        [LoadColumn(0)]
         public float CenterAngle;
-        [Column("1")]
+        [LoadColumn(1)]
         public float InZone;
 
         // player core stats
 
-        [Column("2")]
+        [LoadColumn(2)]
         public float Health;
-        [Column("3")]
+        [LoadColumn(3)]
         public float Shield;
-        [Column("4")]
+        [LoadColumn(4)]
         public float Primary;
-        [Column("5")]
+        [LoadColumn(5)]
         public float PrimaryAmmo;
-        [Column("6")]
+        [LoadColumn(6)]
         public float PrimaryClip;
-        [Column("7")]
+        [LoadColumn(7)]
         public float Secondary;
-        [Column("8")]
+        [LoadColumn(8)]
         public float SecondaryAmmo;
-        [Column("9")]
+        [LoadColumn(9)]
         public float SecondaryClip;
 
         // proximity
 
         // ammo
-        [Column("10")]
+        [LoadColumn(10)]
         public float Angle_1;
-        [Column("11")]
+        [LoadColumn(11)]
         public float Distance_1;
 
         // Bandage
-        [Column("12")]
+        [LoadColumn(12)]
         public float Angle_2;
-        [Column("13")]
+        [LoadColumn(13)]
         public float Distance_2;
 
         // Helmet
-        [Column("14")]
+        [LoadColumn(14)]
         public float Angle_3;
-        [Column("15")]
+        [LoadColumn(15)]
         public float Distance_3;
 
         // Ak47
-        [Column("16")]
+        [LoadColumn(16)]
         public float Angle_4;
-        [Column("17")]
+        [LoadColumn(17)]
         public float Distance_4;
 
         // Shotgun
-        [Column("18")]
+        [LoadColumn(18)]
         public float Angle_5;
-        [Column("19")]
+        [LoadColumn(19)]
         public float Distance_5;
 
         // Pistol
-        [Column("20")]
+        [LoadColumn(20)]
         public float Angle_6;
-        [Column("21")]
+        [LoadColumn(21)]
         public float Distance_6;
 
         // Obstacle
-        [Column("22")]
+        [LoadColumn(22)]
         public float Angle_7;
-        [Column("23")]
+        [LoadColumn(23)]
         public float Distance_7;
 
         // Player
-        [Column("24")]
+        [LoadColumn(24)]
         public float Angle_8;
-        [Column("25")]
+        [LoadColumn(25)]
         public float Distance_8;
 
         // outcomes
@@ -321,7 +320,7 @@ namespace shootMup.Bots
 
     public class ModelDataSetPrediction
     {
-        [ColumnName("Score")]
+        [LoadColumnName("Score")]
         public float Score;
     }
 }

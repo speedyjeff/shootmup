@@ -52,9 +52,9 @@ namespace shootMup.Bots
                 proximity = sb.ToString();
             }
 
-            return String.Format("{{\"CenterAngle\":{0}\",\"InZone\":{1},\"Proximity\":{2},\"Health\":{3},\"Shield\":{4},\"Z\":{5},\"Primary\":\"{6}\",\"PrimaryClip\":{7},\"PrimaryAmmo\":{8},\"Secondary\":\"{9}\",\"SecondaryAmmo\":{10},\"SecondaryClip\":{11},\"Action\":{12},\"Xdelta\":{13},\"Ydelta\":{14},\"Angle\":{15},\"Result\":{16}}}",
+            return String.Format("{{\"CenterAngle\":{0},\"InZone\":{1},\"Proximity\":{2},\"Health\":{3},\"Shield\":{4},\"Z\":{5},\"Primary\":\"{6}\",\"PrimaryClip\":{7},\"PrimaryAmmo\":{8},\"Secondary\":\"{9}\",\"SecondaryAmmo\":{10},\"SecondaryClip\":{11},\"Action\":{12},\"Xdelta\":{13},\"Ydelta\":{14},\"Angle\":{15},\"Result\":{16}}}",
                             CenterAngle,
-                            InZone,
+                            InZone ? "true" : "false",
                             proximity,
                             Health,
                             Shield,
