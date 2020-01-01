@@ -1,11 +1,14 @@
-﻿using shootMup.Common;
+﻿using engine.Common;
+using engine.Common.Entities;
+using engine.Common.Entities.AI;
+using shootMup.Common;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace shootMup.Bots
 {
-    public class SimpleAI : AI
+    public class SimpleAI : ShootMAI
     {
         // Simple rules
         //  direction rules:
@@ -87,7 +90,7 @@ namespace shootMup.Bots
             if (Shield < Constants.MaxShield)
             {
                 ElementProximity helmet = null;
-                if (closest.TryGetValue(typeof(Helmet), out helmet))
+                if (closest.TryGetValue(typeof(Shield), out helmet))
                 {
                     // there is health either close or touching
                     if (IsTouching(helmet, Width/2))
@@ -109,7 +112,7 @@ namespace shootMup.Bots
             if (Health < Constants.MaxHealth)
             {
                 ElementProximity bandage = null;
-                if (closest.TryGetValue(typeof(Bandage), out bandage))
+                if (closest.TryGetValue(typeof(Health), out bandage))
                 {
                     // there is health either close or touching
                     if (IsTouching(bandage, Width/2))
@@ -128,11 +131,12 @@ namespace shootMup.Bots
             }
 
             // 1) Have weapon
-            if (Primary != null)
+            if (Primary != null && Primary is RangeWeapon)
             {
+                var weapon = Primary as RangeWeapon;
                 ElementProximity ammo = null;
                 // need ammo
-                if (Primary.Ammo < MinAmmo && closest.TryGetValue(typeof(Ammo), out ammo))
+                if (weapon.Ammo < MinAmmo && closest.TryGetValue(typeof(Ammo), out ammo))
                 {
                     // there is ammo either close or touching
                     if (IsTouching(ammo, Width/2))
@@ -150,7 +154,7 @@ namespace shootMup.Bots
                 }
 
                 // needs reload
-                if (!Primary.RoundsInClip(out int rounds) && rounds == 0 && Primary.HasAmmo())
+                if (!weapon.RoundsInClip(out int rounds) && rounds == 0 && weapon.HasAmmo())
                 {
                     // choose to reload
                     action = ActionEnum.Reload;
@@ -178,7 +182,7 @@ namespace shootMup.Bots
 
                 ElementProximity player = null;
                 // shoot a player
-                if (Primary.CanShoot() && closest.TryGetValue(typeof(Player), out player))
+                if (weapon.CanShoot() && closest.TryGetValue(typeof(Player), out player))
                 {
                     // choose to shoot
                     action = ActionEnum.Attack;
@@ -188,7 +192,7 @@ namespace shootMup.Bots
             }
 
             // 0) No weapon
-            if (Primary == null)
+            if (Primary == null || !(Primary is RangeWeapon))
             {
                 // AI does not have a weapon, so go ahead and melee (if no other action)
                 shouldMelee = true;

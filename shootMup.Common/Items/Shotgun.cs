@@ -1,10 +1,12 @@
-﻿using System;
+﻿using engine.Common;
+using engine.Common.Entities;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace shootMup.Common
 {
-    public class Shotgun : Gun
+    public class Shotgun : RangeWeapon
     {
         public Shotgun() : base()
         {

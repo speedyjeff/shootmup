@@ -1,11 +1,13 @@
-﻿using shootMup.Common;
+﻿using engine.Common.Entities;
+using engine.Common.Entities.AI;
+using shootMup.Common;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace shootMup.Bots
 {
-    public class RandomAI : AI
+    public class RandomAI : ShootMAI
     {
         public RandomAI() : base()
         {
@@ -67,7 +69,7 @@ namespace shootMup.Bots
             switch(Rand.Next() % 6)
             {
                 case 0:
-                    return ActionEnum.SwitchWeapon;
+                    return ActionEnum.SwitchPrimary;
                 case 1:
                     return ActionEnum.Pickup;
                 case 2:

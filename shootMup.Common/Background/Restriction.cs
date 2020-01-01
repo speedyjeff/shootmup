@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using engine.Common;
+using engine.Common.Entities;
 
 namespace shootMup.Common
 {
@@ -8,8 +10,22 @@ namespace shootMup.Common
     {
         public Restriction(int width, int height) : base(width, height)
         {
-            Diameter = width + width /2 ;
-            Timing = MinTimeing;
+            // base config
+            GroundColor = new RGBA() { R = 70, G = 169, B = 52, A = 255 };
+            X = (width / 2);
+            Y = (height / 2);
+            Width = width;
+            Height = height;
+
+            // setup diameter
+            Diameter = width + height;
+            DiameterDecrease = (int)Width / 500;
+
+            // establish timing (Update runs every GlobalClock ms)
+            var callsPerSecond = 1000 / Constants.GlobalClock;
+            MinTiming = -1 * callsPerSecond;
+            MaxTiming = 2 * callsPerSecond;
+            Timing = MinTiming;
         }
 
         public RGBA DangerColor => new RGBA() { R =255, G =127, B =39, A = 255 };
@@ -18,10 +34,9 @@ namespace shootMup.Common
 
         public override void Draw(IGraphics g)
         {
-            //base.Draw(g);
             // draw the zone
             g.Clear(DangerColor);
-            // add the safe zone
+            // add the safe zone (must be relative to Diameter - as it shifts)
             g.Ellipse(GroundColor, X - (Diameter / 2), Y - (Diameter / 2), Diameter, Diameter, true);
         }
 
@@ -29,11 +44,11 @@ namespace shootMup.Common
         {
             if (Timing++ > 0)
             {
-                Diameter -= 10;
-                if (Diameter < 10) Diameter = 10;
+                Diameter -= DiameterDecrease;
+                if (Diameter < DiameterDecrease) Diameter = DiameterDecrease;
             }
 
-            if (Timing >= MaxTiming) Timing = MinTimeing;
+            if (Timing >= MaxTiming) Timing = MinTiming;
 
             base.Update();
         }
@@ -50,8 +65,9 @@ namespace shootMup.Common
 
         #region private
         private int Timing;
-        private const int MinTimeing = -20;  // 2 seconds pause
-        private const int MaxTiming = 20; // 2 seconds move
+        private int MinTiming = -20;  // 2 seconds pause
+        private int MaxTiming = 20; // 2 seconds move
+        private int DiameterDecrease = 10;
         #endregion
     }
 }

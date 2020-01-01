@@ -1,21 +1,219 @@
-﻿using System;
+﻿using engine.Common;
+using engine.Common.Entities;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace shootMup.Common
 {
+    public enum WorldType { Test, Random, HungerGames }
+    public enum PlayerPlacement { Diagonal, Borders }
+
     public static class WorldGenerator
     {
-        public static void Test(int width, int height, Dictionary<int, Element> obstacles, Dictionary<int, Element> items)
+        public static World Generate(WorldType type, PlayerPlacement placement, Player human, ref Player[] allPlayers)
+        {
+            // defaults
+            var height = 10000;
+            var width = 10000;
+            var numPlayers = 100;
+
+            // world details
+            List<Element> objects = null;
+            Background background = new Restriction(width, height); ;
+
+            // generate the world
+            switch (type)
+            {
+                case WorldType.Test:
+                    // test world
+                    width = 1000;
+                    height = 1000;
+                    numPlayers = 1;
+                    background = new Background(width, height) { GroundColor = new RGBA() { R = 70, G = 169, B = 52, A = 255 } };
+                    objects = WorldGenerator.Test(width, height);
+                    break;
+
+                case WorldType.Random:
+                    // random gen
+                    objects = WorldGenerator.Randomgen(width, height);
+                    break;
+
+                case WorldType.HungerGames:
+                    // hunger games
+                    objects = WorldGenerator.HungerGames(width, height);
+                    break;
+
+                default:
+                    throw new Exception("Unknown world type " + type);
+            }
+
+            // create players
+            if (allPlayers.Length < numPlayers) throw new Exception("Need more players");
+            var players = new Player[numPlayers];
+            var index = 0;
+            players[(new Random()).Next() % numPlayers] = human;
+            for (int i = 0; i < players.Length; i++) if (players[i] == null) players[i] = allPlayers[index++];
+
+            // replace allPlayers with the actual players list
+            allPlayers = players;
+
+            // place the players in a diagnoal pattern
+            if (placement == PlayerPlacement.Diagonal)
+            {
+                for (int i = 0; i < players.Length; i++)
+                {
+                    if (players[i].X != 0 || players[i].Y != 0) continue;
+                    float diag = (width / players.Length) * i;
+                    if (diag < 100) throw new Exception("Too many ai players for this board size");
+                    players[i].X = diag;
+                    players[i].Y = diag;
+                    players[i].Z = Constants.Sky;
+                }
+            }
+            else if (placement == PlayerPlacement.Borders)
+            {
+                // place players around the borders
+                float delta = (((width + height) * 2) / (players.Length + 5));
+                if (delta < 100) throw new Exception("Too many ai players for this board size");
+                float ydelta = delta;
+                float xdelta = 0;
+                float x = 50;
+                float y = 50;
+                for (int i = 0; i < players.Length; i++)
+                {
+                    if (players[i].X != 0 || players[i].Y != 0) continue;
+
+                    x += xdelta;
+                    y += ydelta;
+
+                    if (y > height)
+                    {
+                        // bottom left corner
+                        y -= delta;
+                        xdelta = ydelta;
+                        ydelta = 0;
+                        x += xdelta;
+                    }
+                    else if (x > width)
+                    {
+                        // bottom right corner
+                        x -= delta;
+                        ydelta = xdelta * -1;
+                        xdelta = 0;
+                        y += ydelta;
+                    }
+                    else if (y < 0)
+                    {
+                        // top right corner
+                        y += delta;
+                        xdelta = ydelta;
+                        ydelta = 0;
+                        x += xdelta;
+                    }
+                    else if (x < 0)
+                    {
+                        throw new Exception("Failed to properly distribute all the players evenly");
+                    }
+
+                    if (x < 0 || x > width || y < 0 || y > height)
+                    {
+                        System.Diagnostics.Debug.WriteLine("Placing a player outside of the borders");
+                    }
+
+                    players[i].X = x;
+                    players[i].Y = y;
+                    players[i].Z = Constants.Sky;
+                }
+            }
+            else
+            {
+                throw new Exception("Unknown placement strategy : " + placement);
+            }
+
+            // configuration
+            var finish = new Finish();
+            var title = new Title();
+            var config = new WorldConfiguration()
+            {
+                Width = width,
+                Height = height,
+                EnableZoom = true,
+                ShowCoordinates = false,
+                DisplayStats = true,
+                CenterIndicator = true,
+                ApplyForces = false,
+                EndMenu = finish,
+                StartMenu = title
+            };
+
+            // setup game
+            var world = new World(
+                config,
+                players,
+                objects.ToArray(),
+                background
+                );
+
+            // generate the top players list
+            var playerRanking = 0;
+            world.OnDeath += (elem) =>
+            {
+                // exit early if it was not a player
+                if (!(elem is Player)) return;
+
+                // check how many players are still alive
+                var toplayers = new Dictionary<string, int>();
+                Player lastAlive = null;
+                foreach (var player in players)
+                {
+                    toplayers.Add(player.Name, player.Kills);
+                    if (!player.IsDead)
+                    {
+                        lastAlive = player;
+                    }
+                }
+
+                var winners = toplayers.OrderByDescending(kvp => kvp.Value).Select(kvp => string.Format("{0} [{1}]", kvp.Key, kvp.Value)).ToArray();
+
+                // setup the finish screen
+                finish.Kills = human.Kills;
+                finish.Ranking = playerRanking > 0 ? playerRanking : world.Alive;
+                finish.Winner = (world.Alive == 1) ? human.Name : "";
+                finish.TopPlayers = winners;
+
+                // display the finish menu, if this was the human's death
+                if (human.IsDead)
+                {
+                    if (playerRanking == 0)
+                    {
+                        playerRanking = world.Alive;
+
+                        // show the final screen
+                        world.ShowMenu(finish);
+                    }
+                }
+                // or if there is only 1 player alive
+                if (world.Alive == 1) world.ShowMenu(finish);
+            };
+
+            return world;
+        }
+
+        #region private
+        private static List<Element> Test(int width, int height)
         {
             if (width < 1000 || height < 1000) throw new Exception("Must have at least 1000 wdith & height");
 
+            var objects = new List<Element>();
+
             // borders
             foreach (var elem in WorldHelper.MakeBorders(width, height, 20))
-                obstacles.Add(elem.Id, elem);
+                objects.Add(elem);
             // hut
             foreach (var elem in WorldHelper.MakeHut(700, 700, (DirectionEnum.East | DirectionEnum.South | DirectionEnum.West)))
-                obstacles.Add(elem.Id, elem);
+                objects.Add(elem);
             // items
             foreach (var elem in new Element[] {
                                     new Tree() { X = 125, Y = 125 },
@@ -25,14 +223,18 @@ namespace shootMup.Common
                                     new Ammo() { X = 350, Y = 150 },
                                     new Ammo() { X = 400, Y = 150 },
                                     new Ammo() { X = 450, Y = 150 },
-                                    new Helmet() { X = 200, Y = 300 },
+                                    new Shield() { X = 200, Y = 300 },
                                     new Rock() { X = 750, Y = 250 },
-                                    new Bandage() { X = 350, Y = 800}
+                                    new Health() { X = 350, Y = 800}
             })
-                items.Add(elem.Id, elem);
+            {
+                objects.Add(elem);
+            }
+
+            return objects;
         }
 
-        public static void Randomgen(int width, int height, Dictionary<int, Element> obstacles, Dictionary<int, Element> items)
+        private static List<Element> Randomgen(int width, int height)
         {
             // this size is determined by the largest element (the Hut)
             int chunkSize = 400;
@@ -41,8 +243,9 @@ namespace shootMup.Common
             if (width < chunkSize || height < chunkSize) throw new Exception("Must have at least " + chunkSize + " pixels to generate a board");
 
             // break the board up into 400x400 chunks, within those chunks we will then fill with a few particular patterns
+            var objects = new List<Element>();
 
-            for(int h = 0; h < height / chunkSize; h++)
+            for (int h = 0; h < height / chunkSize; h++)
             {
                 for(int w = 0; w < width / chunkSize; w++)
                 {
@@ -100,22 +303,24 @@ namespace shootMup.Common
                             System.Diagnostics.Debug.WriteLine("Put an item outside of the wall");
 
                         // add items
-                        items.Add(item.Id, item);
+                        objects.Add(item);
                     }
                     if (solids != null)
                     {
                         foreach (var elem in solids)
-                            obstacles.Add(elem.Id, elem);
+                            objects.Add(elem);
                     }
                 }
             }
 
             // make borders
             foreach (var elem in WorldHelper.MakeBorders(width, height, 20))
-                obstacles.Add(elem.Id, elem);
+                objects.Add(elem);
+
+            return objects;
         }
 
-        public static void HungerGames(int width, int height, Dictionary<int, Element> obstacles, Dictionary<int, Element> items)
+        private static List<Element> HungerGames(int width, int height)
         {
             // put all the goodies in the middle - no health
             var rand = new Random();
@@ -123,36 +328,38 @@ namespace shootMup.Common
             float y = height / 2;
             float dim = width / 10;
             int count = 100;
-            while(true)
+            var objects = new List<Element>();
+            while (true)
             {
                 float rx = x + (rand.Next() % dim) * (rand.Next() % 2 == 0 ? -1 : 1);
                 float ry = y + (rand.Next() % dim) * (rand.Next() % 2 == 0 ? -1 : 1);
 
                 var item = RandomgenItem(rx, ry, rand);
 
-                if (item != null && !(item is Bandage) && !(item is Helmet))
+                if (item != null && !(item is Health) && !(item is Shield))
                 {
-                    items.Add(item.Id, item);
+                    objects.Add(item);
 
                     if (count-- <= 0) break;
                 }
             }
 
             foreach (var elem in WorldHelper.MakeBorders(width, height, 20))
-                obstacles.Add(elem.Id, elem);
+                objects.Add(elem);
+
+            return objects;
         }
 
-        #region private
         private static Element RandomgenItem(float x, float y, Random rand)
         {
             switch (rand.Next() % 10)
             {
                 case 0:
                     // helmet
-                    return new Helmet() { X = x, Y = y };
+                    return new Shield() { X = x, Y = y };
                 case 1:
                     // bandage
-                    return new Bandage() { X = x, Y = y };
+                    return new Health() { X = x, Y = y };
                 case 4:
                 case 2:
                 case 5:

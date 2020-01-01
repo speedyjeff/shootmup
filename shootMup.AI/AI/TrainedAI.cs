@@ -1,4 +1,7 @@
-﻿using shootMup.Common;
+﻿using engine.Common;
+using engine.Common.Entities;
+using engine.Common.Entities.AI;
+using shootMup.Common;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6,24 +9,43 @@ using System.Linq;
 
 namespace shootMup.Bots
 {
-    public class TrainedAI : AI
-    {
-        public TrainedAI() : base()
-        {
-            // never record training data for these AI
-            RecordTraining = false;
+    public enum TrainedAIModel { ML_Net, OpenCV }
 
+    public class TrainedAI : ShootMAI
+    {
+        public TrainedAI(TrainedAIModel model) : base()
+        {
             // in case it gest stuck
             Rand = new Random();
             LastActionFailed = 0;
+
+            switch(model)
+            {
+                case TrainedAIModel.ML_Net:
+                    ActionModel = ML_ActionModel;
+                    XYModel = ML_XYModel;
+                    AngleModel = ML_AngleModel;
+                    break;
+                case TrainedAIModel.OpenCV:
+                    ActionModel = CV_ActionModel;
+                    XYModel = CV_XYModel;
+                    AngleModel = CV_AngleModel;
+                    break;
+                default:
+                    throw new Exception("Unknown AI model type " + model);
+            }
         }
 
         static TrainedAI()
         { 
             // get models
-            ActionModel = Model.Load(Path.Combine("Models", "Prebuilt", "action.ml.model"));
-            XYModel = Model.Load(Path.Combine("Models", "Prebuilt", "xy.ml.model"));
-            AngleModel = Model.Load(Path.Combine("Models", "Prebuilt", "angle.ml.model"));            
+            ML_ActionModel = Model.Load(Path.Combine("Models", "Prebuilt", "action.ml.model"));
+            ML_XYModel = Model.Load(Path.Combine("Models", "Prebuilt", "xy.ml.model"));
+            ML_AngleModel = Model.Load(Path.Combine("Models", "Prebuilt", "angle.ml.model"));
+
+            CV_ActionModel = Model.Load(Path.Combine("Models", "Prebuilt", "action.cv.model"));
+            CV_XYModel = Model.Load(Path.Combine("Models", "Prebuilt", "xy.cv.model"));
+            CV_AngleModel = Model.Load(Path.Combine("Models", "Prebuilt", "angle.cv.model"));
         }
 
         public override ActionEnum Action(List<Element> elements, float angleToCenter, bool inZone, ref float xdelta, ref float ydelta, ref float angle)
@@ -38,6 +60,25 @@ namespace shootMup.Bots
             }
 
             // construct a view of the current world
+            var pname = "";
+            var pammo = 0;
+            var pclip = 0;
+            var sname = "";
+            var sammo = 0;
+            var sclip = 0;
+
+            if (Primary != null && Primary is RangeWeapon)
+            {
+                pname = Primary.GetType().Name;
+                pammo = (Primary as RangeWeapon).Ammo;
+                pclip = (Primary as RangeWeapon).Clip;
+            }
+            if (Secondary != null && Secondary.Length == 1 && Secondary[0] != null && Secondary[0] is RangeWeapon)
+            {
+                sname = Secondary.GetType().Name;
+                sammo = (Secondary[0] as RangeWeapon).Ammo;
+                sclip = (Secondary[0] as RangeWeapon).Clip;
+            }
             var data = new TrainingData()
             {
                 // core data
@@ -46,12 +87,12 @@ namespace shootMup.Bots
                 Health = Health,
                 Shield = Shield,
                 Z = Z,
-                Primary = Primary != null ? Primary.GetType().Name : "",
-                PrimaryAmmo = Primary != null ? Primary.Ammo : 0,
-                PrimaryClip = Primary != null ? Primary.Clip : 0,
-                Secondary = Secondary != null ? Secondary.GetType().Name : "",
-                SecondaryAmmo = Secondary != null ? Secondary.Ammo : 0,
-                SecondaryClip = Secondary != null ? Secondary.Clip : 0
+                Primary = pname,
+                PrimaryAmmo = pammo,
+                PrimaryClip = pclip,
+                Secondary = sname,
+                SecondaryAmmo = sammo,
+                SecondaryClip = sclip
             };
             data.Proximity = AITraining.ComputeProximity(this, elements).Values.ToList();
 
@@ -87,12 +128,23 @@ namespace shootMup.Bots
                 Ydelta = Ydelta / sum;
                 //LastActionFailed = 10;
             }
+
+            // pass it along
+            base.Feedback(action, item, result);
         }
 
         #region private
-        private static Model AngleModel;
-        private static Model XYModel;
-        private static Model ActionModel;
+        private Model AngleModel;
+        private Model XYModel;
+        private Model ActionModel;
+
+        private static Model ML_AngleModel;
+        private static Model ML_XYModel;
+        private static Model ML_ActionModel;
+
+        private static Model CV_AngleModel;
+        private static Model CV_XYModel;
+        private static Model CV_ActionModel;
 
         private Random Rand;
         private int LastActionFailed;

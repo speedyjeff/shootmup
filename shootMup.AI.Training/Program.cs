@@ -1,4 +1,5 @@
-﻿using System;
+﻿using engine.Common;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,6 +20,7 @@ namespace shootMup.Bots.Training
             Console.WriteLine("  check [directory to model]        - loads a trained model and gives it a try");
             Console.WriteLine("  serialize [count] [action|angle|xy] [directory to input]");
             Console.WriteLine("                                    - dump the data into a csv file");
+            Console.WriteLine("  run [ml|cv]                       - (experimental) run a sample execution with these models");
             return -1;
         }
 
@@ -51,7 +53,8 @@ namespace shootMup.Bots.Training
                 else if (string.Equals(args[i], "run", StringComparison.OrdinalIgnoreCase))
                 {
                     // do a trial run
-                    return Executor.Run();
+                    var type = i + 1 < args.Length ? args[i + 1] : "";
+                    return Executor.Run(type);
                 }
                 else if (string.Equals(args[i], "test", StringComparison.OrdinalIgnoreCase))
                 {
@@ -59,7 +62,7 @@ namespace shootMup.Bots.Training
                     float xdelta, ydelta;
                     foreach(var angle in new float[] { 0, 45, 90, 135, 180, 225, 270, 315, 359})
                     {
-                        Common.Collision.CalculateLineByAngle(0, 0, angle, 1, out x1, out y1, out xdelta, out ydelta);
+                        Collision.CalculateLineByAngle(0, 0, angle, 1, out x1, out y1, out xdelta, out ydelta);
 
                         var sum = (float)(Math.Abs(xdelta) + Math.Abs(ydelta));
                         xdelta = xdelta / sum;
@@ -81,7 +84,7 @@ namespace shootMup.Bots.Training
                         }
                         )
                     {
-                        var angle = Common.Collision.CalculateAngleFromPoint(0, 0, pair[0], pair[1]);
+                        var angle = Collision.CalculateAngleFromPoint(0, 0, pair[0], pair[1]);
 
                         Console.WriteLine("1: {0} {1},{2}", angle, pair[0], pair[1]);
                     }

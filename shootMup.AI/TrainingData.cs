@@ -69,7 +69,7 @@ namespace shootMup.Bots
                             Xdelta,
                             Ydelta,
                             Angle,
-                            Result);
+                            Result ? "true" : "false");
         }
     }
 }

@@ -1,4 +1,6 @@
-﻿using shootMup.Common;
+﻿using engine.Common;
+using engine.Common.Entities;
+using shootMup.Common;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -69,45 +71,61 @@ namespace shootMup.Bots
             return closest;
         }
 
-        public static void CaptureBefore(Player player, List<Element> elements, float angleToCenter, bool inZone)
+        public static void CaptureBefore(Player player, ActionDetails details)
         {
             var data = GetData(player);
 
             // capture the angle to the center
-            data.CenterAngle = angleToCenter;
+            data.CenterAngle = details.AngleToCenter;
 
             // capture the user health, shield, weapon status, inzone, Z
             data.Angle = player.Angle;
             data.Health = player.Health;
-            data.InZone = inZone;
-            data.Primary = player.Primary != null ? player.Primary.GetType().Name : "";
-            data.PrimaryAmmo = player.Primary != null ? player.Primary.Ammo : 0;
-            data.PrimaryClip = player.Primary != null ? player.Primary.Clip : 0;
-            data.Secondary = player.Secondary != null ? player.Secondary.GetType().Name : "";
-            data.SecondaryAmmo = player.Secondary != null ? player.Secondary.Ammo : 0;
-            data.SecondaryClip = player.Secondary != null ? player.Secondary.Clip : 0;
+            data.InZone = details.InZone;
+            data.Xdelta = details.XDelta;
+            data.Ydelta = details.YDelta;
+            if (player.Primary != null && player.Primary is RangeWeapon)
+            {
+                data.Primary = player.Primary.GetType().Name;
+                data.PrimaryAmmo = (player.Primary as RangeWeapon).Ammo;
+                data.PrimaryClip = (player.Primary as RangeWeapon).Clip;
+            }
+            else
+            {
+                data.Primary = "";
+                data.PrimaryAmmo = data.PrimaryClip = 0;
+            }
+            if (player.Secondary != null && player.Secondary.Length == 1 && player.Secondary[0] != null && player.Secondary[0] is RangeWeapon)
+            {
+                data.Secondary = player.Secondary.GetType().Name;
+                data.SecondaryAmmo = (player.Secondary[0] as RangeWeapon).Ammo;
+                data.SecondaryClip = (player.Secondary[0] as RangeWeapon).Clip;
+            }
+            else
+            {
+                data.Secondary = "";
+                data.SecondaryAmmo = data.SecondaryClip = 0;
+            }
             data.Shield = player.Shield;
             data.Z = player.Z;
 
             // capture what the user sees
-            data.Proximity = AITraining.ComputeProximity(player, elements).Values.ToList();
+            data.Proximity = AITraining.ComputeProximity(player, details.Elements).Values.ToList();
         }
 
-        public static void CaptureAfter(Player player, ActionEnum action, float xdelta, float ydelta, float angle, bool result)
+        public static void CaptureAfter(Player player, ActionEnum action, bool result)
         {
             var data = GetData(player);
 
             data.Action = (int)action;
             data.Result = result;
-            data.Xdelta = xdelta;
-            data.Ydelta = ydelta;
 
             var output = GetOutput(player);
             var json = data.ToJson();
             output.WriteLine(json);
         }
 
-        public static void CaptureWinners(string[] winners)
+        public static void CaptureWinners(List<string> winners)
         {
             StreamWriter output = null;
             lock (Output)
@@ -120,10 +138,10 @@ namespace shootMup.Bots
             }
             var sb = new StringBuilder();
             sb.Append('[');
-            for(int i=0; i<winners.Length; i++)
+            for(int i=0; i<winners.Count; i++)
             {
                 sb.AppendFormat("\"{0}\"", winners[i]);
-                if (i < winners.Length - 1) sb.Append(',');
+                if (i < winners.Count - 1) sb.Append(',');
             }
             sb.Append(']');
             var json = sb.ToString();
@@ -232,15 +250,16 @@ namespace shootMup.Bots
 
         private static StreamWriter GetOutput(Player player)
         {
-            OutputLock.EnterUpgradeableReadLock();
             try
             {
+                OutputLock.EnterUpgradeableReadLock();
+
                 StreamWriter output = null;
                 if (!Output.TryGetValue(player.Id, out output))
                 {
-                    OutputLock.EnterWriteLock();
                     try
                     {
+                        OutputLock.EnterWriteLock();
                         if (!Directory.Exists(TrainingPath)) Directory.CreateDirectory(TrainingPath);
                         output = File.CreateText(Path.Combine(TrainingPath, string.Format("{0:yyyy-MM-dd_HH-mm-ss}.{1}", Start, player.Name)));
                         Output.Add(player.Id, output);

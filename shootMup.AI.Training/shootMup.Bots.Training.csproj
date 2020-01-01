@@ -129,6 +129,14 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\engine\engine.Common\engine.Common.csproj">
+      <Project>{a181b9f7-0422-4805-915e-573e13d07312}</Project>
+      <Name>engine.Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\engine\engine.Winforms\engine.Winforms.csproj">
+      <Project>{c031d3fa-2ec9-423a-a04d-3b176c141577}</Project>
+      <Name>engine.Winforms</Name>
+    </ProjectReference>
     <ProjectReference Include="..\shootMup.AI\shootMup.Bots.csproj">
       <Project>{66ee2793-3766-4464-9960-09255273bce9}</Project>
       <Name>shootMup.Bots</Name>
@@ -136,10 +144,6 @@
     <ProjectReference Include="..\shootMup.Common\shootMup.Common.csproj">
       <Project>{14d7490e-02ae-49d8-9860-48ca4271f8ba}</Project>
       <Name>shootMup.Common</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\shootMup.World\shootMup.World.csproj">
-      <Project>{4dedee14-2239-4609-8e86-5715b564609a}</Project>
-      <Name>shootMup.World</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

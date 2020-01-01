@@ -1,7 +1,14 @@
-﻿using System;
+﻿using engine.Common;
+using engine.Common.Entities;
+using engine.Winforms;
+using shootMup.Bots;
+using shootMup.Common;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
+using System.Linq;
 
 namespace shootMup
 {
@@ -12,12 +19,8 @@ namespace shootMup
         /// </summary>
         private System.ComponentModel.IContainer components = null;
 
-        private WritableGraphics Surface;
-
+        private UIHookup UI;
         private World World;
-
-        private Timer OnPaintTimer;
-        private Timer OnMoveTimer;
 
         /// <summary>
         /// Clean up any resources being used.
@@ -52,113 +55,60 @@ namespace shootMup
                 Text = "shootMup";
                 DoubleBuffered = true;
 
-                // double buffer
-                Surface = new WritableGraphics( BufferedGraphicsManager.Current, CreateGraphics(), Height, Width);
+                // generate players
+                var human = new ShootMPlayer() { Name = "You" };
+                var players = new Player[100];
+                for(int i=0; i<players.Length; i++) players[i] = new SimpleAI() { Name = string.Format("ai{0}", i) };
 
-                // timers
-                OnPaintTimer = new Timer();
-                OnPaintTimer.Interval = Common.Constants.GlobalClock / 2;
-                OnPaintTimer.Tick += OnPaintTimer_Tick;
-                OnMoveTimer = new Timer();
-                OnMoveTimer.Interval = Common.Constants.GlobalClock / 2;
-                OnMoveTimer.Tick += OnMoveTimer_Tick;
+                // generate the world
+                World = WorldGenerator.Generate(WorldType.Random, PlayerPlacement.Borders, human, ref players);
 
-                // setup game
-                World = new World(Surface, new Sounds());
+                // if we are training for AI, then capture telemetry
+                World.OnBeforeAction += AITraining.CaptureBefore;
+                World.OnAfterAction += AITraining.CaptureAfter;
+                World.OnDeath += (elem) =>
+                {
+                    if (elem is Player)
+                    {
+                        var winners = new List<string>();
 
-                // setup callbacks
-                KeyPress += OnKeyPressed;
-                MouseUp += OnMouseUp;
-                MouseDown += OnMouseDown;
-                MouseMove += OnMouseMove;
-                MouseWheel += OnMouseWheel;
-                Resize += OnResize;
+                        // capture the winners
+                        foreach (var player in players)
+                        {
+                            winners.Add(string.Format("{0} [{1}]", player.Name, player.Kills) );
+                        }
 
-                OnPaintTimer.Start();
-         }
+                        AITraining.CaptureWinners(winners);
+                    }
+                };
+
+                UI = new UIHookup(this, World);
+            }
             finally
             {
                 ResumeLayout(false);
             }
         }
-
-        private void OnPaintTimer_Tick(object sender, EventArgs e)
+        
+        protected override bool ProcessCmdKey(ref System.Windows.Forms.Message msg, Keys keyData)
         {
-            Stopwatch duration = new Stopwatch();
-            duration.Start();
-            World.Paint();
-            Refresh();
-            duration.Stop();
-            if (duration.ElapsedMilliseconds > (Common.Constants.GlobalClock / 2)-5) System.Diagnostics.Debug.WriteLine("**Paint Duration {0} ms", duration.ElapsedMilliseconds);
-            //System.IO.File.AppendAllText("timing.tsv", duration.ElapsedMilliseconds.ToString() + System.Environment.NewLine);
-        }
-
-        private void OnMoveTimer_Tick(object sender, EventArgs e)
-        {
-            World.KeyPress(Common.Constants.RightMouse);
-        }
-
-        protected override void OnPaint(PaintEventArgs e)
-        {
-                Surface.RawRender(e.Graphics);
-        }
-
-        private void OnResize(object sender, EventArgs e)
-        {
-            Surface.RawResize(CreateGraphics(), Height, Width);
-        }
-
-        private void OnMouseWheel(object sender, MouseEventArgs e)
-        {
-            World.Mousewheel(e.Delta);
-        }
-
-        private void OnMouseMove(object sender, MouseEventArgs e)
-        {
-            // translate the location into an angle relative to the mid point
-            //        360/0
-            //   270         90
-            //         180
-
-            // Width/2 and Height/2 act as the center point
-            float angle = Common.Collision.CalculateAngleFromPoint(Width / 2.0f, Height / 2.0f, e.X, e.Y);
-
-            World.Mousemove(e.X, e.Y, angle);
-        }
-
-        private void OnMouseDown(object sender, MouseEventArgs e)
-        {
-            if (e.Button == MouseButtons.Left) World.KeyPress(Common.Constants.LeftMouse);
-            else if (e.Button == MouseButtons.Right) OnMoveTimer.Start();
-            else if (e.Button == MouseButtons.Middle) World.KeyPress(Common.Constants.MiddleMouse);
-        }
-
-        private void OnMouseUp(object sender, MouseEventArgs e)
-        {
-            if (e.Button == MouseButtons.Right) OnMoveTimer.Stop();
-        }
-
-        private void OnKeyPressed(object sender, KeyPressEventArgs e)
-        {
-            World.KeyPress(e.KeyChar);
-            e.Handled = true;
-        }
-
-        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
-        {
-            // user input
-            if (keyData == Keys.Left) World.KeyPress(Common.Constants.LeftArrow);
-            else if (keyData == Keys.Right) World.KeyPress(Common.Constants.RightArrow);
-            else if (keyData == Keys.Up) World.KeyPress(Common.Constants.UpArrow);
-            else if (keyData == Keys.Down) World.KeyPress(Common.Constants.DownArrow);
-            else if (keyData == Keys.Space) World.KeyPress(Common.Constants.Space);
-            else if (keyData == Keys.Escape) World.KeyPress(Common.Constants.Esc);
-
-            // command control
-            else if (keyData == Keys.Tab) throw new Exception("NYI - show menu"); // show a menu
+            if (UI != null)
+            {
+                UI.ProcessCmdKey(keyData);
+            }
 
             return base.ProcessCmdKey(ref msg, keyData);
         }
+
+        protected override void WndProc(ref System.Windows.Forms.Message m)
+        {
+            if (UI != null)
+            {
+                UI.ProcessWndProc(ref m);
+            }
+
+            base.WndProc(ref m);
+        } // WndProc
 
 
         #endregion
