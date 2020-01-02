@@ -74,55 +74,62 @@ namespace shootMup.Bots
         public static void CaptureBefore(Player player, ActionDetails details)
         {
             var data = GetData(player);
+            lock (data)
+            {
+                // capture the angle to the center
+                data.CenterAngle = details.AngleToCenter;
 
-            // capture the angle to the center
-            data.CenterAngle = details.AngleToCenter;
+                // capture the user health, shield, weapon status, inzone, Z
+                data.Angle = player.Angle;
+                data.Health = player.Health;
+                data.InZone = details.InZone;
+                data.Xdelta = details.XDelta;
+                data.Ydelta = details.YDelta;
+                if (player.Primary != null && player.Primary is RangeWeapon)
+                {
+                    data.Primary = player.Primary.GetType().Name;
+                    data.PrimaryAmmo = (player.Primary as RangeWeapon).Ammo;
+                    data.PrimaryClip = (player.Primary as RangeWeapon).Clip;
+                }
+                else
+                {
+                    data.Primary = "";
+                    data.PrimaryAmmo = data.PrimaryClip = 0;
+                }
+                if (player.Secondary != null && player.Secondary.Length == 1 && player.Secondary[0] != null && player.Secondary[0] is RangeWeapon)
+                {
+                    data.Secondary = player.Secondary.GetType().Name;
+                    data.SecondaryAmmo = (player.Secondary[0] as RangeWeapon).Ammo;
+                    data.SecondaryClip = (player.Secondary[0] as RangeWeapon).Clip;
+                }
+                else
+                {
+                    data.Secondary = "";
+                    data.SecondaryAmmo = data.SecondaryClip = 0;
+                }
+                data.Shield = player.Shield;
+                data.Z = player.Z;
 
-            // capture the user health, shield, weapon status, inzone, Z
-            data.Angle = player.Angle;
-            data.Health = player.Health;
-            data.InZone = details.InZone;
-            data.Xdelta = details.XDelta;
-            data.Ydelta = details.YDelta;
-            if (player.Primary != null && player.Primary is RangeWeapon)
-            {
-                data.Primary = player.Primary.GetType().Name;
-                data.PrimaryAmmo = (player.Primary as RangeWeapon).Ammo;
-                data.PrimaryClip = (player.Primary as RangeWeapon).Clip;
+                // capture what the user sees
+                data.Proximity = AITraining.ComputeProximity(player, details.Elements).Values.ToList();
             }
-            else
-            {
-                data.Primary = "";
-                data.PrimaryAmmo = data.PrimaryClip = 0;
-            }
-            if (player.Secondary != null && player.Secondary.Length == 1 && player.Secondary[0] != null && player.Secondary[0] is RangeWeapon)
-            {
-                data.Secondary = player.Secondary.GetType().Name;
-                data.SecondaryAmmo = (player.Secondary[0] as RangeWeapon).Ammo;
-                data.SecondaryClip = (player.Secondary[0] as RangeWeapon).Clip;
-            }
-            else
-            {
-                data.Secondary = "";
-                data.SecondaryAmmo = data.SecondaryClip = 0;
-            }
-            data.Shield = player.Shield;
-            data.Z = player.Z;
-
-            // capture what the user sees
-            data.Proximity = AITraining.ComputeProximity(player, details.Elements).Values.ToList();
         }
 
         public static void CaptureAfter(Player player, ActionEnum action, bool result)
         {
             var data = GetData(player);
+            lock (data)
+            {
+                data.Action = (int)action;
+                data.Result = result;
 
-            data.Action = (int)action;
-            data.Result = result;
-
-            var output = GetOutput(player);
-            var json = data.ToJson();
-            output.WriteLine(json);
+                var output = GetOutput(player);
+                lock (output)
+                {
+                    var json = data.ToJson();
+                    output.WriteLine(json);
+                }
+            }
         }
 
         public static void CaptureWinners(List<string> winners)
