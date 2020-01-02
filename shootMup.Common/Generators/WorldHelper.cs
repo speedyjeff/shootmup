@@ -1,4 +1,5 @@
-﻿using engine.Common.Entities;
+﻿using engine.Common;
+using engine.Common.Entities;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -32,10 +33,10 @@ namespace shootMup.Common
         {
             return new List<Element>()
             {
-                new Wall(WallDirection.Horiztonal, width, thickness) { X = width / 2, Y = thickness/2, Z=float.MaxValue },
-                new Wall(WallDirection.Vertical, height, thickness) { X = thickness/2, Y = height / 2, Z=float.MaxValue },
-                new Wall(WallDirection.Horiztonal, width, thickness) { X = width / 2, Y = height - thickness/2, Z=float.MaxValue },
-                new Wall(WallDirection.Vertical, height, thickness) { X = width - thickness/2, Y = height / 2, Z=float.MaxValue }
+                new Wall(WallDirection.Horiztonal, width, thickness) { X = width / 2, Y = thickness/2, Z=Constants.Sky, Depth = Constants.Sky*2 },
+                new Wall(WallDirection.Vertical, height, thickness) { X = thickness/2, Y = height / 2, Z=Constants.Sky, Depth = Constants.Sky*2 },
+                new Wall(WallDirection.Horiztonal, width, thickness) { X = width / 2, Y = height - thickness/2, Z=Constants.Sky, Depth = Constants.Sky*2 },
+                new Wall(WallDirection.Vertical, height, thickness) { X = width - thickness/2, Y = height / 2, Z=Constants.Sky, Depth = Constants.Sky*2 }
             };
         }
     }
