@@ -47,7 +47,7 @@ namespace shootMup.Bots
             //  for example, prefer AK47 or run away
         }
 
-        public override ActionEnum Action(List<Element> elements, float angleToCenter, bool inZone, ref float xdelta, ref float ydelta, ref float angle)
+        public override ActionEnum Action(List<Element> elements, float angleToCenter, bool inZone, ref float xdelta, ref float ydelta, ref float zdelta, ref float angle)
         {
             var playerCount = 0;
             float playerX = 0;

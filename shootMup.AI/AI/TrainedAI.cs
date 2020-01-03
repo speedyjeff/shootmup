@@ -48,7 +48,7 @@ namespace shootMup.Bots
             CV_AngleModel = Model.Load(Path.Combine("Models", "Prebuilt", "angle.cv.model"));
         }
 
-        public override ActionEnum Action(List<Element> elements, float angleToCenter, bool inZone, ref float xdelta, ref float ydelta, ref float angle)
+        public override ActionEnum Action(List<Element> elements, float angleToCenter, bool inZone, ref float xdelta, ref float ydelta, ref float zdelta, ref float angle)
         {
             // check if last action failed
             if (LastActionFailed > 0)
