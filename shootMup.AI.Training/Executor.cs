@@ -31,6 +31,10 @@ namespace shootMup.Bots.Training
         public void Text(RGBA color, float x, float y, string text, float fontsize = 16) { }
         public void Triangle(RGBA color, float x1, float y1, float x2, float y2, float x3, float y3, bool fill = true, bool border = false) { }
         public void Polygon(RGBA color, Point[] points, bool fill) { }
+
+        public void CapturePolygons() { }
+
+        public void RenderPolygons() { }
     }
 
     public class VoidSound : ISounds
