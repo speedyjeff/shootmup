@@ -143,7 +143,7 @@ namespace shootMup.Common
                 ShowCoordinates = false,
                 DisplayStats = true,
                 CenterIndicator = true,
-                ForcesAppied = (int)Forces.Z, // paracutes
+                ForcesApplied = (int)Forces.Z, // paracutes
                 EndMenu = finish,
                 StartMenu = title
             };
