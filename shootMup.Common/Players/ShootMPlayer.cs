@@ -20,7 +20,7 @@ namespace shootMup.Common
             // draw player
             if (Z > Constants.Ground)
             {
-                g.DisableTranslation(true /* nonScaledTranslation */);
+                g.DisableTranslation(TranslationOptions.Translation);
                 {
                     // we are in a parachute
                     g.Ellipse(Color, X - (Width / 2), Y - (Height / 2), Width, Height);
