@@ -30,7 +30,7 @@ namespace shootMup.Bots.Training
         public void Text(RGBA color, float x, float y, string text, float fontsize = 16) { }
         public void Triangle(RGBA color, float x1, float y1, float x2, float y2, float x3, float y3, bool fill, bool border, float thickness) { }
         public void Polygon(RGBA color, Point[] points, bool fill, bool border, float thickness) { }
-        public void SetPerspective(bool is3D, float centerX, float centerY, float centerZ, float yaw, float pitch, float roll, float cameraX, float cameraY, float cameraZ, float zoom = 0f, float horizon = 0f) { }
+        public void SetPerspective(bool is3D, float centerX, float centerY, float centerZ, float yaw, float pitch, float roll, float cameraX, float cameraY, float cameraZ, float horizon = 0f) { }
 
         public void CapturePolygons() { }
 
