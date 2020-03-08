@@ -18,12 +18,12 @@ namespace shootMup.Bots.Training
         public int Width { get { return 1384; } }
         public void Clear(RGBA color) { }
         public IImage CreateImage(int width, int height) { return null;  }
+        public IImage CreateImage(string path) { return null; }
+        public IImage CreateImage(Stream stream) { return null; }
         public void DisableTranslation(TranslationOptions options) { }
         public void Ellipse(RGBA color, float x, float y, float width, float height, bool fill, bool border, float thickness) { }
         public void EnableTranslation() { }
-        public void Image(string path, float x, float y, float width = 0, float height = 0) { }
         public void Image(IImage img, float x, float y, float width = 0, float height = 0) { }
-        public void Image(string name, Stream stream, float x, float y, float width = 0, float height = 0) { }
         public void Line(RGBA color, float x1, float y1, float x2, float y2, float thickness) { }
         public void Rectangle(RGBA color, float x, float y, float width, float height, bool fill, bool border, float thickness) { }
         public void RotateTransform(float angle) { }
@@ -31,6 +31,8 @@ namespace shootMup.Bots.Training
         public void Triangle(RGBA color, float x1, float y1, float x2, float y2, float x3, float y3, bool fill, bool border, float thickness) { }
         public void Polygon(RGBA color, Point[] points, bool fill, bool border, float thickness) { }
         public void SetPerspective(bool is3D, float centerX, float centerY, float centerZ, float yaw, float pitch, float roll, float cameraX, float cameraY, float cameraZ, float horizon = 0f) { }
+        public void Image(IImage img, Point[] points) { }
+
 
         public void CapturePolygons() { }
 

@@ -19,6 +19,11 @@ namespace shootMup.Common
 
         public override void Draw(IGraphics g)
         {
+            // initialization
+            if (KeyboardLayoutImage == null) KeyboardLayoutImage = g.CreateImage(KeyboardLayoutPath);
+            if (MouseLayoutImage == null) MouseLayoutImage = g.CreateImage(MouseLayoutPath);
+
+            // draw title
             var top = 100;
             var left = 100;
             var width = 500;
@@ -37,8 +42,8 @@ namespace shootMup.Common
                 top += 20;
                 g.Text(RGBA.Black, left, top, "a weapon, avoid the zone, and try to survive.");
                 top += 20;
-                g.Image(KeyboardLayoutPath, left, top, 190, 140);
-                g.Image(MouseLayoutPath, left + 250, top, 120, 170);
+                g.Image(KeyboardLayoutImage, left, top, 190, 140);
+                g.Image(MouseLayoutImage, left + 250, top, 120, 170);
                 top += 150;
                 g.Text(RGBA.Black, left, top, "[esc] to start");
             }
@@ -46,5 +51,10 @@ namespace shootMup.Common
 
             base.Draw(g);
         }
+
+        #region private
+        private IImage KeyboardLayoutImage;
+        private IImage MouseLayoutImage;
+        #endregion
     }
 }
