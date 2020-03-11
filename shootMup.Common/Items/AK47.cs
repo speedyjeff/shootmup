@@ -26,6 +26,6 @@ namespace shootMup.Common
         }
 
         public override string FiredSoundPath() => "media/ak47.2.wav";
-        public override string ImagePath => "media/ak47.png";
+        public override ImageSource Image => new ImageSource(path: "media/ak47.png");
     }
 }

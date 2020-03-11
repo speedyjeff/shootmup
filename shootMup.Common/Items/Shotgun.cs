@@ -26,6 +26,6 @@ namespace shootMup.Common
         }
 
         public override string FiredSoundPath() => "media/shotgun.wav";
-        public override string ImagePath => "media/shotgun.png";
+        public override ImageSource Image => new ImageSource(path: "media/shotgun.png");
     }
 }
