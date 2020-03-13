@@ -34,12 +34,19 @@ namespace shootMup.Bots
 
         public string ToJson()
         {
-            var proximity = "[]";
+            var sb = new StringBuilder(1024);
+
+            sb.AppendFormat("{{ \"CenterAngle\":{0},", CenterAngle);
+            sb.AppendFormat("\"InZone\":{0},", InZone ? "true" : "false");
+            sb.AppendFormat("\"Health\":{0},", Health);
+            sb.AppendFormat("\"Shield\":{0},", Shield);
+            sb.AppendFormat("\"Z\":{0},", Z);
+
             if (Proximity != null && Proximity.Count > 0)
             {
-                var sb = new StringBuilder(1024);
-                sb.Append('[');
-                for(int i=0; i<Proximity.Count; i++)
+
+                sb.Append("\"Proximity\":[");
+                for (int i = 0; i < Proximity.Count; i++)
                 {
                     sb.AppendFormat("{{\"Id\":{0},\"Name\":\"{1}\",\"Angle\":{2},\"Distance\":{3}}}",
                         Proximity[i].Id,
@@ -48,28 +55,22 @@ namespace shootMup.Bots
                         Proximity[i].Distance);
                     if (i <= (Proximity.Count - 1)) sb.Append(',');
                 }
-                sb.Append(']');
-                proximity = sb.ToString();
+                sb.Append("],");
             }
 
-            return String.Format("{{\"CenterAngle\":{0},\"InZone\":{1},\"Proximity\":{2},\"Health\":{3},\"Shield\":{4},\"Z\":{5},\"Primary\":\"{6}\",\"PrimaryClip\":{7},\"PrimaryAmmo\":{8},\"Secondary\":\"{9}\",\"SecondaryAmmo\":{10},\"SecondaryClip\":{11},\"Action\":{12},\"Xdelta\":{13},\"Ydelta\":{14},\"Angle\":{15},\"Result\":{16}}}",
-                            CenterAngle,
-                            InZone ? "true" : "false",
-                            proximity,
-                            Health,
-                            Shield,
-                            Z,
-                            Primary,
-                            PrimaryClip,
-                            PrimaryAmmo,
-                            Secondary,
-                            SecondaryClip,
-                            SecondaryAmmo,
-                            Action,
-                            Xdelta,
-                            Ydelta,
-                            Angle,
-                            Result ? "true" : "false");
+            sb.AppendFormat("\"Primary\":\"{0}\",", Primary);
+            sb.AppendFormat("\"PrimaryClip\":{0},", PrimaryClip);
+            sb.AppendFormat("\"PrimaryAmmo\":{0},", PrimaryAmmo);
+            sb.AppendFormat("\"Secondary\":\"{0}\",", Secondary);
+            sb.AppendFormat("\"SecondaryClip\":{0},", SecondaryClip);
+            sb.AppendFormat("\"SecondaryAmmo\":{0},", SecondaryAmmo);
+            sb.AppendFormat("\"Action\":{0},", Action);
+            sb.AppendFormat("\"Xdelta\":{0},", Xdelta);
+            sb.AppendFormat("\"Ydelta\":{0},", Ydelta);
+            sb.AppendFormat("\"Angle\":{0},", Angle);
+            sb.AppendFormat("\"Result\":{0} }}", Result ? "true" : "false");
+
+            return sb.ToString();
         }
     }
 }
