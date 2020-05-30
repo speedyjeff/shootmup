@@ -38,9 +38,6 @@ namespace shootMup.Bots
 
             sb.AppendFormat("{{ \"CenterAngle\":{0},", CenterAngle);
             sb.AppendFormat("\"InZone\":{0},", InZone ? "true" : "false");
-            sb.AppendFormat("\"Health\":{0},", Health);
-            sb.AppendFormat("\"Shield\":{0},", Shield);
-            sb.AppendFormat("\"Z\":{0},", Z);
 
             if (Proximity != null && Proximity.Count > 0)
             {
@@ -58,6 +55,9 @@ namespace shootMup.Bots
                 sb.Append("],");
             }
 
+            sb.AppendFormat("\"Health\":{0},", Health);
+            sb.AppendFormat("\"Shield\":{0},", Shield);
+            sb.AppendFormat("\"Z\":{0},", Z);
             sb.AppendFormat("\"Primary\":\"{0}\",", Primary);
             sb.AppendFormat("\"PrimaryClip\":{0},", PrimaryClip);
             sb.AppendFormat("\"PrimaryAmmo\":{0},", PrimaryAmmo);
