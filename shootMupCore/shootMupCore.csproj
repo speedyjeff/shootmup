@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\engine\engine.Common\engine.Common.csproj" />
+    <ProjectReference Include="..\engine\engine.Winforms\engine.Winforms.csproj" />
+    <ProjectReference Include="..\shootMup.AI\shootMup.Bots.csproj" />
+    <ProjectReference Include="..\shootMup.Common\shootMup.Common.csproj" />
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="mkdir &quot;$(TargetDir)media&quot;&#xD;&#xA;xcopy /y &quot;$(SolutionDir)media\*&quot; &quot;$(TargetDir)media\&quot;&#xD;&#xA;xcopy /y &quot;$(SolutionDir)packages\Microsoft.ML.CpuMath.1.4.0\runtimes\win-x64\nativeassets\netstandard2.0\CpuMathNative.dll&quot; &quot;$(TargetDir)&quot;" />
+  </Target>
+
+</Project>

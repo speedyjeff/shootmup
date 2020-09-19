@@ -8,6 +8,10 @@ namespace shootMup.Common
 {
     public class Restriction : Background
     {
+        public Restriction() : base()
+        {
+        }
+
         public Restriction(int width, int height) : base(width, height)
         {
             // base config

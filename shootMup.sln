@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "engine.Common", "engine\eng
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "engine.Winforms", "engine\engine.Winforms\engine.Winforms.csproj", "{C031D3FA-2EC9-423A-A04D-3B176C141577}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "shootMupCore", "shootMupCore\shootMupCore.csproj", "{F225A814-C9AD-4F76-9885-DC3BA5E59F3F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{C031D3FA-2EC9-423A-A04D-3B176C141577}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C031D3FA-2EC9-423A-A04D-3B176C141577}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C031D3FA-2EC9-423A-A04D-3B176C141577}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F225A814-C9AD-4F76-9885-DC3BA5E59F3F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F225A814-C9AD-4F76-9885-DC3BA5E59F3F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F225A814-C9AD-4F76-9885-DC3BA5E59F3F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F225A814-C9AD-4F76-9885-DC3BA5E59F3F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

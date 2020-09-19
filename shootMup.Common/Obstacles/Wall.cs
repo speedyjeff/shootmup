@@ -10,6 +10,10 @@ namespace shootMup.Common
 
     public class Wall : Obstacle
     {
+        public Wall() : base()
+        {
+        }
+
         public Wall(WallDirection dir, float length, float thickness) : base()
         {
             IsSolid = true;
