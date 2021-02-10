@@ -146,7 +146,7 @@ namespace shootMup.Common
                 ForcesApplied = (int)Forces.Z, // paracutes
                 EndMenu = finish,
                 StartMenu = title,
-                ServerUrl = "https://localhost:44390"
+                ServerUrl = "" //"https://localhost:44390"
             };
 
             // setup game

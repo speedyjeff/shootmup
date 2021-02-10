@@ -34,7 +34,7 @@ namespace shootMup.Common
 
         public RGBA DangerColor => new RGBA() { R =255, G =127, B =39, A = 255 };
 
-        public float Diameter { get; private set; }
+        public float Diameter { get; set; }
 
         public override void Draw(IGraphics g)
         {
