@@ -26,8 +26,8 @@ namespace shootMup.Common
             // draw title
             var top = 100;
             var left = 100;
-            var width = 500;
-            var height = 300;
+            var width = 1200;
+            var height = 700;
 
             g.DisableTranslation();
             {
@@ -35,13 +35,13 @@ namespace shootMup.Common
                 left += 10;
                 top += 10;
                 g.Text(RGBA.Black, left, top, "Welcome to shoot-M-up", 32);
-                top += 50;
+                top += 100;
                 g.Text(RGBA.Black, left, top, "Shortly you will be parachuting into a foreign land");
-                top += 20;
+                top += 100;
                 g.Text(RGBA.Black, left, top, string.Format("along with {0} enemies... run quickly to acquire", Players-1));
-                top += 20;
+                top += 100;
                 g.Text(RGBA.Black, left, top, "a weapon, avoid the zone, and try to survive.");
-                top += 20;
+                top += 100;
                 g.Image(KeyboardLayoutImage, left, top, 190, 140);
                 g.Image(MouseLayoutImage, left + 250, top, 120, 170);
                 top += 150;

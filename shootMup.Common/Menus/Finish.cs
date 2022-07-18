@@ -22,8 +22,8 @@ namespace shootMup.Common
         {
             var top = 100;
             var left = 100;
-            var width = 500;
-            var height = 300;
+            var width = 600;
+            var height = 600;
 
             if (g.Width < width || g.Height < height) throw new Exception("The title menu assumes at least " + width + "x" + height);
 
@@ -47,19 +47,19 @@ namespace shootMup.Common
                         g.Text(RGBA.Black, left, top, string.Format("You placed #{0}, {1} won!", Ranking, Winner), 24);
                     }
                 }
-                top += 50;
+                top += 75;
                 g.Text(RGBA.Black, left, top, string.Format("You killed {0} players", Kills));
-                top += 50;
+                top += 75;
                 g.Text(RGBA.Black, left, top, "Top Players:");
                 for (int i=0; i<7; i++)
                 {
-                    top += 20;
+                    top += 40;
                     if (i < TopPlayers.Length)
                     {
                         g.Text(RGBA.Black, left, top, string.Format("#{0}: {1}", i+1, TopPlayers[i]));
                     }
                 } 
-                top += 20;
+                top += 40;
                 if (Ranking != 1)
                 {
                     g.Text(RGBA.Black, left, top, "[esc] to spectate");

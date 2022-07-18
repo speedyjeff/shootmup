@@ -1,21 +1,19 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29613.14
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.32712.418
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "shootMup", "shootMup\shootMup.csproj", "{C0264C8C-B2AA-49A9-AD37-C2B1A9524F2D}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "shootMup.Common", "shootMup.Common\shootMup.Common.csproj", "{14D7490E-02AE-49D8-9860-48CA4271F8BA}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "shootMup.Bots", "shootMup.AI\shootMup.Bots.csproj", "{66EE2793-3766-4464-9960-09255273BCE9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "shootMup.Bots.Training", "shootMup.AI.Training\shootMup.Bots.Training.csproj", "{78A1C0D9-01FF-4A16-930C-60AEB136AEAA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "engine.Common", "engine\engine.Common\engine.Common.csproj", "{A181B9F7-0422-4805-915E-573E13D07312}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "engine.Common", "engine\engine.Common\engine.Common.csproj", "{A181B9F7-0422-4805-915E-573E13D07312}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "engine.Winforms", "engine\engine.Winforms\engine.Winforms.csproj", "{C031D3FA-2EC9-423A-A04D-3B176C141577}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "engine.Winforms", "engine\engine.Winforms\engine.Winforms.csproj", "{C031D3FA-2EC9-423A-A04D-3B176C141577}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "shootMupCore", "shootMupCore\shootMupCore.csproj", "{F225A814-C9AD-4F76-9885-DC3BA5E59F3F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "shootMupCore", "shootMupCore\shootMupCore.csproj", "{F225A814-C9AD-4F76-9885-DC3BA5E59F3F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,10 +21,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{C0264C8C-B2AA-49A9-AD37-C2B1A9524F2D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C0264C8C-B2AA-49A9-AD37-C2B1A9524F2D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C0264C8C-B2AA-49A9-AD37-C2B1A9524F2D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C0264C8C-B2AA-49A9-AD37-C2B1A9524F2D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{14D7490E-02AE-49D8-9860-48CA4271F8BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{14D7490E-02AE-49D8-9860-48CA4271F8BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{14D7490E-02AE-49D8-9860-48CA4271F8BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
