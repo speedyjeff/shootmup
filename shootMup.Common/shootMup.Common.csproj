@@ -1,34 +1,53 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\engine\engine.Common\engine.Common.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Players\" />
+    <None Remove="media\ak47.2.wav" />
+    <None Remove="media\ak47.png" />
+    <None Remove="media\ak47.wav" />
+    <None Remove="media\empty.wav" />
+    <None Remove="media\endscreen.png" />
+    <None Remove="media\gameplay.png" />
+    <None Remove="media\hurt.wav" />
+    <None Remove="media\keyboard.png" />
+    <None Remove="media\mouse.png" />
+    <None Remove="media\nothing.wav" />
+    <None Remove="media\pickup.wav" />
+    <None Remove="media\pistol.png" />
+    <None Remove="media\pistol.wav" />
+    <None Remove="media\reload.wav" />
+    <None Remove="media\shotgun.png" />
+    <None Remove="media\shotgun.wav" />
+    <None Remove="media\startscreen.png" />
+    <None Remove="media\template.png" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="Properties\Resources.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Update="Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
+    <EmbeddedResource Include="media\ak47.2.wav" />
+    <EmbeddedResource Include="media\ak47.png" />
+    <EmbeddedResource Include="media\ak47.wav" />
+    <EmbeddedResource Include="media\empty.wav" />
+    <EmbeddedResource Include="media\endscreen.png" />
+    <EmbeddedResource Include="media\gameplay.png" />
+    <EmbeddedResource Include="media\hurt.wav" />
+    <EmbeddedResource Include="media\keyboard.png" />
+    <EmbeddedResource Include="media\mouse.png" />
+    <EmbeddedResource Include="media\nothing.wav" />
+    <EmbeddedResource Include="media\pickup.wav" />
+    <EmbeddedResource Include="media\pistol.png" />
+    <EmbeddedResource Include="media\pistol.wav" />
+    <EmbeddedResource Include="media\reload.wav" />
+    <EmbeddedResource Include="media\shotgun.png" />
+    <EmbeddedResource Include="media\shotgun.wav" />
+    <EmbeddedResource Include="media\startscreen.png" />
+    <EmbeddedResource Include="media\template.png" />
   </ItemGroup>
 
 </Project>

@@ -8,8 +8,8 @@ namespace shootMup.Common
 {
     public class Pistol : RangeWeapon
     {
-        public override string FiredSoundPath() => "media/pistol.wav";
-        public override ImageSource Image => new ImageSource(path: "media/pistol.png");
+        public override string FiredSoundPath() => "pistol";
+        public override ImageSource Image => new ImageSource(path: "pistol");
 
         public Pistol() : base()
         {

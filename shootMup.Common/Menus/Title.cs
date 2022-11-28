@@ -12,16 +12,16 @@ namespace shootMup.Common
         {
         }
 
-        public string KeyboardLayoutPath => "media/keyboard.png";
-        public string MouseLayoutPath => "media/mouse.png";
+        public string KeyboardLayoutPath => "keyboard";
+        public string MouseLayoutPath => "mouse";
 
         public int Players { get; set; }
 
         public override void Draw(IGraphics g)
         {
             // initialization
-            if (KeyboardLayoutImage == null) KeyboardLayoutImage = g.CreateImage(KeyboardLayoutPath);
-            if (MouseLayoutImage == null) MouseLayoutImage = g.CreateImage(MouseLayoutPath);
+            if (KeyboardLayoutImage == null) KeyboardLayoutImage = new ImageSource(KeyboardLayoutPath);
+            if (MouseLayoutImage == null) MouseLayoutImage = new ImageSource(MouseLayoutPath);
 
             // draw title
             var top = 100;
@@ -42,8 +42,8 @@ namespace shootMup.Common
                 top += 100;
                 g.Text(RGBA.Black, left, top, "a weapon, avoid the zone, and try to survive.");
                 top += 100;
-                g.Image(KeyboardLayoutImage, left, top, 190, 140);
-                g.Image(MouseLayoutImage, left + 250, top, 120, 170);
+                g.Image(KeyboardLayoutImage.Image, left, top, 190, 140);
+                g.Image(MouseLayoutImage.Image, left + 250, top, 120, 170);
                 top += 150;
                 g.Text(RGBA.Black, left, top, "[esc] to start");
             }
@@ -53,8 +53,8 @@ namespace shootMup.Common
         }
 
         #region private
-        private IImage KeyboardLayoutImage;
-        private IImage MouseLayoutImage;
+        private ImageSource KeyboardLayoutImage;
+        private ImageSource MouseLayoutImage;
         #endregion
     }
 }

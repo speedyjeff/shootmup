@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -37,6 +38,9 @@ namespace shootMupCore
                 var human = new ShootMPlayer() { Name = "You" };
                 var players = new Player[100];
                 for (int i = 0; i < players.Length; i++) players[i] = new SimpleAI() { Name = string.Format("ai{0}", i) };
+
+                // load resources
+                Initialize.LoadResources((name, bytes) => { Sounds.Preload(name, new MemoryStream(bytes)); });
 
                 // generate the world
                 World = WorldGenerator.Generate(WorldType.Random, PlayerPlacement.Borders, human, ref players);

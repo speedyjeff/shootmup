@@ -25,7 +25,7 @@ namespace shootMup.Common
             Delay = Constants.GlobalClock * 15;
         }
 
-        public override string FiredSoundPath() => "media/shotgun.wav";
-        public override ImageSource Image => new ImageSource(path: "media/shotgun.png");
+        public override string FiredSoundPath() => "shotgun";
+        public override ImageSource Image => new ImageSource(path: "shotgun");
     }
 }

@@ -1,5 +1,6 @@
 ﻿using engine.Common;
 using engine.Common.Entities;
+using shootMup.Common.Menus;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -135,17 +136,17 @@ namespace shootMup.Common
             // configuration
             var finish = new Finish();
             var title = new Title();
+            var hud = new Hud(human, width, height);
             var config = new WorldConfiguration()
             {
                 Width = width,
                 Height = height,
                 EnableZoom = true,
                 ShowCoordinates = false,
-                DisplayStats = true,
-                CenterIndicator = true,
                 ForcesApplied = (int)Forces.Z, // paracutes
                 EndMenu = finish,
                 StartMenu = title,
+                HUD = hud,
                 ServerUrl = "" //"https://localhost:44390"
             };
 
@@ -156,6 +157,10 @@ namespace shootMup.Common
                 objects.ToArray(),
                 background
                 );
+
+            // connect with world
+            hud.OnGetAlive += () => { return world.Alive; };
+            hud.OnGetPlayers += () => { return world.Players; };
 
             // generate the top players list
             var playerRanking = 0;

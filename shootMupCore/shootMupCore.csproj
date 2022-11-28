@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFramework>net7.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
 
@@ -12,9 +12,5 @@
     <ProjectReference Include="..\shootMup.AI\shootMup.Bots.csproj" />
     <ProjectReference Include="..\shootMup.Common\shootMup.Common.csproj" />
   </ItemGroup>
-
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="mkdir &quot;$(TargetDir)media\&quot;&#xD;&#xA;xcopy /y &quot;$(SolutionDir)media\*&quot; &quot;$(TargetDir)media\&quot;&#xD;&#xA;xcopy /y &quot;$(SolutionDir)packages\Microsoft.ML.CpuMath.1.4.0\runtimes\win-x64\nativeassets\netstandard2.0\CpuMathNative.dll&quot; &quot;$(TargetDir)&quot;&#xD;&#xA;mkdir &quot;$(SolutionDir)engine\engine.Server\$(OutDir)\games&quot;&#xD;&#xA;xcopy /y &quot;$(TargetDir)*&quot; &quot;$(SolutionDir)engine\engine.Server\$(OutDir)\games&quot;&#xD;&#xA;" />
-  </Target>
 
 </Project>
