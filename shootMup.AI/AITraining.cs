@@ -134,25 +134,28 @@ namespace shootMup.Bots
 
         public static void CaptureWinners(List<string> winners)
         {
-            StreamWriter output = null;
-            lock (Output)
-            {
-                if (!Output.TryGetValue(-1, out output))
-                {
-                    output = File.CreateText(Path.Combine(TrainingPath, string.Format("{0:yyyy-MM-dd_hh-mm-ss}.winner", Start)));
-                    Output.Add(-1, output);
-                }
-            }
+            // serialize the winner list
             var sb = new StringBuilder();
             sb.Append('[');
-            for(int i=0; i<winners.Count; i++)
+            for (int i = 0; i < winners.Count; i++)
             {
                 sb.AppendFormat("\"{0}\"", winners[i]);
                 if (i < winners.Count - 1) sb.Append(',');
             }
             sb.Append(']');
             var json = sb.ToString();
-            output.WriteLine(json);
+
+            // write to the stream
+            lock (Output)
+            {
+                if (!Output.TryGetValue(-1, out StreamWriter output))
+                {
+                    output = File.CreateText(Path.Combine(TrainingPath, string.Format("{0:yyyy-MM-dd_hh-mm-ss}.winner", Start)));
+                    Output.Add(-1, output);
+                }
+
+                output.WriteLine(json);
+            }
         }
 
         public static Dictionary<string, int> GetTrainingFiles(string path)

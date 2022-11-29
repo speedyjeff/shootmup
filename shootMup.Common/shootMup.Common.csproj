@@ -9,7 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="media\ak47.2.wav" />
+    <None Remove="media\ak47-2.wav" />
     <None Remove="media\ak47.png" />
     <None Remove="media\ak47.wav" />
     <None Remove="media\empty.wav" />
@@ -17,6 +17,7 @@
     <None Remove="media\gameplay.png" />
     <None Remove="media\hurt.wav" />
     <None Remove="media\keyboard.png" />
+    <None Remove="Media\meele.wav" />
     <None Remove="media\mouse.png" />
     <None Remove="media\nothing.wav" />
     <None Remove="media\pickup.wav" />
@@ -30,7 +31,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="media\ak47.2.wav" />
+    <EmbeddedResource Include="media\ak47-2.wav" />
     <EmbeddedResource Include="media\ak47.png" />
     <EmbeddedResource Include="media\ak47.wav" />
     <EmbeddedResource Include="media\empty.wav" />
@@ -38,6 +39,7 @@
     <EmbeddedResource Include="media\gameplay.png" />
     <EmbeddedResource Include="media\hurt.wav" />
     <EmbeddedResource Include="media\keyboard.png" />
+    <EmbeddedResource Include="Media\meele.wav" />
     <EmbeddedResource Include="media\mouse.png" />
     <EmbeddedResource Include="media\nothing.wav" />
     <EmbeddedResource Include="media\pickup.wav" />

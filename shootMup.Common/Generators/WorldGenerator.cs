@@ -135,7 +135,7 @@ namespace shootMup.Common
 
             // configuration
             var finish = new Finish();
-            var title = new Title();
+            var title = new Title(players.Length);
             var hud = new Hud(human, width, height);
             var config = new WorldConfiguration()
             {

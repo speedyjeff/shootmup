@@ -52,14 +52,42 @@ namespace shootMup.Common.Menus
             // draw stats
             var alive = OnGetAlive != null ? OnGetAlive() : 0;
             var players = OnGetPlayers != null ? OnGetPlayers() : 0;
-            g.Text(RGBA.Black, x: g.Width - 250, y: 5, string.Format("Alive {0} of {1}", alive, players));
-            g.Text(RGBA.Black, x: g.Width - 250, y: 45, string.Format("Kills {0}", Human.Kills));
+            g.Text(RGBA.Black, x: g.Width - 400, y: 5, string.Format("Alive {0} of {1}", alive, players));
+            g.Text(RGBA.Black, x: g.Width - 400, y: 45, string.Format("Kills {0}", Human.Kills));
+
+            // player hud
+            // health
+            g.Rectangle(Green, (g.Width / 4), g.Height - 120, (Human.Health / Constants.MaxHealth) * (g.Width / 2), 20, fill: true);
+            g.Rectangle(RGBA.Black, g.Width / 4, g.Height - 120, g.Width / 2, 20, false);
+
+            // shield
+            g.Rectangle(Yellow, g.Width / 4, g.Height - 130, (Human.Shield / Constants.MaxShield) * (g.Width / 4), 10, fill: true);
+            g.Rectangle(RGBA.Black, g.Width / 4, g.Height - 130, g.Width / 4, 10, false);
+
+            // primary weapon
+            g.Rectangle(RGBA.Black, x: g.Width - 300, y: (g.Height / 10), width: 250, height: 80, fill: false);
+            if (Human.Primary != null && Human.Primary is RangeWeapon pgun)
+            {
+                g.Text(RGBA.Black, g.Width - 300, (g.Height / 10) - 8, pgun.Name);
+                g.Text(RGBA.Black, g.Width - 300, (g.Height / 10) + 28, $"{pgun.Clip}/{pgun.Ammo}");
+            }
+
+            // secondary weapon
+            g.Rectangle(RGBA.Black, g.Width - 300, (g.Height / 10) + 100, width: 250, height: 80, false);
+            if (Human.Secondary != null && Human.Secondary.Length >= 1 && Human.Secondary[0] is RangeWeapon sgun)
+            {
+                g.Text(RGBA.Black, g.Width - 300, (g.Height / 10) + 100 - 8, sgun.Name);
+                g.Text(RGBA.Black, g.Width - 300, (g.Height / 10) + 100 + 28, $"{sgun.Clip}/{sgun.Ammo}");
+            }
         }
 
         #region private
         private Player Human;
         private float MapWidth;
         private float MapHeight;
+
+        private readonly RGBA Green = new RGBA() { G = 255, A = 255 };
+        private readonly RGBA Yellow = new RGBA() { R = 255, G = 255, A = 255 };
         #endregion
     }
 }

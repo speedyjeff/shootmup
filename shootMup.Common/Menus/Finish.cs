@@ -22,14 +22,14 @@ namespace shootMup.Common
         {
             var top = 100;
             var left = 100;
-            var width = 600;
+            var width = 1000;
             var height = 600;
 
             if (g.Width < width || g.Height < height) throw new Exception("The title menu assumes at least " + width + "x" + height);
 
             g.DisableTranslation();
             {
-                g.Rectangle(new RGBA() { R = 255, G = 255, B = 255, A = 200 }, top, left, width, height);
+                g.Rectangle(TransparentWhite, top, left, width, height);
                 left += 10;
                 top += 10;
                 if (Ranking == 1)
@@ -69,5 +69,9 @@ namespace shootMup.Common
 
             base.Draw(g);
         }
+
+        #region private
+        private readonly RGBA TransparentWhite = new RGBA() { R = 255, G = 255, B = 255, A = 200 };
+        #endregion
     }
 }

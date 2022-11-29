@@ -25,7 +25,7 @@ namespace shootMup.Common
             Delay = Constants.GlobalClock;
         }
 
-        public override string FiredSoundPath() => "ak47.2";
+        public override string FiredSoundPath() => "ak47-2";
         public override ImageSource Image => new ImageSource(path: "ak47");
     }
 }

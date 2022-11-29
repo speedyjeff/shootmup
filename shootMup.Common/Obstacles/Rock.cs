@@ -19,11 +19,14 @@ namespace shootMup.Common
 
         public override void Draw(IGraphics g)
         {
-            var gray = new RGBA() { R =157, G =157, B =157, A = 255 };
-            g.Ellipse(gray, X - Width / 2, Y - Height / 2, 50, 50);
-            g.Ellipse(gray, X + Width / 2, Y - Height / 2, 50, 50);
-            g.Ellipse(gray, X - Width / 2, Y - Height / 2, Width, Height);
+            g.Ellipse(Gray, X - Width / 2, Y - Height / 2, 50, 50);
+            g.Ellipse(Gray, X + Width / 2, Y - Height / 2, 50, 50);
+            g.Ellipse(Gray, X - Width / 2, Y - Height / 2, Width, Height);
             base.Draw(g);
         }
+
+        #region private
+        private readonly RGBA Gray = new RGBA() { R = 157, G = 157, B = 157, A = 255 };
+        #endregion
     }
 }

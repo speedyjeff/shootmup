@@ -30,7 +30,7 @@ namespace shootMup.Common
         }
 
         #region private
-        private static RGBA Green = new RGBA() { R = 32, G = 125, B = 44, A = 255 };
+        private readonly RGBA Green = new RGBA() { R = 32, G = 125, B = 44, A = 255 };
         #endregion
     }
 }

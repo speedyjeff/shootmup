@@ -23,7 +23,7 @@ namespace shootMup.Bots
                 {
                     // we are in a parachute
                     g.Ellipse(Color, X - (Width / 2), Y - (Height / 2), Width, Height);
-                    g.Rectangle(new RGBA() { R = 146, G = 27, B = 167, A = 255 }, X - Width, Y, Width * 2, Height / 2, true);
+                    g.Rectangle(Purple, X - Width, Y, Width * 2, Height / 2, true);
                     g.Line(RGBA.Black, X - Width, Y, X, Y - (Height / 4), 5f);
                     g.Line(RGBA.Black, X, Y - (Height / 4), X + Width, Y, 5f);
                 }
@@ -40,7 +40,7 @@ namespace shootMup.Bots
                     g.Line(RGBA.Black, x1, y1, x2, y2, 10);
                 }
                 g.Ellipse(Color, X - (Width / 2), Y - (Height / 2), Width, Height);
-                if (Shield > 0) g.Ellipse(new RGBA() { R = 85, G = 85, B = 85, A = 255 }, X - (Width / 4), Y - (Height / 4), (Width / 2), (Width / 2));
+                if (Shield > 0) g.Ellipse(Gray, X - (Width / 4), Y - (Height / 4), (Width / 2), (Width / 2));
 
                 if (Primary == null)
                 {
@@ -51,5 +51,10 @@ namespace shootMup.Bots
                 }
             }
         }
+
+        #region private
+        private readonly RGBA Purple = new RGBA() { R = 146, G = 27, B = 167, A = 255 };
+        private readonly RGBA Gray = new RGBA() { R = 85, G = 85, B = 85, A = 255 };
+        #endregion
     }
 }
