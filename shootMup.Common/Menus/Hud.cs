@@ -85,7 +85,7 @@ namespace shootMup.Common.Menus
         private Player Human;
         private float MapWidth;
         private float MapHeight;
-
+        
         private readonly RGBA Green = new RGBA() { G = 255, A = 255 };
         private readonly RGBA Yellow = new RGBA() { R = 255, G = 255, A = 255 };
         #endregion

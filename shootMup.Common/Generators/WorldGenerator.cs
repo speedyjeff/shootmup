@@ -4,6 +4,7 @@ using shootMup.Common.Menus;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Text;
 
 namespace shootMup.Common
@@ -22,7 +23,8 @@ namespace shootMup.Common
 
             // world details
             List<Element> objects = null;
-            Background background = new Restriction(width, height); ;
+            Background background = new Restriction(width, height);
+            Human = human;
 
             // generate the world
             switch (type)
@@ -52,39 +54,39 @@ namespace shootMup.Common
 
             // create players
             if (allPlayers.Length < numPlayers) throw new Exception("Need more players");
-            var players = new Player[numPlayers];
+            Players = new Player[numPlayers];
             var index = 0;
-            players[(new Random()).Next() % numPlayers] = human;
-            for (int i = 0; i < players.Length; i++) if (players[i] == null) players[i] = allPlayers[index++];
+            Players[(new Random()).Next() % numPlayers] = human;
+            for (int i = 0; i < Players.Length; i++) if (Players[i] == null) Players[i] = allPlayers[index++];
 
             // replace allPlayers with the actual players list
-            allPlayers = players;
+            allPlayers = Players;
 
             // place the players in a diagnoal pattern
             if (placement == PlayerPlacement.Diagonal)
             {
-                for (int i = 0; i < players.Length; i++)
+                for (int i = 0; i < Players.Length; i++)
                 {
-                    if (players[i].X != 0 || players[i].Y != 0) continue;
-                    float diag = (width / players.Length) * i;
+                    if (Players[i].X != 0 || Players[i].Y != 0) continue;
+                    float diag = (width / Players.Length) * i;
                     if (diag < 100) throw new Exception("Too many ai players for this board size");
-                    players[i].X = diag;
-                    players[i].Y = diag;
-                    players[i].Z = Constants.Sky;
+                    Players[i].X = diag;
+                    Players[i].Y = diag;
+                    Players[i].Z = Constants.Sky;
                 }
             }
             else if (placement == PlayerPlacement.Borders)
             {
                 // place players around the borders
-                float delta = (((width + height) * 2) / (players.Length + 5));
+                float delta = (((width + height) * 2) / (Players.Length + 5));
                 if (delta < 100) throw new Exception("Too many ai players for this board size");
                 float ydelta = delta;
                 float xdelta = 0;
                 float x = 50;
                 float y = 50;
-                for (int i = 0; i < players.Length; i++)
+                for (int i = 0; i < Players.Length; i++)
                 {
-                    if (players[i].X != 0 || players[i].Y != 0) continue;
+                    if (Players[i].X != 0 || Players[i].Y != 0) continue;
 
                     x += xdelta;
                     y += ydelta;
@@ -123,9 +125,9 @@ namespace shootMup.Common
                         System.Diagnostics.Debug.WriteLine("Placing a player outside of the borders");
                     }
 
-                    players[i].X = x;
-                    players[i].Y = y;
-                    players[i].Z = Constants.Sky;
+                    Players[i].X = x;
+                    Players[i].Y = y;
+                    Players[i].Z = Constants.Sky;
                 }
             }
             else
@@ -134,9 +136,8 @@ namespace shootMup.Common
             }
 
             // configuration
-            var finish = new Finish();
-            var title = new Title(players.Length);
-            var hud = new Hud(human, width, height);
+            var title = new Title(Players.Length);
+            Hud = new Hud(human, width, height);
             var config = new WorldConfiguration()
             {
                 Width = width,
@@ -144,70 +145,91 @@ namespace shootMup.Common
                 EnableZoom = true,
                 ShowCoordinates = false,
                 ForcesApplied = (int)Forces.Z, // paracutes
-                EndMenu = finish,
                 StartMenu = title,
-                HUD = hud,
+                HUD = Hud,
                 ServerUrl = "" //"https://localhost:44390"
             };
 
             // setup game
-            var world = new World(
+            World = new World(
                 config,
-                players,
+                Players,
                 objects.ToArray(),
                 background
                 );
 
             // connect with world
-            hud.OnGetAlive += () => { return world.Alive; };
-            hud.OnGetPlayers += () => { return world.Players; };
+            Hud.OnGetAlive += () => { return World.Alive; };
+            Hud.OnGetPlayers += () => { return World.Players; };
 
             // generate the top players list
-            var playerRanking = 0;
-            world.OnDeath += (elem) =>
-            {
-                // exit early if it was not a player
-                if (!(elem is Player)) return;
+            World.OnAttack += OnAttack;
+            World.OnDeath += OnDeath;
 
-                // check how many players are still alive
-                var toplayers = new Dictionary<string, int>();
-                Player lastAlive = null;
-                foreach (var player in players)
-                {
-                    toplayers.Add(player.Name, player.Kills);
-                    if (!player.IsDead)
-                    {
-                        lastAlive = player;
-                    }
-                }
-
-                var winners = toplayers.OrderByDescending(kvp => kvp.Value).Select(kvp => string.Format("{0} [{1}]", kvp.Key, kvp.Value)).ToArray();
-
-                // setup the finish screen
-                finish.Kills = human.Kills;
-                finish.Ranking = playerRanking > 0 ? playerRanking : world.Alive;
-                finish.Winner = (world.Alive == 1) ? human.Name : "";
-                finish.TopPlayers = winners;
-
-                // display the finish menu, if this was the human's death
-                if (human.IsDead)
-                {
-                    if (playerRanking == 0)
-                    {
-                        playerRanking = world.Alive;
-
-                        // show the final screen
-                        world.ShowMenu(finish);
-                    }
-                }
-                // or if there is only 1 player alive
-                if (world.Alive == 1) world.ShowMenu(finish);
-            };
-
-            return world;
+            return World;
         }
 
         #region private
+        private static World World;
+        private static Player[] Players;
+        private static Player Human;
+        private static Hud Hud;
+
+        private static void OnAttack(Element elem1, Element elem2)
+        {
+            // todo track damage from players to know who killed who
+        }
+
+        private static void OnDeath(Element elem)
+        {
+            var playerRanking = 0;
+
+            // exit early if it was not a player
+            if (!(elem is Player)) return;
+
+            // display an ephemerial message
+            World.AddItem(new OnScreenText()
+            {
+                Text = $"Player {elem.Name} died"
+            });
+
+            // check how many players are still alive
+            var toplayers = new Dictionary<string, int>();
+            Player lastAlive = null;
+            foreach (var player in Players)
+            {
+                toplayers.Add(player.Name, player.Kills);
+                if (!player.IsDead)
+                {
+                    lastAlive = player;
+                }
+            }
+
+            // get winners list
+            var winners = toplayers.OrderByDescending(kvp => kvp.Value).Select(kvp => string.Format("{0} [{1}]", kvp.Key, kvp.Value)).ToArray();
+
+            // setup the finish screen
+            var finish = new Finish();
+            finish.Kills = Human.Kills;
+            finish.Ranking = playerRanking > 0 ? playerRanking : World.Alive;
+            finish.Winner = (World.Alive == 1) ? Human.Name : "";
+            finish.TopPlayers = winners;
+
+            // display the finish menu, if this was the human's death
+            if (Human.IsDead)
+            {
+                if (playerRanking == 0)
+                {
+                    playerRanking = World.Alive;
+
+                    // show the final screen
+                    World.ShowMenu(finish);
+                }
+            }
+            // or if there is only 1 player alive
+            if (World.Alive == 1) World.ShowMenu(finish);
+        }
+
         private static List<Element> Test(int width, int height)
         {
             if (width < 1000 || height < 1000) throw new Exception("Must have at least 1000 wdith & height");
