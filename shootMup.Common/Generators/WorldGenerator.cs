@@ -218,6 +218,7 @@ namespace shootMup.Common
             // display the finish menu, if this was the human's death
             if (Human.IsDead)
             {
+                // todo this shows after every death
                 if (playerRanking == 0)
                 {
                     playerRanking = World.Alive;
