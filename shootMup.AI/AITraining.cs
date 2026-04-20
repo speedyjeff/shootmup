@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 
 namespace shootMup.Bots
@@ -217,7 +218,8 @@ namespace shootMup.Bots
         {
             foreach (var json in File.ReadAllLines(file))
             {
-                var data = Newtonsoft.Json.JsonConvert.DeserializeObject<TrainingData>(json);
+                var data = JsonSerializer.Deserialize<TrainingData>(json, TrainingJson.SerializerOptions)
+                    ?? throw new InvalidDataException("Unable to deserialize training data from " + file);
                 yield return data;
             }
         }

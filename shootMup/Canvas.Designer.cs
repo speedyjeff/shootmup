@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Windows.Forms;
 using System.Linq;
 
@@ -59,6 +60,9 @@ namespace shootMup
                 var human = new ShootMPlayer() { Name = "You" };
                 var players = new Player[100];
                 for(int i=0; i<players.Length; i++) players[i] = new SimpleAI() { Name = string.Format("ai{0}", i) };
+
+                // preload embedded images and sounds before the first paint
+                Initialize.LoadResources((name, bytes) => { Sounds.Preload(name, new MemoryStream(bytes)); });
 
                 // generate the world
                 World = WorldGenerator.Generate(WorldType.Random, PlayerPlacement.Borders, human, ref players);

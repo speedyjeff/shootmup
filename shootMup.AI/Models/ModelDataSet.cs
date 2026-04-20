@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Text.Json;
 using engine.Common;
 using Microsoft.ML;
 using Microsoft.ML.Data;
@@ -188,7 +189,7 @@ namespace shootMup.Bots
 
         public static string ToJson(this ModelDataSet data)
         {
-            return Newtonsoft.Json.JsonConvert.SerializeObject(data);
+            return JsonSerializer.Serialize(data, TrainingJson.SerializerOptions);
         }
 
         public static int ComputeHash(this ModelDataSet data)
