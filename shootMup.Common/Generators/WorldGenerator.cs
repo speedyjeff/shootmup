@@ -25,6 +25,7 @@ namespace shootMup.Common
             List<Element> objects = null;
             Background background = new Restriction(width, height);
             Human = human;
+            HumanRanking = 0;
 
             // generate the world
             switch (type)
@@ -173,6 +174,7 @@ namespace shootMup.Common
         private static World World;
         private static Player[] Players;
         private static Player Human;
+        private static int HumanRanking;
         private static Hud Hud;
 
         private static void OnAttack(Element elem1, Element elem2)
@@ -182,8 +184,6 @@ namespace shootMup.Common
 
         private static void OnDeath(Element elem)
         {
-            var playerRanking = 0;
-
             // exit early if it was not a player
             if (!(elem is Player)) return;
 
@@ -192,6 +192,14 @@ namespace shootMup.Common
             {
                 Text = $"Player {elem.Name} died"
             });
+
+            var humanDied = ReferenceEquals(elem, Human);
+            var matchComplete = World.Alive == 1;
+            if (humanDied) HumanRanking = World.Alive + 1;
+
+            // Show the results when the human dies and once more when a winner
+            // is determined, but not for intermediate AI deaths.
+            if (!humanDied && !matchComplete) return;
 
             // check how many players are still alive
             var toplayers = new Dictionary<string, int>();
@@ -211,24 +219,12 @@ namespace shootMup.Common
             // setup the finish screen
             var finish = new Finish();
             finish.Kills = Human.Kills;
-            finish.Ranking = playerRanking > 0 ? playerRanking : World.Alive;
-            finish.Winner = (World.Alive == 1) ? Human.Name : "";
+            finish.Ranking = Human.IsDead ? HumanRanking : 1;
+            finish.MatchComplete = matchComplete;
+            finish.Winner = matchComplete && lastAlive != null ? lastAlive.Name : "";
             finish.TopPlayers = winners;
 
-            // display the finish menu, if this was the human's death
-            if (Human.IsDead)
-            {
-                // todo this shows after every death
-                if (playerRanking == 0)
-                {
-                    playerRanking = World.Alive;
-
-                    // show the final screen
-                    World.ShowMenu(finish);
-                }
-            }
-            // or if there is only 1 player alive
-            if (World.Alive == 1) World.ShowMenu(finish);
+            World.ShowMenu(finish);
         }
 
         private static List<Element> Test(int width, int height)

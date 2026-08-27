@@ -15,6 +15,7 @@ namespace shootMup.Common
 
         public int Ranking { get; set; }
         public int Kills { get; set; }
+        public bool MatchComplete { get; set; }
         public string[] TopPlayers { get; set; }
         public string Winner { get; set; }
 
@@ -34,21 +35,18 @@ namespace shootMup.Common
                 g.Rectangle(Ranking == 1 ? ArenaArt.Gold : ArenaArt.Coral, left, top, 18, height, true, false);
                 left += 52;
                 top += 34;
-                if (Ranking == 1)
+                if (MatchComplete && Ranking == 1)
                 {
                     g.Text(ArenaArt.Gold, left, top, "LAST ONE STANDING", 30);
                 }
+                else if (MatchComplete)
+                {
+                    g.Text(ArenaArt.Gold, left, top, string.Format("{0} WINS THE ARENA", Winner), 30);
+                    g.Text(ArenaArt.SteelLight, left, top + 46, string.Format("YOU PLACED  #{0}", Ranking), 16);
+                }
                 else
                 {
-                    if (string.IsNullOrWhiteSpace(Winner))
-                    {
-                        g.Text(ArenaArt.Coral, left, top, string.Format("EXTRACTED  #{0}", Ranking), 30);
-                    }
-                    else
-                    {
-                        g.Text(ArenaArt.Coral, left, top, string.Format("EXTRACTED  #{0}", Ranking), 30);
-                        g.Text(ArenaArt.SteelLight, left, top + 46, string.Format("{0} controls the arena", Winner), 16);
-                    }
+                    g.Text(ArenaArt.Coral, left, top, string.Format("EXTRACTED  #{0}", Ranking), 30);
                 }
                 top += 100;
                 g.Text(ArenaArt.Sand, left, top, string.Format("ELIMINATIONS  {0}", Kills), 18);
@@ -63,7 +61,7 @@ namespace shootMup.Common
                     }
                 } 
                 top += 40;
-                if (Ranking != 1)
+                if (!MatchComplete)
                 {
                     g.Text(ArenaArt.Coral, left, top, "ESC // SPECTATE", 16);
                 }
