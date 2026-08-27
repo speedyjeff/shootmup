@@ -29,40 +29,43 @@ namespace shootMup.Common
 
             g.DisableTranslation();
             {
-                g.Rectangle(TransparentWhite, top, left, width, height);
-                left += 10;
-                top += 10;
+                g.Rectangle(Backdrop, left + 12, top + 14, width, height, true, false);
+                g.Rectangle(ArenaArt.Ink, left, top, width, height, true, false);
+                g.Rectangle(Ranking == 1 ? ArenaArt.Gold : ArenaArt.Coral, left, top, 18, height, true, false);
+                left += 52;
+                top += 34;
                 if (Ranking == 1)
                 {
-                    g.Text(RGBA.Black, left, top, "Winner winner chicken dinner", 24);
+                    g.Text(ArenaArt.Gold, left, top, "LAST ONE STANDING", 30);
                 }
                 else
                 {
                     if (string.IsNullOrWhiteSpace(Winner))
                     {
-                        g.Text(RGBA.Black, left, top, string.Format("You placed #{0}", Ranking), 24);
+                        g.Text(ArenaArt.Coral, left, top, string.Format("EXTRACTED  #{0}", Ranking), 30);
                     }
                     else
                     {
-                        g.Text(RGBA.Black, left, top, string.Format("You placed #{0}, {1} won!", Ranking, Winner), 24);
+                        g.Text(ArenaArt.Coral, left, top, string.Format("EXTRACTED  #{0}", Ranking), 30);
+                        g.Text(ArenaArt.SteelLight, left, top + 46, string.Format("{0} controls the arena", Winner), 16);
                     }
                 }
-                top += 75;
-                g.Text(RGBA.Black, left, top, string.Format("You killed {0} players", Kills));
-                top += 75;
-                g.Text(RGBA.Black, left, top, "Top Players:");
+                top += 100;
+                g.Text(ArenaArt.Sand, left, top, string.Format("ELIMINATIONS  {0}", Kills), 18);
+                top += 60;
+                g.Text(ArenaArt.Cyan, left, top, "ARENA LEADERS", 18);
                 for (int i=0; i<7; i++)
                 {
                     top += 40;
                     if (i < TopPlayers.Length)
                     {
-                        g.Text(RGBA.Black, left, top, string.Format("#{0}: {1}", i+1, TopPlayers[i]));
+                        g.Text(i == 0 ? ArenaArt.Gold : ArenaArt.SteelLight, left, top, string.Format("{0:00}  {1}", i+1, TopPlayers[i]));
                     }
                 } 
                 top += 40;
                 if (Ranking != 1)
                 {
-                    g.Text(RGBA.Black, left, top, "[esc] to spectate");
+                    g.Text(ArenaArt.Coral, left, top, "ESC // SPECTATE", 16);
                 }
             }
             g.EnableTranslation();
@@ -71,7 +74,7 @@ namespace shootMup.Common
         }
 
         #region private
-        private readonly RGBA TransparentWhite = new RGBA() { R = 255, G = 255, B = 255, A = 200 };
+        private readonly RGBA Backdrop = new RGBA() { R = 12, G = 17, B = 21, A = 120 };
         #endregion
     }
 }

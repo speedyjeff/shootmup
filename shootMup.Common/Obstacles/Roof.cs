@@ -19,14 +19,18 @@ namespace shootMup.Common
 
         public override void Draw(IGraphics g)
         {
-            g.Rectangle(Brown, X-(Width/2), Y-(Height/2), Width, Height);
-            g.Line(RGBA.Black, X - (Width / 2), Y - (Height / 2), X + (Width / 2), Y + (Height / 2), 5f);
-            g.Line(RGBA.Black, X + (Width / 2), Y - (Height / 2), X - (Width / 2), Y + (Height / 2), 5f);
+            ArenaArt.DrawShadow(g, X + 12, Y + 16, Width, Height);
+            g.Rectangle(ArenaArt.Ink, X - Width / 2, Y - Height / 2, Width, Height, true, false);
+            g.Rectangle(ArenaArt.Steel, X - Width / 2 + 10, Y - Height / 2 + 10, Width - 20, Height - 20, true, false);
+            g.Line(ArenaArt.SteelLight, X - Width / 2 + 18, Y - Height / 4, X + Width / 2 - 18, Y - Height / 4, 6);
+            g.Line(ArenaArt.SteelLight, X - Width / 2 + 18, Y + Height / 4, X + Width / 2 - 18, Y + Height / 4, 6);
+            g.Line(ArenaArt.Rust, X - Width / 4, Y - Height / 2 + 18, X - Width / 4, Y + Height / 2 - 18, 8);
+            g.Line(ArenaArt.Rust, X + Width / 4, Y - Height / 2 + 18, X + Width / 4, Y + Height / 2 - 18, 8);
+            g.Rectangle(ArenaArt.Ink, X - 42, Y - 36, 84, 72, true, false);
+            g.Rectangle(ArenaArt.Cyan, X - 32, Y - 26, 64, 52, true, false);
+            g.Line(ArenaArt.Ink, X - 22, Y, X + 22, Y, 7);
+            g.Line(ArenaArt.Ink, X, Y - 18, X, Y + 18, 7);
             base.Draw(g);
         }
-
-        #region private
-        private readonly RGBA Brown = new RGBA() { R = 160, G = 113, B = 61, A = 255 };
-        #endregion
     }
 }

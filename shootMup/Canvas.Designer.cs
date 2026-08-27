@@ -2,6 +2,7 @@
 using engine.Common.Entities;
 using engine.Winforms;
 using shootMup.Bots;
+using shootMup.Bots.RL;
 using shootMup.Common;
 using System;
 using System.Collections.Generic;
@@ -59,7 +60,45 @@ namespace shootMup
                 // generate players
                 var human = new ShootMPlayer() { Name = "You" };
                 var players = new Player[100];
-                for(int i=0; i<players.Length; i++) players[i] = new SimpleAI() { Name = string.Format("ai{0}", i) };
+
+                // If SHOOTMUP_AI=rl and a trained model is present, spawn a
+                // handful of RL inference bots; otherwise fall back to SimpleAI.
+                RLAgent rlAgent = null;
+                var aiMode = Environment.GetEnvironmentVariable("SHOOTMUP_AI");
+                if (string.Equals(aiMode, "rl", StringComparison.OrdinalIgnoreCase))
+                {
+                    var modelPath = Path.Combine("Models", "Prebuilt", "rl.nn.model");
+                    if (RLAgent.ModelFileExists(modelPath))
+                    {
+                        try
+                        {
+                            rlAgent = RLAgent.Load(modelPath);
+                            rlAgent.Epsilon = 0f;
+                            Debug.WriteLine("Loaded RL agent from {0}", modelPath);
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine("Failed to load RL agent: {0}", ex.Message);
+                            rlAgent = null;
+                        }
+                    }
+                    else
+                    {
+                        Debug.WriteLine("SHOOTMUP_AI=rl but no model at {0}; falling back to SimpleAI", modelPath);
+                    }
+                }
+
+                for (int i = 0; i < players.Length; i++)
+                {
+                    if (rlAgent != null && i < 4)
+                    {
+                        players[i] = new RLAI(rlAgent, RLMode.Inference) { Name = string.Format("rl{0}", i) };
+                    }
+                    else
+                    {
+                        players[i] = new SimpleAI() { Name = string.Format("ai{0}", i) };
+                    }
+                }
 
                 // preload embedded images and sounds before the first paint
                 Initialize.LoadResources((name, bytes) => { Sounds.Preload(name, new MemoryStream(bytes)); });

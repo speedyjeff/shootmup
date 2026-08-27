@@ -9,7 +9,13 @@ namespace shootMup.Common
     public class Pistol : RangeWeapon
     {
         public override string FiredSoundPath() => "pistol";
-        public override ImageSource Image => new ImageSource(path: "pistol");
+        public override ImageSource Image => null;
+
+        public override void Draw(IGraphics g)
+        {
+            ArenaArt.DrawGroundWeapon(g, X, Y, Width, WeaponStyle.Pistol);
+            base.Draw(g);
+        }
 
         public Pistol() : base()
         {

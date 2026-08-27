@@ -21,6 +21,8 @@ namespace shootMup.Bots.Training
             Console.WriteLine("  serialize [count] [action|angle|xy] [directory to input]");
             Console.WriteLine("                                    - dump the data into a csv file");
             Console.WriteLine("  run [ml|cv]                       - (experimental) run a sample execution with these models");
+            Console.WriteLine("  rl [episodes] [modelPath] [simple|random] [secondsPerEp]");
+            Console.WriteLine("                                    - train the reinforcement-learning bot");
             return -1;
         }
 
@@ -55,6 +57,17 @@ namespace shootMup.Bots.Training
                     // do a trial run
                     var type = i + 1 < args.Length ? args[i + 1] : "";
                     return Executor.Run(type);
+                }
+                else if (string.Equals(args[i], "rl", StringComparison.OrdinalIgnoreCase))
+                {
+                    // reinforcement-learning training
+                    int episodes = 100;
+                    if (i + 1 < args.Length) int.TryParse(args[i + 1], out episodes);
+                    var modelPath = i + 2 < args.Length ? args[i + 2] : "";
+                    var opponents = i + 3 < args.Length ? args[i + 3] : "simple";
+                    int secs = 60;
+                    if (i + 4 < args.Length) int.TryParse(args[i + 4], out secs);
+                    return RLRunner.Run(episodes, modelPath, opponents, secs);
                 }
                 else if (string.Equals(args[i], "test", StringComparison.OrdinalIgnoreCase))
                 {

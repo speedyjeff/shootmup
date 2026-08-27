@@ -40,10 +40,13 @@ namespace shootMup.Bots
                 ElementProximity proximity = null;
                 Type type = elem.GetType();
 
-                // consolidate player types 
+                // Consolidate derived types by gameplay role so visual subclasses
+                // remain visible to AI policies trained against the base item types.
                 if (elem is Player) type = typeof(Player);
-                // consolidate obstacle types
-                if (elem is Obstacle) type = typeof(Obstacle);
+                else if (elem is Obstacle) type = typeof(Obstacle);
+                else if (elem is Ammo) type = typeof(Ammo);
+                else if (elem is Health) type = typeof(Health);
+                else if (elem is Shield) type = typeof(Shield);
 
                 if (!closest.TryGetValue(type, out proximity))
                 {

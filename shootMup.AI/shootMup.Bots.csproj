@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\shootMup.Common\shootMup.Common.csproj" />
+    <ProjectReference Include="..\reinforcement\Learning\Learning.csproj" />
   </ItemGroup>
 
   <ItemGroup>

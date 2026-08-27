@@ -1,3 +1,6 @@
 [submodule "engine"]
 	path = engine
 	url = https://github.com/speedyjeff/engine
+[submodule "reinforcement"]
+	path = reinforcement
+	url = https://github.com/speedyjeff/reinforcement

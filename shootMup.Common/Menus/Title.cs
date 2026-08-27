@@ -15,35 +15,61 @@ namespace shootMup.Common
 
         public override void Draw(IGraphics g)
         {
-            // draw title
-            var top = 100;
-            var left = 100;
-            var width = 1200;
-            var height = 700;
+            var left = 90f;
+            var top = 80f;
+            var width = Math.Min(1220, g.Width - 180);
+            var height = Math.Min(760, g.Height - 160);
 
-            g.Rectangle(TransparentWhite, top, left, width, height);
-            left += 10;
-            top += 10;
-            g.Text(RGBA.Black, left, top, "Welcome to shoot-M-up", 32);
-            top += 100;
-            g.Text(RGBA.Black, left, top, "Shortly you will be parachuting into a foreign land");
-            top += 100;
-            g.Text(RGBA.Black, left, top, $"along with {Players - 1} enemies... run quickly to acquire");
-            top += 100;
-            g.Text(RGBA.Black, left, top, "a weapon, avoid the zone, and try to survive.");
-            top += 100;
-            g.Image(KeyboardLayoutImage.Image, left+300, top, 320, 270);
-            g.Image(MouseLayoutImage.Image, left + 650, top, 250, 300);
-            top += 200;
-            g.Text(RGBA.Black, left, top, "[esc] to start");
+            g.Rectangle(Backdrop, left + 12, top + 14, width, height, true, false);
+            g.Rectangle(ArenaArt.Ink, left, top, width, height, true, false);
+            g.Rectangle(ArenaArt.Coral, left, top, 18, height, true, false);
+            g.Rectangle(ArenaArt.Gold, left + 18, top, width - 18, 8, true, false);
+
+            g.Text(ArenaArt.Sand, left + 60, top + 42, "SHOOT M UP", 48, "Arial");
+            g.Text(ArenaArt.Cyan, left + 64, top + 112, "SALVAGE. OUTRUN. SURVIVE.", 18, "Arial");
+            g.Line(ArenaArt.Steel, left + 60, top + 158, left + width - 60, top + 158, 3);
+
+            g.Text(ArenaArt.Sand, left + 64, top + 192, $"DROP ZONE // {Players} CONTESTANTS", 19);
+            g.Text(ArenaArt.SteelLight, left + 64, top + 234, "Scavenge weapons and armor. Stay inside the closing perimeter.", 14);
+            g.Text(ArenaArt.SteelLight, left + 64, top + 270, "Every silhouette is hostile. Only one survivor leaves the arena.", 14);
+
+            const float cardGap = 24;
+            var cardLeft = left + 64;
+            var cardAreaWidth = width - 128;
+            var cardWidth = (cardAreaWidth - cardGap * 2) / 3;
+            DrawControlCard(g, cardLeft, top + 340, cardWidth, "MOVE", "W A S D", null, ArenaArt.Cyan);
+            DrawControlCard(g, cardLeft + cardWidth + cardGap, top + 340, cardWidth, "AIM + FIRE", "MOUSE", null, ArenaArt.Coral);
+            DrawControlCard(g, cardLeft + (cardWidth + cardGap) * 2, top + 340, cardWidth, "GEAR", "F  PICKUP", "R  RELOAD", ArenaArt.Gold);
+
+            g.Rectangle(ArenaArt.Coral, left + 64, top + height - 104, width - 128, 58, true, false);
+            DrawCenteredText(g, ArenaArt.Ink, left + 64, top + height - 94, width - 128, "PRESS ESC TO DROP", 22);
         }
 
         #region private
-        private ImageSource KeyboardLayoutImage = new ImageSource("keyboard");
-        private ImageSource MouseLayoutImage = new ImageSource("mouse");
+        private static void DrawControlCard(IGraphics g, float x, float y, float width, string label, string control, string secondaryControl, RGBA accent)
+        {
+            g.Rectangle(Card, x, y, width, 150, true, false);
+            g.Rectangle(accent, x, y, width, 8, true, false);
+            DrawCenteredText(g, ArenaArt.SteelLight, x, y + 25, width, label, 14, 3);
+            DrawCenteredText(g, ArenaArt.Sand, x, y + 72, width, control, secondaryControl == null ? 22 : 17, 3);
+            if (secondaryControl != null)
+            {
+                DrawCenteredText(g, ArenaArt.Sand, x, y + 106, width, secondaryControl, 17, 3);
+            }
+        }
+
+        private static void DrawCenteredText(IGraphics g, RGBA color, float x, float y, float width, string text, float fontSize, int leftCharacterOffset = 0)
+        {
+            const float averageCharacterWidth = .56f;
+            var estimatedWidth = text.Length * fontSize * averageCharacterWidth;
+            var leftOffset = leftCharacterOffset * fontSize * averageCharacterWidth;
+            g.Text(color, x + Math.Max(8, (width - estimatedWidth) / 2 - leftOffset), y, text, fontSize);
+        }
+
         private int Players;
 
-        private readonly RGBA TransparentWhite = new RGBA() { R = 255, G = 255, B = 255, A = 200 };
+        private static readonly RGBA Backdrop = new RGBA() { R = 12, G = 17, B = 21, A = 120 };
+        private static readonly RGBA Card = new RGBA() { R = 43, G = 52, B = 60, A = 255 };
         #endregion
     }
 }

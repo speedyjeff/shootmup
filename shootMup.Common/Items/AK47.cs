@@ -26,6 +26,12 @@ namespace shootMup.Common
         }
 
         public override string FiredSoundPath() => "ak47-2";
-        public override ImageSource Image => new ImageSource(path: "ak47");
+        public override ImageSource Image => null;
+
+        public override void Draw(IGraphics g)
+        {
+            ArenaArt.DrawGroundWeapon(g, X, Y, Width, WeaponStyle.Rifle);
+            base.Draw(g);
+        }
     }
 }

@@ -249,12 +249,12 @@ namespace shootMup.Common
                                     new Pistol() { X = 350, Y = 200 },
                                     new AK47() { X = 350, Y = 400 },
                                     new Shotgun() { X = 350, Y = 350 },
-                                    new Ammo() { X = 350, Y = 150 },
-                                    new Ammo() { X = 400, Y = 150 },
-                                    new Ammo() { X = 450, Y = 150 },
-                                    new Shield() { X = 200, Y = 300 },
+                                    new ArenaAmmo() { X = 350, Y = 150 },
+                                    new ArenaAmmo() { X = 400, Y = 150 },
+                                    new ArenaAmmo() { X = 450, Y = 150 },
+                                    new ArenaShield() { X = 200, Y = 300 },
                                     new Rock() { X = 750, Y = 250 },
-                                    new Health() { X = 350, Y = 800}
+                                    new ArenaHealth() { X = 350, Y = 800}
             })
             {
                 objects.Add(elem);
@@ -385,15 +385,15 @@ namespace shootMup.Common
             {
                 case 0:
                     // helmet
-                    return new Shield() { X = x, Y = y };
+                    return new ArenaShield() { X = x, Y = y };
                 case 1:
                     // bandage
-                    return new Health() { X = x, Y = y };
+                    return new ArenaHealth() { X = x, Y = y };
                 case 4:
                 case 2:
                 case 5:
                     // ammo
-                    return new Ammo() { X = x, Y = y };
+                    return new ArenaAmmo() { X = x, Y = y };
                 case 3:
                     // guns
                     switch (rand.Next() % 3)

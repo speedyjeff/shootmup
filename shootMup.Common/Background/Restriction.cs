@@ -15,7 +15,7 @@ namespace shootMup.Common
         public Restriction(int width, int height) : base(width, height)
         {
             // base config
-            GroundColor = new RGBA() { R = 70, G = 169, B = 52, A = 255 };
+            GroundColor = new RGBA() { R = 91, G = 132, B = 87, A = 255 };
             X = (width / 2);
             Y = (height / 2);
             Width = width;
@@ -32,7 +32,7 @@ namespace shootMup.Common
             Timing = MinTiming;
         }
 
-        public RGBA DangerColor => new RGBA() { R =255, G =127, B =39, A = 255 };
+        public RGBA DangerColor => new RGBA() { R = 116, G = 40, B = 53, A = 255 };
 
         public float Diameter { get; set; }
 
@@ -40,8 +40,9 @@ namespace shootMup.Common
         {
             // draw the zone
             g.Clear(DangerColor);
-            // add the safe zone (must be relative to Diameter - as it shifts)
             g.Ellipse(GroundColor, X - (Diameter / 2), Y - (Diameter / 2), Diameter, Diameter, true);
+            g.Ellipse(ArenaArt.Gold, X - (Diameter / 2), Y - (Diameter / 2), Diameter, Diameter, false, false, 18);
+            g.Ellipse(ArenaArt.Sand, X - (Diameter / 2) + 24, Y - (Diameter / 2) + 24, Diameter - 48, Diameter - 48, false, false, 5);
         }
 
         public override void Update()

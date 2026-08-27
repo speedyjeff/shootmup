@@ -261,4 +261,5 @@ __pycache__/
 *.pyc
 
 # shootMup generated training artifacts
-shootMup/training/
+/training/
+/shootMup/training/

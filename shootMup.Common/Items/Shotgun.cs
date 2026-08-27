@@ -26,6 +26,12 @@ namespace shootMup.Common
         }
 
         public override string FiredSoundPath() => "shotgun";
-        public override ImageSource Image => new ImageSource(path: "shotgun");
+        public override ImageSource Image => null;
+
+        public override void Draw(IGraphics g)
+        {
+            ArenaArt.DrawGroundWeapon(g, X, Y, Width, WeaponStyle.Shotgun);
+            base.Draw(g);
+        }
     }
 }
